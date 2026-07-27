@@ -1,0 +1,41 @@
+services:
+
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+
+    volumes:
+      - ..:/workspace:cached
+
+    command: sleep infinity
+
+    depends_on:
+      - opensearch
+
+    networks:
+      - reconciliation-net
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=LocalDevPassword123!
+
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+
+    networks:
+      - reconciliation-net
+
+volumes:
+  opensearch-data:
+
+networks:
+  reconciliation-net:

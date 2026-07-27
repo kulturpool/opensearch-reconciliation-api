@@ -1,0 +1,2688 @@
+{
+  "ConferenceOrEvent": [
+    {
+      "id": "abbreviatedNameForTheConferenceOrEvent",
+      "name": "Abgekürzter Name der Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "benefactor",
+      "name": "Stifter"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermPartitive",
+      "name": "Oberbegriff partitiv"
+    },
+    {
+      "id": "broaderTermWithMoreThanOneElement",
+      "name": "Oberbegriff mehrgliedrig"
+    },
+    {
+      "id": "celebratedCorporateBody",
+      "name": "Gefeierte Körperschaft"
+    },
+    {
+      "id": "celebratedFamily",
+      "name": "Gefeierte Familie"
+    },
+    {
+      "id": "celebratedPerson",
+      "name": "Gefeierte Person"
+    },
+    {
+      "id": "celebratedTopic",
+      "name": "Gefeiertes Thema"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "contributingCorporateBody",
+      "name": "Beteiligte Körperschaft"
+    },
+    {
+      "id": "contributingFamily",
+      "name": "Beteiligte Familie"
+    },
+    {
+      "id": "contributingPerson",
+      "name": "Beteiligte Person"
+    },
+    {
+      "id": "curator",
+      "name": "Kurator"
+    },
+    {
+      "id": "dateOfConferenceOrEvent",
+      "name": "Veranstaltungsdaten"
+    },
+    {
+      "id": "dateOfEstablishment",
+      "name": "Gründungsdatum"
+    },
+    {
+      "id": "dateOfEstablishmentAndTermination",
+      "name": "Gründungs- und Auflösungsdatum"
+    },
+    {
+      "id": "dateOfTermination",
+      "name": "Auflösungsdatum"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "exhibitor",
+      "name": "Aussteller"
+    },
+    {
+      "id": "fieldOfActivity",
+      "name": "Tätigkeitsbereich"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "hierarchicalSuperiorOfTheConferenceOrEvent",
+      "name": "Administrative Überordnung der Konferenz oder der Veranstaltung"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "musician",
+      "name": "Musiker"
+    },
+    {
+      "id": "occasionOfTheSubjectHeading",
+      "name": "Anlass des Schlagworts"
+    },
+    {
+      "id": "occasionOfTheWork",
+      "name": "Anlass des Werkes"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "organizerOrHost",
+      "name": "Veranstalter oder Gastgeber"
+    },
+    {
+      "id": "otherPlace",
+      "name": "Weiterer Ort"
+    },
+    {
+      "id": "placeOfConferenceOrEvent",
+      "name": "Veranstaltungsort"
+    },
+    {
+      "id": "precedingConferenceOrEvent",
+      "name": "Vorherige Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "precedingPlaceOrGeographicName",
+      "name": "Vorheriges Geografikum"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "spatialAreaOfActivity",
+      "name": "Geographischer Wirkungsbereich"
+    },
+    {
+      "id": "sponsorOrPatron",
+      "name": "Sponsor oder Mäzen"
+    },
+    {
+      "id": "succeedingConferenceOrEvent",
+      "name": "Nachfolgende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "temporaryNameOfTheConferenceOrEvent",
+      "name": "Zeitweiser Name der Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "CorporateBody": [
+    {
+      "id": "abbreviatedNameForTheCorporateBody",
+      "name": "Abgekürzter Name der Körperschaft"
+    },
+    {
+      "id": "benefactor",
+      "name": "Stifter"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "broaderTermPartitive",
+      "name": "Oberbegriff partitiv"
+    },
+    {
+      "id": "broaderTermWithMoreThanOneElement",
+      "name": "Oberbegriff mehrgliedrig"
+    },
+    {
+      "id": "celebratedCorporateBody",
+      "name": "Gefeierte Körperschaft"
+    },
+    {
+      "id": "celebratedFamily",
+      "name": "Gefeierte Familie"
+    },
+    {
+      "id": "celebratedPerson",
+      "name": "Gefeierte Person"
+    },
+    {
+      "id": "celebratedTopic",
+      "name": "Gefeiertes Thema"
+    },
+    {
+      "id": "collector",
+      "name": "Sammler"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "contributingCorporateBody",
+      "name": "Beteiligte Körperschaft"
+    },
+    {
+      "id": "contributingFamily",
+      "name": "Beteiligte Familie"
+    },
+    {
+      "id": "contributingPerson",
+      "name": "Beteiligte Person"
+    },
+    {
+      "id": "contributingPlaceOrGeographicName",
+      "name": "Beteiligtes Geografikum"
+    },
+    {
+      "id": "corporateBodyIsMember",
+      "name": "Körperschaft ist Mitglied"
+    },
+    {
+      "id": "correspondent",
+      "name": "Korrespondenzpartner"
+    },
+    {
+      "id": "dateOfEstablishment",
+      "name": "Gründungsdatum"
+    },
+    {
+      "id": "dateOfEstablishmentAndTermination",
+      "name": "Gründungs- und Auflösungsdatum"
+    },
+    {
+      "id": "dateOfTermination",
+      "name": "Auflösungsdatum"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "fieldOfActivity",
+      "name": "Tätigkeitsbereich"
+    },
+    {
+      "id": "founder",
+      "name": "Gründer"
+    },
+    {
+      "id": "functionOrRole",
+      "name": "Funktion oder Rolle"
+    },
+    {
+      "id": "functionOrRoleAsLiteral",
+      "name": "Funktion oder Rolle (Literal)"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "hierarchicalSuperiorOfTheCorporateBody",
+      "name": "Administrative Überordnung der Körperschaft"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "musician",
+      "name": "Musiker"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "otherPlace",
+      "name": "Weiterer Ort"
+    },
+    {
+      "id": "placeOfBusiness",
+      "name": "Sitz"
+    },
+    {
+      "id": "precedingCorporateBody",
+      "name": "Vorherige Körperschaft"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "spatialAreaOfActivity",
+      "name": "Geographischer Wirkungsbereich"
+    },
+    {
+      "id": "sponsorOrPatron",
+      "name": "Sponsor oder Mäzen"
+    },
+    {
+      "id": "succeedingCorporateBody",
+      "name": "Nachfolgende Körperschaft"
+    },
+    {
+      "id": "succeedingPlaceOrGeographicName",
+      "name": "Nachfolgendes Geografikum"
+    },
+    {
+      "id": "temporaryNameOfTheCorporateBody",
+      "name": "Zeitweiser Name der Körperschaft"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "DifferentiatedPerson": [
+    {
+      "id": "academicDegree",
+      "name": "Akademischer Grad"
+    },
+    {
+      "id": "acquaintanceshipOrFriendship",
+      "name": "Beziehung, Bekanntschaft, Freundschaft"
+    },
+    {
+      "id": "affiliation",
+      "name": "Affiliation"
+    },
+    {
+      "id": "affiliationAsLiteral",
+      "name": "Affiliation (Literal)"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "characteristicPlace",
+      "name": "Charakteristischer Ort"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "correspondent",
+      "name": "Korrespondenzpartner"
+    },
+    {
+      "id": "correspondsTo",
+      "name": "korrespondiert mit"
+    },
+    {
+      "id": "correspondsToInverse",
+      "name": "korrespondiert invers mit"
+    },
+    {
+      "id": "dateOfBirth",
+      "name": "Geburtsdatum"
+    },
+    {
+      "id": "dateOfBirthAndDeath",
+      "name": "Geburts- und Sterbedatum"
+    },
+    {
+      "id": "dateOfDeath",
+      "name": "Sterbedatum"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "familialRelationship",
+      "name": "Familiäre Beziehung"
+    },
+    {
+      "id": "fieldOfActivity",
+      "name": "Tätigkeitsbereich"
+    },
+    {
+      "id": "fieldOfStudy",
+      "name": "Studienfach"
+    },
+    {
+      "id": "functionOrRole",
+      "name": "Funktion oder Rolle"
+    },
+    {
+      "id": "functionOrRoleAsLiteral",
+      "name": "Funktion oder Rolle (Literal)"
+    },
+    {
+      "id": "gender",
+      "name": "Geschlecht"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "hasAcquaintance",
+      "name": "Bekannte(n)"
+    },
+    {
+      "id": "hasAdoptiveChild",
+      "name": "Adoptivkind"
+    },
+    {
+      "id": "hasAdoptiveParent",
+      "name": "Adoptivelternteil"
+    },
+    {
+      "id": "hasAdoptiveSibling",
+      "name": "Adoptivgeschwister"
+    },
+    {
+      "id": "hasAncestor",
+      "name": "Vorfahr"
+    },
+    {
+      "id": "hasAssociate",
+      "name": "Gruppenzugehörigkeit"
+    },
+    {
+      "id": "hasAuntUncle",
+      "name": "Tante oder Onkel"
+    },
+    {
+      "id": "hasBeginDate",
+      "name": "Anfangsdatum"
+    },
+    {
+      "id": "hasBiologicalChild",
+      "name": "biologisches Kind"
+    },
+    {
+      "id": "hasBiologicalParent",
+      "name": "biologischen Elternteil"
+    },
+    {
+      "id": "hasBiologicalSibling",
+      "name": "biologisches Geschwister"
+    },
+    {
+      "id": "hasChannel",
+      "name": "Medium"
+    },
+    {
+      "id": "hasChief",
+      "name": "Chef"
+    },
+    {
+      "id": "hasChild",
+      "name": "Kind"
+    },
+    {
+      "id": "hasChildInlaw",
+      "name": "Schwiegerkind"
+    },
+    {
+      "id": "hasCohabitee",
+      "name": "Lebensgefährte"
+    },
+    {
+      "id": "hasColleague",
+      "name": "Kollege"
+    },
+    {
+      "id": "hasCooperator",
+      "name": "Kollaborator"
+    },
+    {
+      "id": "hasCorrespondent",
+      "name": "Korrespondent"
+    },
+    {
+      "id": "hasCousin",
+      "name": "Cousin"
+    },
+    {
+      "id": "hasEmployee",
+      "name": "Arbeitnehmer"
+    },
+    {
+      "id": "hasEmployer",
+      "name": "Arbeitgeber"
+    },
+    {
+      "id": "hasEndDate",
+      "name": "Enddatum"
+    },
+    {
+      "id": "hasFianceeFiance",
+      "name": "Verlobte(n)"
+    },
+    {
+      "id": "hasFosterChild",
+      "name": "Pflegekind"
+    },
+    {
+      "id": "hasFosterParent",
+      "name": "Pflegeelternteil"
+    },
+    {
+      "id": "hasFosterSibling",
+      "name": "has Pflegegeschwister"
+    },
+    {
+      "id": "hasFounder",
+      "name": "Gründer"
+    },
+    {
+      "id": "hasFriend",
+      "name": "Freund"
+    },
+    {
+      "id": "hasGndCode",
+      "name": "GND Code"
+    },
+    {
+      "id": "hasGodChild",
+      "name": "Patenkind"
+    },
+    {
+      "id": "hasGodParent",
+      "name": "Pate"
+    },
+    {
+      "id": "hasGrandChild",
+      "name": "Enkel"
+    },
+    {
+      "id": "hasGrandParent",
+      "name": "Großelternteil"
+    },
+    {
+      "id": "hasHalfSibling",
+      "name": "Halbgeschwister"
+    },
+    {
+      "id": "hasIllegitimateChild",
+      "name": "illegitimes Kind"
+    },
+    {
+      "id": "hasIllegitimateParent",
+      "name": "illegitimen Elternteil"
+    },
+    {
+      "id": "hasInfluenceDonee",
+      "name": "Einfluss auf"
+    },
+    {
+      "id": "hasInfluenceDonor",
+      "name": "ist beeinflusst durch"
+    },
+    {
+      "id": "hasInlaw",
+      "name": "angeheiratete(n) Verwandte(n)"
+    },
+    {
+      "id": "hasLover",
+      "name": "Geliebte(n)"
+    },
+    {
+      "id": "hasMember",
+      "name": "Mitglied"
+    },
+    {
+      "id": "hasMultipleBirthSibling",
+      "name": "Mehrlingsgeschwister"
+    },
+    {
+      "id": "hasMurderee",
+      "name": "Mordopfer"
+    },
+    {
+      "id": "hasMurderer",
+      "name": "Mörder"
+    },
+    {
+      "id": "hasMuse",
+      "name": "Muse"
+    },
+    {
+      "id": "hasNieceNephew",
+      "name": "Nichte oder Neffe"
+    },
+    {
+      "id": "hasOffspring",
+      "name": "Nachkomme"
+    },
+    {
+      "id": "hasParent",
+      "name": "Elternteil"
+    },
+    {
+      "id": "hasParentInlaw",
+      "name": "Schwiegerelternteil"
+    },
+    {
+      "id": "hasPatron",
+      "name": "Mäzen"
+    },
+    {
+      "id": "hasPhysician",
+      "name": "Arzt"
+    },
+    {
+      "id": "hasProfessionalContact",
+      "name": "Berufskontakt"
+    },
+    {
+      "id": "hasRelative",
+      "name": "Verwandte(n)"
+    },
+    {
+      "id": "hasSibling",
+      "name": "Geschwister"
+    },
+    {
+      "id": "hasSiblingInlaw",
+      "name": "Schwager oder Schwägerin"
+    },
+    {
+      "id": "hasSpiritualContact",
+      "name": "spirituellen Kontakt"
+    },
+    {
+      "id": "hasSpouse",
+      "name": "Ehepartner"
+    },
+    {
+      "id": "hasStepChild",
+      "name": "Stiefkind"
+    },
+    {
+      "id": "hasStepParent",
+      "name": "Stiefelternteil"
+    },
+    {
+      "id": "hasStepSibling",
+      "name": "Stiefgeschwister"
+    },
+    {
+      "id": "hasStudent",
+      "name": "Schüler"
+    },
+    {
+      "id": "hasSubject",
+      "name": "Subjekt"
+    },
+    {
+      "id": "hasSubjectObject",
+      "name": "Subjekt oder Objekt"
+    },
+    {
+      "id": "hasTeacher",
+      "name": "Lehrer"
+    },
+    {
+      "id": "hasVitalLethalContact",
+      "name": "vitalen oder letalen Kontakt"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "isChannelOf",
+      "name": "ist Medium von"
+    },
+    {
+      "id": "isChiefOf",
+      "name": "ist Chef von"
+    },
+    {
+      "id": "isFounderOf",
+      "name": "ist Gründer von"
+    },
+    {
+      "id": "isMemberOf",
+      "name": "ist Mitglied von"
+    },
+    {
+      "id": "isMuseOf",
+      "name": "ist Muse von"
+    },
+    {
+      "id": "isObject",
+      "name": "ist Objekt"
+    },
+    {
+      "id": "isPatronOf",
+      "name": "ist Mäzen von"
+    },
+    {
+      "id": "isPhysicianOf",
+      "name": "ist Arzt von"
+    },
+    {
+      "id": "isSubject",
+      "name": "ist Subjekt"
+    },
+    {
+      "id": "isSubjectObject",
+      "name": "ist Subjekt oder Objekt"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "memberOfTheFamily",
+      "name": "Familienmitglied"
+    },
+    {
+      "id": "metadataConfidence",
+      "name": "Konfidenzwert"
+    },
+    {
+      "id": "metadataPeriod",
+      "name": "Gültigkeitszeitraum"
+    },
+    {
+      "id": "metadataProvenance",
+      "name": "Herkunft"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "periodOfActivity",
+      "name": "Wirkungsdaten"
+    },
+    {
+      "id": "placeOfActivity",
+      "name": "Wirkungsort"
+    },
+    {
+      "id": "placeOfBirth",
+      "name": "Geburtsort"
+    },
+    {
+      "id": "placeOfBirthAsLiteral",
+      "name": "Geburtsort (Literal)"
+    },
+    {
+      "id": "placeOfDeath",
+      "name": "Sterbeort"
+    },
+    {
+      "id": "placeOfDeathAsLiteral",
+      "name": "Sterbeort (Literal)"
+    },
+    {
+      "id": "placeOfExile",
+      "name": "Exilort"
+    },
+    {
+      "id": "playedInstrument",
+      "name": "Gespieltes Instrument"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "professionOrOccupation",
+      "name": "Beruf oder Beschäftigung"
+    },
+    {
+      "id": "professionOrOccupationAsLiteral",
+      "name": "Beruf oder Beschäftigung (Literal)"
+    },
+    {
+      "id": "professionalRelationship",
+      "name": "Berufliche Beziehung"
+    },
+    {
+      "id": "pseudonym",
+      "name": "Pseudonym"
+    },
+    {
+      "id": "publication",
+      "name": "Titelangabe"
+    },
+    {
+      "id": "realIdentity",
+      "name": "Echte Identität"
+    },
+    {
+      "id": "relatedAgent",
+      "name": "verknüpfter Agens"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "titleOfNobility",
+      "name": "Adelstitel"
+    },
+    {
+      "id": "titleOfNobilityAsLiteral",
+      "name": "Adelstitel (Literal)"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "udkCode",
+      "name": "UDK-Code"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "Person": [
+    {
+      "id": "academicDegree",
+      "name": "Akademischer Grad"
+    },
+    {
+      "id": "acquaintanceshipOrFriendship",
+      "name": "Beziehung, Bekanntschaft, Freundschaft"
+    },
+    {
+      "id": "affiliation",
+      "name": "Affiliation"
+    },
+    {
+      "id": "affiliationAsLiteral",
+      "name": "Affiliation (Literal)"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "characteristicPlace",
+      "name": "Charakteristischer Ort"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "correspondent",
+      "name": "Korrespondenzpartner"
+    },
+    {
+      "id": "correspondsTo",
+      "name": "korrespondiert mit"
+    },
+    {
+      "id": "correspondsToInverse",
+      "name": "korrespondiert invers mit"
+    },
+    {
+      "id": "dateOfBirth",
+      "name": "Geburtsdatum"
+    },
+    {
+      "id": "dateOfBirthAndDeath",
+      "name": "Geburts- und Sterbedatum"
+    },
+    {
+      "id": "dateOfDeath",
+      "name": "Sterbedatum"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "familialRelationship",
+      "name": "Familiäre Beziehung"
+    },
+    {
+      "id": "fieldOfActivity",
+      "name": "Tätigkeitsbereich"
+    },
+    {
+      "id": "fieldOfStudy",
+      "name": "Studienfach"
+    },
+    {
+      "id": "functionOrRole",
+      "name": "Funktion oder Rolle"
+    },
+    {
+      "id": "functionOrRoleAsLiteral",
+      "name": "Funktion oder Rolle (Literal)"
+    },
+    {
+      "id": "gender",
+      "name": "Geschlecht"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "hasAcquaintance",
+      "name": "Bekannte(n)"
+    },
+    {
+      "id": "hasAdoptiveChild",
+      "name": "Adoptivkind"
+    },
+    {
+      "id": "hasAdoptiveParent",
+      "name": "Adoptivelternteil"
+    },
+    {
+      "id": "hasAdoptiveSibling",
+      "name": "Adoptivgeschwister"
+    },
+    {
+      "id": "hasAncestor",
+      "name": "Vorfahr"
+    },
+    {
+      "id": "hasAssociate",
+      "name": "Gruppenzugehörigkeit"
+    },
+    {
+      "id": "hasAuntUncle",
+      "name": "Tante oder Onkel"
+    },
+    {
+      "id": "hasBeginDate",
+      "name": "Anfangsdatum"
+    },
+    {
+      "id": "hasBiologicalChild",
+      "name": "biologisches Kind"
+    },
+    {
+      "id": "hasBiologicalParent",
+      "name": "biologischen Elternteil"
+    },
+    {
+      "id": "hasBiologicalSibling",
+      "name": "biologisches Geschwister"
+    },
+    {
+      "id": "hasChannel",
+      "name": "Medium"
+    },
+    {
+      "id": "hasChief",
+      "name": "Chef"
+    },
+    {
+      "id": "hasChild",
+      "name": "Kind"
+    },
+    {
+      "id": "hasChildInlaw",
+      "name": "Schwiegerkind"
+    },
+    {
+      "id": "hasCohabitee",
+      "name": "Lebensgefährte"
+    },
+    {
+      "id": "hasColleague",
+      "name": "Kollege"
+    },
+    {
+      "id": "hasCooperator",
+      "name": "Kollaborator"
+    },
+    {
+      "id": "hasCorrespondent",
+      "name": "Korrespondent"
+    },
+    {
+      "id": "hasCousin",
+      "name": "Cousin"
+    },
+    {
+      "id": "hasEmployee",
+      "name": "Arbeitnehmer"
+    },
+    {
+      "id": "hasEmployer",
+      "name": "Arbeitgeber"
+    },
+    {
+      "id": "hasEndDate",
+      "name": "Enddatum"
+    },
+    {
+      "id": "hasFianceeFiance",
+      "name": "Verlobte(n)"
+    },
+    {
+      "id": "hasFosterChild",
+      "name": "Pflegekind"
+    },
+    {
+      "id": "hasFosterParent",
+      "name": "Pflegeelternteil"
+    },
+    {
+      "id": "hasFosterSibling",
+      "name": "has Pflegegeschwister"
+    },
+    {
+      "id": "hasFounder",
+      "name": "Gründer"
+    },
+    {
+      "id": "hasFriend",
+      "name": "Freund"
+    },
+    {
+      "id": "hasGndCode",
+      "name": "GND Code"
+    },
+    {
+      "id": "hasGodChild",
+      "name": "Patenkind"
+    },
+    {
+      "id": "hasGodParent",
+      "name": "Pate"
+    },
+    {
+      "id": "hasGrandChild",
+      "name": "Enkel"
+    },
+    {
+      "id": "hasGrandParent",
+      "name": "Großelternteil"
+    },
+    {
+      "id": "hasHalfSibling",
+      "name": "Halbgeschwister"
+    },
+    {
+      "id": "hasIllegitimateChild",
+      "name": "illegitimes Kind"
+    },
+    {
+      "id": "hasIllegitimateParent",
+      "name": "illegitimen Elternteil"
+    },
+    {
+      "id": "hasInfluenceDonee",
+      "name": "Einfluss auf"
+    },
+    {
+      "id": "hasInfluenceDonor",
+      "name": "ist beeinflusst durch"
+    },
+    {
+      "id": "hasInlaw",
+      "name": "angeheiratete(n) Verwandte(n)"
+    },
+    {
+      "id": "hasLover",
+      "name": "Geliebte(n)"
+    },
+    {
+      "id": "hasMember",
+      "name": "Mitglied"
+    },
+    {
+      "id": "hasMultipleBirthSibling",
+      "name": "Mehrlingsgeschwister"
+    },
+    {
+      "id": "hasMurderee",
+      "name": "Mordopfer"
+    },
+    {
+      "id": "hasMurderer",
+      "name": "Mörder"
+    },
+    {
+      "id": "hasMuse",
+      "name": "Muse"
+    },
+    {
+      "id": "hasNieceNephew",
+      "name": "Nichte oder Neffe"
+    },
+    {
+      "id": "hasOffspring",
+      "name": "Nachkomme"
+    },
+    {
+      "id": "hasParent",
+      "name": "Elternteil"
+    },
+    {
+      "id": "hasParentInlaw",
+      "name": "Schwiegerelternteil"
+    },
+    {
+      "id": "hasPatron",
+      "name": "Mäzen"
+    },
+    {
+      "id": "hasPhysician",
+      "name": "Arzt"
+    },
+    {
+      "id": "hasProfessionalContact",
+      "name": "Berufskontakt"
+    },
+    {
+      "id": "hasRelative",
+      "name": "Verwandte(n)"
+    },
+    {
+      "id": "hasSibling",
+      "name": "Geschwister"
+    },
+    {
+      "id": "hasSiblingInlaw",
+      "name": "Schwager oder Schwägerin"
+    },
+    {
+      "id": "hasSpiritualContact",
+      "name": "spirituellen Kontakt"
+    },
+    {
+      "id": "hasSpouse",
+      "name": "Ehepartner"
+    },
+    {
+      "id": "hasStepChild",
+      "name": "Stiefkind"
+    },
+    {
+      "id": "hasStepParent",
+      "name": "Stiefelternteil"
+    },
+    {
+      "id": "hasStepSibling",
+      "name": "Stiefgeschwister"
+    },
+    {
+      "id": "hasStudent",
+      "name": "Schüler"
+    },
+    {
+      "id": "hasSubject",
+      "name": "Subjekt"
+    },
+    {
+      "id": "hasSubjectObject",
+      "name": "Subjekt oder Objekt"
+    },
+    {
+      "id": "hasTeacher",
+      "name": "Lehrer"
+    },
+    {
+      "id": "hasVitalLethalContact",
+      "name": "vitalen oder letalen Kontakt"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "isChannelOf",
+      "name": "ist Medium von"
+    },
+    {
+      "id": "isChiefOf",
+      "name": "ist Chef von"
+    },
+    {
+      "id": "isFounderOf",
+      "name": "ist Gründer von"
+    },
+    {
+      "id": "isMemberOf",
+      "name": "ist Mitglied von"
+    },
+    {
+      "id": "isMuseOf",
+      "name": "ist Muse von"
+    },
+    {
+      "id": "isObject",
+      "name": "ist Objekt"
+    },
+    {
+      "id": "isPatronOf",
+      "name": "ist Mäzen von"
+    },
+    {
+      "id": "isPhysicianOf",
+      "name": "ist Arzt von"
+    },
+    {
+      "id": "isSubject",
+      "name": "ist Subjekt"
+    },
+    {
+      "id": "isSubjectObject",
+      "name": "ist Subjekt oder Objekt"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "memberOfTheFamily",
+      "name": "Familienmitglied"
+    },
+    {
+      "id": "metadataConfidence",
+      "name": "Konfidenzwert"
+    },
+    {
+      "id": "metadataPeriod",
+      "name": "Gültigkeitszeitraum"
+    },
+    {
+      "id": "metadataProvenance",
+      "name": "Herkunft"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "periodOfActivity",
+      "name": "Wirkungsdaten"
+    },
+    {
+      "id": "placeOfActivity",
+      "name": "Wirkungsort"
+    },
+    {
+      "id": "placeOfBirth",
+      "name": "Geburtsort"
+    },
+    {
+      "id": "placeOfBirthAsLiteral",
+      "name": "Geburtsort (Literal)"
+    },
+    {
+      "id": "placeOfDeath",
+      "name": "Sterbeort"
+    },
+    {
+      "id": "placeOfDeathAsLiteral",
+      "name": "Sterbeort (Literal)"
+    },
+    {
+      "id": "placeOfExile",
+      "name": "Exilort"
+    },
+    {
+      "id": "playedInstrument",
+      "name": "Gespieltes Instrument"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "professionOrOccupation",
+      "name": "Beruf oder Beschäftigung"
+    },
+    {
+      "id": "professionOrOccupationAsLiteral",
+      "name": "Beruf oder Beschäftigung (Literal)"
+    },
+    {
+      "id": "professionalRelationship",
+      "name": "Berufliche Beziehung"
+    },
+    {
+      "id": "pseudonym",
+      "name": "Pseudonym"
+    },
+    {
+      "id": "publication",
+      "name": "Titelangabe"
+    },
+    {
+      "id": "realIdentity",
+      "name": "Echte Identität"
+    },
+    {
+      "id": "relatedAgent",
+      "name": "verknüpfter Agens"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "titleOfNobility",
+      "name": "Adelstitel"
+    },
+    {
+      "id": "titleOfNobilityAsLiteral",
+      "name": "Adelstitel (Literal)"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "udkCode",
+      "name": "UDK-Code"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "PlaceOrGeographicName": [
+    {
+      "id": "abbreviatedNameForThePlaceOrGeographicName",
+      "name": "Abgekürzter Name des Geografikum"
+    },
+    {
+      "id": "accreditedArtist",
+      "name": "Zugeschriebener Künstler"
+    },
+    {
+      "id": "architect",
+      "name": "Architekt"
+    },
+    {
+      "id": "artist",
+      "name": "Künstler"
+    },
+    {
+      "id": "benefactor",
+      "name": "Stifter"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "broaderTermPartitive",
+      "name": "Oberbegriff partitiv"
+    },
+    {
+      "id": "broaderTermWithMoreThanOneElement",
+      "name": "Oberbegriff mehrgliedrig"
+    },
+    {
+      "id": "buildingOwner",
+      "name": "Bauherr"
+    },
+    {
+      "id": "celebratedFamily",
+      "name": "Gefeierte Familie"
+    },
+    {
+      "id": "celebratedPerson",
+      "name": "Gefeierte Person"
+    },
+    {
+      "id": "citedArtist",
+      "name": "Zitierter Künstler"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "dateOfEstablishment",
+      "name": "Gründungsdatum"
+    },
+    {
+      "id": "dateOfEstablishmentAndTermination",
+      "name": "Gründungs- und Auflösungsdatum"
+    },
+    {
+      "id": "dateOfProduction",
+      "name": "Erstellungszeit"
+    },
+    {
+      "id": "dateOfTermination",
+      "name": "Auflösungsdatum"
+    },
+    {
+      "id": "dedicatee",
+      "name": "Widmungsempfänger"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "doubtfulArtist",
+      "name": "Angezweifelter Künstler"
+    },
+    {
+      "id": "easternmostLongitude",
+      "name": "Östlichster Längengrad"
+    },
+    {
+      "id": "firstArtist",
+      "name": "Erster Künstler"
+    },
+    {
+      "id": "formerOwner",
+      "name": "Früherer Besitzer"
+    },
+    {
+      "id": "founder",
+      "name": "Gründer"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "hierarchicalSuperiorOfPlaceOrGeographicName",
+      "name": "Administrative Überordnung des Geografikums"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "initiator",
+      "name": "Veranlasser"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "narrowerTermPartitive",
+      "name": "Unterbegriff partitiv"
+    },
+    {
+      "id": "northernmostLatitude",
+      "name": "Nördlichster Breitengrad"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "owner",
+      "name": "Besitzer"
+    },
+    {
+      "id": "place",
+      "name": "Ort"
+    },
+    {
+      "id": "placeOrGeographicNameIsMember",
+      "name": "Geografikum ist Mitglied"
+    },
+    {
+      "id": "precedingCorporateBody",
+      "name": "Vorherige Körperschaft"
+    },
+    {
+      "id": "precedingPlaceOrGeographicName",
+      "name": "Vorheriges Geografikum"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy1",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 1"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy2",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 2"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy3",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 3"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy4",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 4"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "restorer",
+      "name": "Restaurator"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "sculptor",
+      "name": "Bildhauer"
+    },
+    {
+      "id": "southernmostLatitude",
+      "name": "Südlichster Breitengrad"
+    },
+    {
+      "id": "sponsorOrPatron",
+      "name": "Sponsor oder Mäzen"
+    },
+    {
+      "id": "startingOrFinalPointOfADistance",
+      "name": "Beginn und Ende einer Strecke"
+    },
+    {
+      "id": "succeedingCorporateBody",
+      "name": "Nachfolgende Körperschaft"
+    },
+    {
+      "id": "succeedingPlaceOrGeographicName",
+      "name": "Nachfolgendes Geografikum"
+    },
+    {
+      "id": "temporaryNameOfThePlaceOrGeographicName",
+      "name": "Zeitweiser Name des Geografikums"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "typeOfCoordinates",
+      "name": "Koordinatentyp"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    },
+    {
+      "id": "westernmostLongitude",
+      "name": "Westlichster Längengrad"
+    }
+  ],
+  "SubjectHeading": [
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermGeneric",
+      "name": "Oberbegriff generisch"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "broaderTermPartitive",
+      "name": "Oberbegriff partitiv"
+    },
+    {
+      "id": "broaderTermWithMoreThanOneElement",
+      "name": "Oberbegriff mehrgliedrig"
+    },
+    {
+      "id": "celebratedCorporateBody",
+      "name": "Gefeierte Körperschaft"
+    },
+    {
+      "id": "celebratedFamily",
+      "name": "Gefeierte Familie"
+    },
+    {
+      "id": "celebratedPerson",
+      "name": "Gefeierte Person"
+    },
+    {
+      "id": "celebratedTopic",
+      "name": "Gefeiertes Thema"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "contributingFamily",
+      "name": "Beteiligte Familie"
+    },
+    {
+      "id": "contributingPerson",
+      "name": "Beteiligte Person"
+    },
+    {
+      "id": "contributingPlaceOrGeographicName",
+      "name": "Beteiligtes Geografikum"
+    },
+    {
+      "id": "creator",
+      "name": "Urheber"
+    },
+    {
+      "id": "dateOfEstablishment",
+      "name": "Gründungsdatum"
+    },
+    {
+      "id": "dateOfEstablishmentAndTermination",
+      "name": "Gründungs- und Auflösungsdatum"
+    },
+    {
+      "id": "dateOfProduction",
+      "name": "Erstellungszeit"
+    },
+    {
+      "id": "dateOfTermination",
+      "name": "Auflösungsdatum"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "functionOrRole",
+      "name": "Funktion oder Rolle"
+    },
+    {
+      "id": "functionOrRoleAsLiteral",
+      "name": "Funktion oder Rolle (Literal)"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "inventor",
+      "name": "Erfinder"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "manufacturer",
+      "name": "Hersteller"
+    },
+    {
+      "id": "narrowerTermGeneral",
+      "name": "Unterbegriff allgemein"
+    },
+    {
+      "id": "narrowerTermGeneric",
+      "name": "Unterbegriff generisch"
+    },
+    {
+      "id": "narrowerTermInstantial",
+      "name": "Unterbegriff instantiell"
+    },
+    {
+      "id": "narrowerTermPartitive",
+      "name": "Unterbegriff partitiv"
+    },
+    {
+      "id": "occasionOfTheSubjectHeading",
+      "name": "Anlass des Schlagworts"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "place",
+      "name": "Ort"
+    },
+    {
+      "id": "placeOfActivity",
+      "name": "Wirkungsort"
+    },
+    {
+      "id": "placeOfManufacture",
+      "name": "Herstellungsort"
+    },
+    {
+      "id": "precedingSubject",
+      "name": "Vorheriges Schlagwort"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy1",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 1"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy2",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 2"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy3",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 3"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy4",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 4"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "succeedingSubjectHeading",
+      "name": "Nachfolgendes Schlagwort"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "translator",
+      "name": "Übersetzer"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "SubjectHeadingSensoStricto": [
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "TerritorialCorporateBodyOrAdministrativeUnit": [
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    }
+  ],
+  "Work": [
+    {
+      "id": "abbreviatedNameForTheWork",
+      "name": "Abgekürzter Name des Werks"
+    },
+    {
+      "id": "accordingWork",
+      "name": "Zugehöriges Werk"
+    },
+    {
+      "id": "accreditedArtist",
+      "name": "Zugeschriebener Künstler"
+    },
+    {
+      "id": "accreditedAuthor",
+      "name": "Zugeschriebener Verfasser"
+    },
+    {
+      "id": "accreditedComposer",
+      "name": "Zugeschriebener Komponist"
+    },
+    {
+      "id": "addressee",
+      "name": "Adressat"
+    },
+    {
+      "id": "alternativeMediumOfPerformance",
+      "name": "Alternative Besetzung oder Doubling instruments oder Ad-libitum-Besetzung"
+    },
+    {
+      "id": "annotator",
+      "name": "Annotator"
+    },
+    {
+      "id": "arranger",
+      "name": "Arrangeur"
+    },
+    {
+      "id": "artist",
+      "name": "Künstler"
+    },
+    {
+      "id": "author",
+      "name": "Verfasser"
+    },
+    {
+      "id": "benefactor",
+      "name": "Stifter"
+    },
+    {
+      "id": "biographicalOrHistoricalInformation",
+      "name": "Biografische oder historische Angaben"
+    },
+    {
+      "id": "bookbinder",
+      "name": "Buchbinder"
+    },
+    {
+      "id": "bookdesigner",
+      "name": "Buchgestalter"
+    },
+    {
+      "id": "broaderTermGeneral",
+      "name": "Oberbegriff allgemein"
+    },
+    {
+      "id": "broaderTermInstantial",
+      "name": "Oberbegriff instantiell"
+    },
+    {
+      "id": "broaderTermPartitive",
+      "name": "Oberbegriff partitiv"
+    },
+    {
+      "id": "broaderTermWithMoreThanOneElement",
+      "name": "Oberbegriff mehrgliedrig"
+    },
+    {
+      "id": "cartographer",
+      "name": "Kartograf"
+    },
+    {
+      "id": "celebratedCorporateBody",
+      "name": "Gefeierte Körperschaft"
+    },
+    {
+      "id": "celebratedFamily",
+      "name": "Gefeierte Familie"
+    },
+    {
+      "id": "celebratedPerson",
+      "name": "Gefeierte Person"
+    },
+    {
+      "id": "celebratedTopic",
+      "name": "Gefeiertes Thema"
+    },
+    {
+      "id": "choreographer",
+      "name": "Choreograf"
+    },
+    {
+      "id": "citedArtist",
+      "name": "Zitierter Künstler"
+    },
+    {
+      "id": "citedAuthor",
+      "name": "Zitierter Verfasser"
+    },
+    {
+      "id": "citedComposer",
+      "name": "Zitierter Komponist"
+    },
+    {
+      "id": "collector",
+      "name": "Sammler"
+    },
+    {
+      "id": "compiler",
+      "name": "Kompilator"
+    },
+    {
+      "id": "complexSeeReferenceSubject",
+      "name": "Relationierter Deskriptor"
+    },
+    {
+      "id": "composer",
+      "name": "Komponist"
+    },
+    {
+      "id": "conferrer",
+      "name": "Leihgeber"
+    },
+    {
+      "id": "contributingCorporateBody",
+      "name": "Beteiligte Körperschaft"
+    },
+    {
+      "id": "contributingFamily",
+      "name": "Beteiligte Familie"
+    },
+    {
+      "id": "contributingPerson",
+      "name": "Beteiligte Person"
+    },
+    {
+      "id": "copist",
+      "name": "Kopist"
+    },
+    {
+      "id": "creator",
+      "name": "Urheber"
+    },
+    {
+      "id": "curator",
+      "name": "Kurator"
+    },
+    {
+      "id": "dateOfDiscovery",
+      "name": "Fundjahr"
+    },
+    {
+      "id": "dateOfEstablishment",
+      "name": "Gründungsdatum"
+    },
+    {
+      "id": "dateOfEstablishmentAndTermination",
+      "name": "Gründungs- und Auflösungsdatum"
+    },
+    {
+      "id": "dateOfProduction",
+      "name": "Erstellungszeit"
+    },
+    {
+      "id": "dateOfPublication",
+      "name": "Erscheinungszeit"
+    },
+    {
+      "id": "dateOfTermination",
+      "name": "Auflösungsdatum"
+    },
+    {
+      "id": "dedicatee",
+      "name": "Widmungsempfänger"
+    },
+    {
+      "id": "definition",
+      "name": "Definition"
+    },
+    {
+      "id": "depiction",
+      "name": "Darstellung"
+    },
+    {
+      "id": "designer",
+      "name": "Designer"
+    },
+    {
+      "id": "director",
+      "name": "Regisseur"
+    },
+    {
+      "id": "directorOfPhotography",
+      "name": "Verantwortlicher Kameramann"
+    },
+    {
+      "id": "doubtfulArtist",
+      "name": "Angezweifelter Künstler"
+    },
+    {
+      "id": "doubtfulAuthor",
+      "name": "Angezweifelter Verfasser"
+    },
+    {
+      "id": "doubtfulComposer",
+      "name": "Angezweifelter Komponist"
+    },
+    {
+      "id": "editor",
+      "name": "Herausgeber"
+    },
+    {
+      "id": "engraver",
+      "name": "Graveur"
+    },
+    {
+      "id": "etcher",
+      "name": "Radierer"
+    },
+    {
+      "id": "fictitiousAuthor",
+      "name": "Fiktiver Verfasser"
+    },
+    {
+      "id": "firstArtist",
+      "name": "Erster Künstler"
+    },
+    {
+      "id": "firstAuthor",
+      "name": "Erste Verfasserschaft"
+    },
+    {
+      "id": "firstComposer",
+      "name": "Erster Komponist"
+    },
+    {
+      "id": "formOfWorkAndExpression",
+      "name": "Form des Werks und der Expression"
+    },
+    {
+      "id": "formerOwner",
+      "name": "Früherer Besitzer"
+    },
+    {
+      "id": "geographicAreaCode",
+      "name": "Ländercode"
+    },
+    {
+      "id": "gndIdentifier",
+      "name": "GND-Nummer"
+    },
+    {
+      "id": "gndSubjectCategory",
+      "name": "GND-Sachgruppe"
+    },
+    {
+      "id": "homepage",
+      "name": "Homepage"
+    },
+    {
+      "id": "illustratorOrIlluminator",
+      "name": "Illustrator oder Illuminator"
+    },
+    {
+      "id": "initiator",
+      "name": "Veranlasser"
+    },
+    {
+      "id": "instrumentalist",
+      "name": "Instrumentalmusiker"
+    },
+    {
+      "id": "keyOfTheVersion",
+      "name": "Tonart der Fassung"
+    },
+    {
+      "id": "keyOfTheWork",
+      "name": "Tonart des Werks"
+    },
+    {
+      "id": "language",
+      "name": "Sprache"
+    },
+    {
+      "id": "languageCode",
+      "name": "Sprachencode"
+    },
+    {
+      "id": "librettist",
+      "name": "Librettist"
+    },
+    {
+      "id": "literarySource",
+      "name": "Vorlage"
+    },
+    {
+      "id": "lithographer",
+      "name": "Litograf"
+    },
+    {
+      "id": "manufacturer",
+      "name": "Hersteller"
+    },
+    {
+      "id": "mediumOfPerformance",
+      "name": "Besetzung im Musikbereich"
+    },
+    {
+      "id": "mediumOfPerformanceAsLiteral",
+      "name": "Besetzung im Musikbereich (Literal)"
+    },
+    {
+      "id": "narrator",
+      "name": "Sprecher"
+    },
+    {
+      "id": "narrowerTermPartitive",
+      "name": "Unterbegriff partitiv"
+    },
+    {
+      "id": "numberOfEnsemblesOfTheSameType",
+      "name": "Anzahl der Ensembles vom gleichen Typ"
+    },
+    {
+      "id": "numberOfPerformersOfTheSameMedium",
+      "name": "Besetzungsstärke"
+    },
+    {
+      "id": "occasionOfTheSubjectHeading",
+      "name": "Anlass des Schlagworts"
+    },
+    {
+      "id": "occasionOfTheWork",
+      "name": "Anlass des Werkes"
+    },
+    {
+      "id": "oldAuthorityNumber",
+      "name": "Alte Normnummer"
+    },
+    {
+      "id": "opusNumericDesignationOfMusicalWork",
+      "name": "Opus-Zählung des Musikwerks"
+    },
+    {
+      "id": "owner",
+      "name": "Besitzer"
+    },
+    {
+      "id": "painter",
+      "name": "Maler"
+    },
+    {
+      "id": "photographer",
+      "name": "Fotograf"
+    },
+    {
+      "id": "placeOfCustody",
+      "name": "Aufbewahrungsort"
+    },
+    {
+      "id": "placeOfDiscovery",
+      "name": "Fundort"
+    },
+    {
+      "id": "placeOfManufacture",
+      "name": "Herstellungsort"
+    },
+    {
+      "id": "poet",
+      "name": "Dichter"
+    },
+    {
+      "id": "precedingWork",
+      "name": "Vorheriges Werk"
+    },
+    {
+      "id": "preferredName",
+      "name": "Bevorzugter Name"
+    },
+    {
+      "id": "printer",
+      "name": "Drucker"
+    },
+    {
+      "id": "relatedConferenceOrEvent",
+      "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+    },
+    {
+      "id": "relatedCorporateBody",
+      "name": "In Beziehung stehende Körperschaft"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy1",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 1"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy2",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 2"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy3",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 3"
+    },
+    {
+      "id": "relatedDdcWithDegreeOfDeterminacy4",
+      "name": "In Beziehung stehende Dewey-Dezimalklassifikation mit Determiniertheitsgrad 4"
+    },
+    {
+      "id": "relatedFamily",
+      "name": "In Beziehung stehende Familie"
+    },
+    {
+      "id": "relatedPerson",
+      "name": "In Beziehung stehende Person"
+    },
+    {
+      "id": "relatedPlaceOrGeographicName",
+      "name": "In Beziehung stehendes Geografikum"
+    },
+    {
+      "id": "relatedSubjectHeading",
+      "name": "In Beziehung stehendes Schlagwort"
+    },
+    {
+      "id": "relatedTerm",
+      "name": "Verwandter Begriff"
+    },
+    {
+      "id": "relatedWork",
+      "name": "In Beziehung stehendes Werk"
+    },
+    {
+      "id": "restorer",
+      "name": "Restaurator"
+    },
+    {
+      "id": "revisor",
+      "name": "Bearbeiter"
+    },
+    {
+      "id": "sameAs",
+      "name": "Siehe auch"
+    },
+    {
+      "id": "screenwriter",
+      "name": "Drehbuchautor"
+    },
+    {
+      "id": "scriptorium",
+      "name": "Skriptorium"
+    },
+    {
+      "id": "sculptor",
+      "name": "Bildhauer"
+    },
+    {
+      "id": "serialNumericDesignationOfMusicalWork",
+      "name": "Fortlaufende Zählung des Musikwerks"
+    },
+    {
+      "id": "singer",
+      "name": "Sänger"
+    },
+    {
+      "id": "sponsorOrPatron",
+      "name": "Sponsor oder Mäzen"
+    },
+    {
+      "id": "subeditor",
+      "name": "Redakteur"
+    },
+    {
+      "id": "succeedingWork",
+      "name": "Nachfolgendes Werk"
+    },
+    {
+      "id": "thematicIndexNumericDesignationOfMusicalWork",
+      "name": "Zählung eines Werksverzeichnisses des Musikwerks"
+    },
+    {
+      "id": "titleWithOtherTitleInformation",
+      "name": "Titel mit Titelzusatz"
+    },
+    {
+      "id": "topic",
+      "name": "Thema"
+    },
+    {
+      "id": "totalNumberOfEnsembles",
+      "name": "Gesamtanzahl der Ensembles"
+    },
+    {
+      "id": "totalNumberOfPerformers",
+      "name": "Gesamtanzahl der Ausführenden"
+    },
+    {
+      "id": "translator",
+      "name": "Übersetzer"
+    },
+    {
+      "id": "type",
+      "name": "Entitätstyp"
+    },
+    {
+      "id": "udkCode",
+      "name": "UDK-Code"
+    },
+    {
+      "id": "usingInstructions",
+      "name": "Benutzungshinweise"
+    },
+    {
+      "id": "variantName",
+      "name": "Varianter Name"
+    },
+    {
+      "id": "writerOfAddedCommentary",
+      "name": "Kommentator (schriftlich)"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+# API
+fastapi
+uvicorn[standard]
+pydantic
+
+# Reconciliation
+csv-reconcile
+rapidfuzz
+
+# OpenSearch
+opensearch-py
+
+# Data Processing
+pandas
+numpy
+pyarrow
+
+# RDF / Linked Data
+rdflib
+rdflib-jsonld
+
+# JSON
+ijson
+
+# XML
+lxml
+
+# HTTP
+requests
+httpx
+
+# Scheduling
+apscheduler
+
+# Logging
+structlog
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+
+# Quality
+black
+ruff
+mypy
+
+# Jupyter
+jupyter
+ipykernel
