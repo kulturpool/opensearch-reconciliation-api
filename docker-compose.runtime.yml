@@ -1,0 +1,37 @@
+services:
+  gnd-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    env_file:
+      - .env
+
+    ports:
+      - "${API_PORT:-8083}:8083"
+
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+
+    depends_on:
+      - opensearch
+
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=LocalDevPassword123!
+      - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g
+
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+
+    restart: unless-stopped
+
+volumes:
+  opensearch-data:

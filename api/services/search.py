@@ -2,6 +2,12 @@ from typing import Any
 
 from opensearchpy import OpenSearch
 
+import os
+
+INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
+
+OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "opensearch")
+OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
 
 INDEX_NAME = "gnd"
 
@@ -165,7 +171,7 @@ def get_opensearch_client() -> OpenSearch:
     """
 
     return OpenSearch(
-        hosts=[{"host": "opensearch", "port": 9200}],
+        hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
         http_compress=True,
         use_ssl=False,
         verify_certs=False,

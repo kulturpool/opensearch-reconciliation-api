@@ -16,6 +16,10 @@
 
   "postCreateCommand": "pip install --upgrade pip && pip install -r requirements-dev.txt",
 
+  // "postStartCommand": "python scripts/bootstrap_gnd.py --auto",
+
+  "postStartCommand": "bash scripts/start_dev_services.sh",
+
   "customizations": {
     "vscode": {
       "extensions": [

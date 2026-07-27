@@ -9,6 +9,13 @@ from opensearchpy import OpenSearch, helpers
 from importer.download_gnd_lds import GND_LDS_SOURCES, get_filename_from_url
 from importer.normalize_gnd_lds import normalize_gnd_lds_record
 
+import os
+
+INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
+
+OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "opensearch")
+OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
+
 
 DEFAULT_INDEX_NAME = "gnd"
 DEFAULT_RAW_DIR = "data/raw"
@@ -20,7 +27,7 @@ def get_opensearch_client() -> OpenSearch:
     """
 
     return OpenSearch(
-        hosts=[{"host": "opensearch", "port": 9200}],
+        hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
         http_compress=True,
         use_ssl=False,
         verify_certs=False,
