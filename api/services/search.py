@@ -549,7 +549,7 @@ def apply_match_decision(
 
     top_score = results[0].get("score", 0)
 
-    if top_score < 92:
+    if top_score < 90:
         return
 
     if len(results) == 1:
@@ -716,12 +716,6 @@ def token_match_score(
 
     return len(overlap) / len(query_tokens)
 
-def is_likely_match(score: int) -> bool:
-    """
-    Determines whether a result should be treated as an automatic match.
-    """
-
-    return score >= 90
 
 
 def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
