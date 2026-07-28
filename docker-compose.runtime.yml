@@ -8,7 +8,7 @@ services:
       - .env
 
     ports:
-      - "${API_PORT:-8083}:8083"
+      - "${HOST_API_PORT:-8083}:${API_PORT:-8083}"
 
     volumes:
       - ./data:/app/data

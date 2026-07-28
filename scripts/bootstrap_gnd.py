@@ -12,6 +12,7 @@ from opensearchpy import OpenSearch
 import os
 
 INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
+GND_FORCE_REINDEX = os.getenv("GND_FORCE_REINDEX", "false").lower() == "true"
 
 OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "opensearch")
 OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
@@ -304,6 +305,16 @@ def run_auto(limit: int | None = None) -> None:
     ensure_directories()
     wait_for_opensearch()
 
+    if GND_FORCE_REINDEX:
+        log("GND_FORCE_REINDEX=true. Rebuilding full GND index.")
+        download_missing_gnd_files()
+        fetch_property_registry_if_needed()
+        fetch_vocab_labels_if_needed()
+        build_full_index(limit=limit)
+        write_initialized_state()
+        log("Forced full reindex completed.")
+        return
+
     if initial_setup_required():
         log("Initial setup required. Running setup.")
         run_init(limit=limit)
@@ -313,8 +324,6 @@ def run_auto(limit: int | None = None) -> None:
         log(f"Last full import: {state.get('last_full_import')}")
         log(f"Document count in state: {state.get('document_count')}")
         log(f"Current OpenSearch count: {get_index_count(INDEX_NAME):,}")
-
-        # Update check will be added later.
         log("Update check not yet implemented.")
 
 

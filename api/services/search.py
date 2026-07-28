@@ -3,6 +3,9 @@ from typing import Any
 from opensearchpy import OpenSearch
 
 import os
+import re
+
+from api.services.property_matching import calculate_property_bonus
 
 INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
 
@@ -186,6 +189,7 @@ def search_gnd(
     query: str,
     limit: int = 5,
     entity_type: str | None = None,
+    properties: list[dict[str, Any]] | None = None, 
 ) -> list[dict[str, Any]]:
     """
     Searches the local GND OpenSearch index.
@@ -209,6 +213,7 @@ def search_gnd(
         query=query.strip(),
         limit=limit,
         entity_type=entity_type,
+        properties=properties or [],
     )
 
     response = client.search(
@@ -216,7 +221,11 @@ def search_gnd(
         body=search_body,
     )
 
-    return format_search_results(response, query=query)
+    return format_search_results(response=response, 
+                                query=query,
+                                requested_type=entity_type,
+                                requested_properties=properties or []
+                                )
 
 def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
     """
@@ -251,6 +260,7 @@ def build_search_body(
     query: str,
     limit: int,
     entity_type: str | None = None,
+    properties: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Builds the OpenSearch query.
@@ -261,6 +271,7 @@ def build_search_body(
     - id is searchable for direct GND-ID lookups
     - fuzziness allows approximate matches
     """
+    properties = properties or []
 
     should_clauses: list[dict[str, Any]] = [
         {
@@ -333,6 +344,9 @@ def build_search_body(
         }
     ]
 
+    property_should_clauses = build_property_should_clauses(properties)
+    should_clauses.extend(property_should_clauses)
+
     filter_clauses: list[dict[str, Any]] = []
 
     if entity_type:
@@ -358,10 +372,114 @@ def build_search_body(
         },
     }
 
+def build_property_should_clauses(
+    properties: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Builds OpenSearch should clauses from OpenRefine reconciliation properties.
+
+    These clauses should boost matching candidates, not strictly filter them.
+    """
+
+    clauses: list[dict[str, Any]] = []
+
+    for prop in properties:
+        prop_id = prop.get("pid")
+        value = prop.get("v")
+
+        if not prop_id or value is None:
+            continue
+
+        values = value if isinstance(value, list) else [value]
+
+        for item in values:
+            item_value = extract_property_value_for_query(item)
+
+            if not item_value:
+                continue
+
+            # 1. Top-level field exact/keyword match, if available
+            clauses.append(
+                {
+                    "term": {
+                        f"{prop_id}.keyword": {
+                            "value": item_value,
+                            "boost": 8,
+                        }
+                    }
+                }
+            )
+
+            # 2. Top-level text match
+            clauses.append(
+                {
+                    "match_phrase": {
+                        prop_id: {
+                            "query": item_value,
+                            "boost": 5,
+                        }
+                    }
+                }
+            )
+
+            # 3. Generic fallback via propertiesFlat
+            clauses.append(
+                {
+                    "nested": {
+                        "path": "propertiesFlat",
+                        "query": {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "term": {
+                                            "propertiesFlat.id": prop_id
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "propertiesFlat.value": {
+                                                "query": item_value,
+                                                "boost": 4,
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                        "score_mode": "max",
+                    }
+                }
+            )
+
+    return clauses
+
+def extract_property_value_for_query(value: Any) -> str | None:
+    """
+    Converts OpenRefine property values into a searchable string.
+
+    Values can be:
+    - plain strings
+    - numbers
+    - reconciled values like {"id": "...", "name": "..."}
+    """
+
+    if value is None:
+        return None
+
+    if isinstance(value, dict):
+        return (
+            value.get("id")
+            or value.get("name")
+            or value.get("str")
+        )
+
+    return str(value)
 
 def format_search_results(
     response: dict[str, Any],
     query: str | None = None,
+    requested_type: str | None = None,
+    requested_properties: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Converts OpenSearch hits into reconciliation-style result objects.
@@ -385,6 +503,8 @@ def format_search_results(
             raw_score=raw_score,
             query=query,
             source=source,
+            requested_type=requested_type,
+            requested_properties=requested_properties or [],
         )
 
         result = {
@@ -397,26 +517,39 @@ def format_search_results(
 
         results.append(result)
 
-    apply_match_decision(results)
+    results.sort(
+        key=lambda result: result.get("score", 0),
+        reverse=True,
+    )
+
+    apply_match_decision(
+        results=results,
+        requested_properties=requested_properties or [],
+    )
 
     return results
 
-def apply_match_decision(results: list[dict[str, Any]]) -> None:
+def apply_match_decision(
+    results: list[dict[str, Any]],
+    requested_properties: list[dict[str, Any]] | None = None,
+) -> None:
     """
     Marks at most one candidate as an automatic match.
 
-    Rule:
-    - Top result must have score >= 95
-    - If there is a second result, the top score must be at least 5 points higher
-    - Otherwise no automatic match is assigned
+    Conservative rules:
+    - Top result must be high enough
+    - Gap to second result must be large enough
+    - With detail properties, a smaller gap is allowed
     """
 
     if not results:
         return
 
+    requested_properties = requested_properties or []
+
     top_score = results[0].get("score", 0)
 
-    if top_score < 95:
+    if top_score < 92:
         return
 
     if len(results) == 1:
@@ -424,8 +557,14 @@ def apply_match_decision(results: list[dict[str, Any]]) -> None:
         return
 
     second_score = results[1].get("score", 0)
+    score_gap = top_score - second_score
 
-    if top_score - second_score >= 5:
+    required_gap = 6
+
+    if requested_properties:
+        required_gap = 3
+
+    if score_gap >= required_gap:
         results[0]["match"] = True
 
 
@@ -433,63 +572,156 @@ def normalize_score(
     raw_score: float,
     query: str | None = None,
     source: dict[str, Any] | None = None,
+    requested_properties: list[dict[str, Any]] | None = None,
+    requested_type: str | None = None,
 ) -> int:
     """
-    Converts an OpenSearch score into a rough 0-100 reconciliation score.
+    Converts an OpenSearch score into a 0-100 reconciliation score.
 
-    For the MVP we combine:
-    - exact preferredName match
-    - exact variantName match
-    - substring match
-    - fallback based on OpenSearch _score
+    More conservative scoring:
+    - high scores only for very strong evidence
+    - substring and fuzzy matches are capped lower
+    - property details can boost, but not overpower name evidence
     """
 
     if not source:
         source = {}
 
-    if query:
-        query_normalized = query.strip().lower()
+    requested_properties = requested_properties or []
 
-        preferred_name = str(source.get("preferredName", "")).strip().lower()
+    query_normalized = normalize_text_for_scoring(query or "")
 
-        variant_names = source.get("variantName", [])
+    gnd_id = str(source.get("id", ""))
+    preferred_name = str(source.get("preferredName", ""))
+    preferred_normalized = normalize_text_for_scoring(preferred_name)
 
-        if isinstance(variant_names, str):
-            variant_names = [variant_names]
+    variant_names = source.get("variantName", [])
 
-        variant_names_normalized = [
-            str(value).strip().lower()
-            for value in variant_names
-        ]
+    if isinstance(variant_names, str):
+        variant_names = [variant_names]
 
-        if query_normalized == preferred_name:
-            return 100
+    variant_names_normalized = [
+        normalize_text_for_scoring(str(value))
+        for value in variant_names
+    ]
 
-        if query_normalized in variant_names_normalized:
-            return 98
+    base_score = 0
 
-        if query_normalized in preferred_name:
-            return 92
+    # 1. Exact identifier match
+    if query_normalized and query_normalized == normalize_text_for_scoring(gnd_id):
+        base_score = 100
+
+    # 2. Exact preferredName match
+    elif query_normalized and query_normalized == preferred_normalized:
+        base_score = 96
+
+    # 3. Exact variantName match
+    elif query_normalized and query_normalized in variant_names_normalized:
+        base_score = 92
+
+    # 4. Token-based preferredName match
+    elif query_normalized:
+        preferred_token_score = token_match_score(
+            query=query_normalized,
+            candidate=preferred_normalized,
+        )
+
+        variant_token_score = 0
 
         for variant_name in variant_names_normalized:
-            if query_normalized in variant_name:
-                return 90
+            variant_token_score = max(
+                variant_token_score,
+                token_match_score(
+                    query=query_normalized,
+                    candidate=variant_name,
+                ),
+            )
 
-    if raw_score <= 0:
-        return 0
+        best_token_score = max(preferred_token_score, variant_token_score)
 
-    # Fallback for fuzzy / partial OpenSearch matches.
-    score = round(raw_score * 35)
+        if best_token_score >= 1.0:
+            base_score = 88
+        elif best_token_score >= 0.75:
+            base_score = 82
+        elif best_token_score >= 0.5:
+            base_score = 70
 
-    return min(score, 89)
+    # 5. Substring matches, capped lower
+    if query_normalized and base_score == 0:
+        if query_normalized in preferred_normalized:
+            base_score = 78
+        else:
+            for variant_name in variant_names_normalized:
+                if query_normalized in variant_name:
+                    base_score = 74
+                    break
 
+    # 6. OpenSearch fallback, capped lower
+    if base_score == 0:
+        if raw_score <= 0:
+            base_score = 0
+        else:
+            base_score = min(round(raw_score * 18), 72)
+
+    # 7. Property bonus, but capped
+    property_bonus, _property_features = calculate_property_bonus(
+        source=source,
+        requested_properties=requested_properties,
+        max_bonus=12,
+    )
+    if base_score < 60:
+        property_bonus = min(property_bonus, 5)
+
+    # 8. Type bonus, small only
+    type_bonus = 0
+
+    if requested_type and candidate_matches_requested_type(
+        source=source,
+        requested_type=requested_type,
+    ):
+        type_bonus = 3
+
+    final_score = base_score + property_bonus + type_bonus
+
+    return min(final_score, 100)
+
+def normalize_text_for_scoring(value: Any) -> str:
+    """
+    Normalizes text for scoring:
+    - string conversion
+    - lowercase
+    - whitespace normalization
+    """
+
+    value = str(value or "").strip().lower()
+    return " ".join(value.split())
+
+def token_match_score(
+    query: str,
+    candidate: str,
+) -> float:
+    """
+    Computes overlap of query tokens against candidate tokens.
+
+    Returns value between 0 and 1.
+    """
+
+    query_tokens = set(re.findall(r"\w+", query))
+    candidate_tokens = set(re.findall(r"\w+", candidate))
+
+    if not query_tokens or not candidate_tokens:
+        return 0.0
+
+    overlap = query_tokens.intersection(candidate_tokens)
+
+    return len(overlap) / len(query_tokens)
 
 def is_likely_match(score: int) -> bool:
     """
     Determines whether a result should be treated as an automatic match.
     """
 
-    return score >= 85
+    return score >= 90
 
 
 def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
@@ -537,3 +769,79 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
             )
 
     return formatted_types
+
+def candidate_matches_requested_type(
+    source: dict[str, Any],
+    requested_type: str | None,
+) -> bool:
+    """
+    Checks whether a candidate's type matches the requested OpenRefine type.
+
+    Supports:
+    - exact type matches
+    - broad type aliases via GND_TYPE_ALIASES
+    - candidates with a single type string
+    - candidates with a list of type strings
+    - candidates with OpenRefine-style type dicts
+    """
+
+    if not requested_type:
+        return False
+
+    candidate_types = source.get("type", [])
+
+    if not candidate_types:
+        return False
+
+    normalized_candidate_types = normalize_candidate_types(candidate_types)
+
+    allowed_types = GND_TYPE_ALIASES.get(
+        requested_type,
+        [requested_type],
+    )
+
+    return any(
+        candidate_type in allowed_types
+        for candidate_type in normalized_candidate_types
+    )
+
+def normalize_candidate_types(candidate_types: Any) -> list:
+    """
+    Normalizes candidate type values into a list of string IDs.
+
+    Supports:
+    - "DifferentiatedPerson"
+    - ["DifferentiatedPerson", "RoyalOrMemberOfARoyalHouse"]
+    - [{"id": "DifferentiatedPerson", "name": "..."}]
+    """
+
+    if candidate_types is None:
+        return []
+
+    if isinstance(candidate_types, str):
+        return [candidate_types]
+
+    if isinstance(candidate_types, dict):
+        type_id = candidate_types.get("id")
+
+        if type_id:
+            return [str(type_id)]
+
+        return []
+
+    if isinstance(candidate_types, list):
+        result: list[str] = []
+
+        for item in candidate_types:
+            if isinstance(item, str):
+                result.append(item)
+
+            elif isinstance(item, dict):
+                type_id = item.get("id")
+
+                if type_id:
+                    result.append(str(type_id))
+
+        return result
+
+    return []

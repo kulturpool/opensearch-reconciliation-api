@@ -211,7 +211,33 @@ def service_manifest_response() -> dict:
             "propose_properties": {
                 "service_url": BASE_URL,
                 "service_path": "/properties"
-            }
+            },
+            "property_settings": [
+                {
+                    "name": "limit",
+                    "label": "Limit",
+                    "type": "number",
+                    "default": 0,
+                    "help_text": "Maximum number of values to return per row. Use 0 for no limit."
+                },
+                {
+                    "name": "content",
+                    "label": "Content",
+                    "type": "select",
+                    "default": "literal",
+                    "help_text": "Return either identifiers/URIs or readable literal labels.",
+                    "choices": [
+                        {
+                            "value": "id",
+                            "name": "ID"
+                        },
+                        {
+                            "value": "literal",
+                            "name": "Literal"
+                        }
+                    ]
+                }
+            ]
         }
     }
 
@@ -534,21 +560,6 @@ def handle_reconciliation_queries(
 ) -> dict:
     """
     Processes OpenRefine-style batched reconciliation queries.
-
-    Expected input:
-    {
-      "q1": {
-        "query": "Goethe",
-        "type": "Person"
-      }
-    }
-
-    Expected output:
-    {
-      "q1": {
-        "result": [...]
-      }
-    }
     """
 
     response = {}
@@ -557,14 +568,26 @@ def handle_reconciliation_queries(
         if isinstance(query_object, str):
             query_text = query_object
             entity_type = None
-        else:
+            details = []
+            query_limit = limit
+
+        elif isinstance(query_object, dict):
             query_text = query_object.get("query", "")
             entity_type = extract_entity_type(query_object)
+            details = extract_reconciliation_properties(query_object)
+            query_limit = query_object.get("limit", limit)
+
+        else:
+            response[query_id] = {
+                "result": []
+            }
+            continue
 
         results = search_gnd(
             query=query_text,
-            limit=limit,
+            limit=query_limit,
             entity_type=entity_type,
+            properties=details,
         )
 
         response[query_id] = {
@@ -846,23 +869,54 @@ def build_extend_row(
         if not prop_id:
             continue
 
+        settings = get_extend_property_settings(prop)
+
         value = get_property_values_from_record(record, prop_id)
 
-        row[prop_id] = format_extend_values(prop_id, value)
+        values = format_extend_values(
+            prop_id=prop_id,
+            value=value,
+            content=settings["content"],
+        )
+
+        values = apply_extend_limit(
+            values=values,
+            limit=settings["limit"],
+        )
+
+        row[prop_id] = values
 
     return row
 
+def apply_extend_limit(
+    values: list,
+    limit: int,
+) -> list:
+    """
+    Applies OpenRefine limit setting.
 
-def format_extend_values(prop_id: str, value) -> list:
+    limit = 0 means no limit.
+    """
+
+    if limit <= 0:
+        return values
+
+    return values[:limit]
+
+
+def format_extend_values(
+    prop_id: str,
+    value,
+    content: str = "literal",
+) -> list:
     """
     Converts a value into OpenRefine extend cell format.
 
-    - GND entity URIs become reconciled entity values:
-      {"id": "...", "name": "...", "type": [...]}
+    content="id":
+      Return raw identifiers / URIs.
 
-    - GND vocabulary URIs such as geographic-area-code become strings.
-
-    - Plain literals remain strings.
+    content="literal":
+      Return readable labels / literals.
     """
 
     if value is None:
@@ -876,41 +930,34 @@ def format_extend_values(prop_id: str, value) -> list:
                 format_extend_values(
                     prop_id=prop_id,
                     value=item,
+                    content=content,
                 )
             )
 
         return result
 
     if isinstance(value, dict):
-        if "id" in value and "name" in value:
-            return [value]
-
-        label = (
-            value.get("label")
-            or value.get("name")
-            or value.get("id")
-            or str(value)
+        return format_extend_dict_value(
+            value=value,
+            content=content,
         )
-
-        return [
-            {
-                "str": str(label)
-            }
-        ]
 
     value_string = str(value)
 
-    reconciled_value = gnd_uri_to_reconciled_value(value_string)
-
-    if reconciled_value:
-        return [reconciled_value]
-
-    resolved_vocab_value = resolve_gnd_vocab_uri(value_string)
-
-    if resolved_vocab_value:
+    if content == "id":
         return [
             {
-                "str": resolved_vocab_value
+                "str": format_identifier_value(value_string)
+            }
+        ]
+
+    # literal mode
+    resolved_value = resolve_extend_value(value_string)
+
+    if resolved_value:
+        return [
+            {
+                "str": resolved_value
             }
         ]
 
@@ -919,6 +966,68 @@ def format_extend_values(prop_id: str, value) -> list:
             "str": value_string
         }
     ]
+
+def format_extend_dict_value(
+    value: dict,
+    content: str = "literal",
+) -> list:
+    """
+    Formats dict values for OpenRefine extend output.
+    """
+
+    if content == "id":
+        identifier = (
+            value.get("id")
+            or value.get("@id")
+            or value.get("uri")
+            or value.get("value")
+            or value.get("str")
+            or value.get("name")
+        )
+
+        if identifier is None:
+            return []
+
+        return [
+            {
+                "str": format_identifier_value(str(identifier))
+            }
+        ]
+
+    label = (
+        value.get("label")
+        or value.get("name")
+        or value.get("str")
+        or value.get("value")
+        or value.get("id")
+        or value.get("@id")
+    )
+
+    if label is None:
+        return []
+
+    label_string = str(label)
+
+    resolved_value = resolve_extend_value(label_string)
+
+    if resolved_value:
+        label_string = resolved_value
+
+    return [
+        {
+            "str": label_string
+        }
+    ]
+
+
+def format_identifier_value(value: str) -> str:
+    """
+    Formats identifier values for content='id'.
+
+    Currently returns raw URI/identifier. This mirrors the ID/link mode.
+    """
+
+    return value
 
 def gnd_uri_to_reconciled_value(value: str) -> dict | None:
     """
@@ -1124,3 +1233,93 @@ def resolve_extend_value(value: str) -> str | None:
         return resolved_vocab_value
 
     return None
+
+def extract_reconciliation_properties(query_object: dict) -> list:
+    """
+    Extracts additional reconciliation properties from an OpenRefine query.
+
+    OpenRefine sends details from other columns as:
+    {
+      "properties": [
+        {
+          "pid": "dateOfBirth",
+          "v": "1749"
+        }
+      ]
+    }
+    """
+
+    properties = query_object.get("properties", [])
+
+    if not isinstance(properties, list):
+        return []
+
+    cleaned = []
+
+    for prop in properties:
+        if not isinstance(prop, dict):
+            continue
+
+        prop_id = prop.get("pid") or prop.get("id")
+        value = prop.get("v") or prop.get("value")
+
+        if not prop_id or value is None:
+            continue
+
+        cleaned.append(
+            {
+                "pid": str(prop_id),
+                "v": value,
+            }
+        )
+
+    return cleaned
+
+def get_extend_property_settings(prop: dict) -> dict:
+    """
+    Extracts OpenRefine data extension settings for a requested property.
+
+    Example:
+    {
+      "id": "geographicAreaCode",
+      "settings": {
+        "limit": "1",
+        "content": "id"
+      }
+    }
+    """
+
+    settings = prop.get("settings", {})
+
+    if not isinstance(settings, dict):
+        settings = {}
+
+    content = settings.get("content", "literal")
+
+    if content not in {"id", "literal"}:
+        content = "literal"
+
+    limit = parse_extend_limit(settings.get("limit", 0))
+
+    return {
+        "content": content,
+        "limit": limit,
+    }
+
+
+def parse_extend_limit(value) -> int:
+    """
+    Parses OpenRefine limit setting.
+
+    0 means no limit.
+    """
+
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return 0
+
+    if parsed < 0:
+        return 0
+
+    return parsed
