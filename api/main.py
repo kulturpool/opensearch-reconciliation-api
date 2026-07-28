@@ -7,6 +7,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from api.services.search import get_gnd_record_by_id, search_gnd
 from fastapi.middleware.cors import CORSMiddleware
 
+from html import escape
+from api.services.properties import get_property_values_from_record
+
 from api.services.property_labels import property_label
 
 from api.services.properties import (
@@ -21,6 +24,9 @@ from api.services.property_registry import (
 )
 
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
+
+from fastapi.responses import HTMLResponse
+from api.services.preview import render_preview_for_id
 
 app = FastAPI(
     title="Local GND Reconciliation API",
@@ -328,30 +334,23 @@ def health():
         "status": "ok"
     }
 
-@app.get("/preview/{gnd_id}", response_class=HTMLResponse)
-def preview(gnd_id: str):
-    """
-    Returns a small HTML preview for OpenRefine candidate flyouts.
-    """
-
-    record = get_gnd_record_by_id(gnd_id)
-
-    if record is None:
-        return HTMLResponse(
-            content=f"""
-            <html>
-              <body style="font-family: sans-serif; padding: 12px;">
-                <h3>GND record not found</h3>
-                <p>No record found for GND ID: <code>{escape_html(gnd_id)}</code></p>
-              </body>
-            </html>
-            """,
-            status_code=404,
-        )
+@app.get("/preview", response_class=HTMLResponse)
+def preview_by_query(id: str = Query(...)):
+    html, status_code = render_preview_for_id(id)
 
     return HTMLResponse(
-        content=render_gnd_preview(record),
-        status_code=200,
+        content=html,
+        status_code=status_code,
+    )
+
+
+@app.get("/preview/{gnd_id}", response_class=HTMLResponse)
+def preview_by_path(gnd_id: str):
+    html, status_code = render_preview_for_id(gnd_id)
+
+    return HTMLResponse(
+        content=html,
+        status_code=status_code,
     )
 
 @app.get("/suggest/entity")
@@ -619,153 +618,6 @@ def extract_entity_type(query_object: dict) -> str | None:
 
     return None
 
-def render_gnd_preview(record: dict) -> str:
-    """
-    Renders a GND record as a small HTML preview.
-    """
-
-    gnd_id = escape_html(record.get("id", ""))
-    preferred_name = escape_html(record.get("preferredName", ""))
-    uri = escape_html(record.get("uri", f"https://d-nb.info/gnd/{gnd_id}"))
-
-    entity_types = record.get("type", [])
-    variant_names = record.get("variantName", [])
-
-    date_of_birth = record.get("dateOfBirth")
-    date_of_death = record.get("dateOfDeath")
-
-    profession = record.get("professionOrOccupation", [])
-    place_of_birth = record.get("placeOfBirth")
-    place_of_death = record.get("placeOfDeath")
-
-    html = f"""
-    <html>
-      <head>
-        <meta charset="utf-8" />
-      </head>
-      <body style="font-family: Arial, sans-serif; font-size: 13px; padding: 12px; line-height: 1.4;">
-        <h3 style="margin-top: 0; margin-bottom: 6px;">
-          {preferred_name}
-        </h3>
-
-        <div style="color: #555; margin-bottom: 8px;">
-          GND-ID: <strong>{gnd_id}</strong>
-        </div>
-
-        {render_list_block("Typ", entity_types)}
-
-        {render_life_dates(date_of_birth, date_of_death)}
-
-        {render_list_block("Variantenamen", variant_names)}
-
-        {render_list_block("Beruf / Tätigkeit", profession)}
-
-        {render_value_block("Geburtsort", place_of_birth)}
-
-        {render_value_block("Sterbeort", place_of_death)}
-
-        <div style="margin-top: 12px;">
-          {uri}
-            Datensatz bei d-nb.info öffnen
-          </a>
-        </div>
-      </body>
-    </html>
-    """
-
-    return html
-
-def render_life_dates(
-    date_of_birth: str | None,
-    date_of_death: str | None,
-) -> str:
-    """
-    Renders birth/death dates if available.
-    """
-
-    if not date_of_birth and not date_of_death:
-        return ""
-
-    birth = escape_html(date_of_birth or "")
-    death = escape_html(date_of_death or "")
-
-    if birth and death:
-        value = f"{birth} – {death}"
-    elif birth:
-        value = f"* {birth}"
-    else:
-        value = f"† {death}"
-
-    return f"""
-    <div style="margin-bottom: 8px;">
-      <strong>Lebensdaten:</strong><br />
-      {value}
-    </div>
-    """
-
-def render_list_block(label: str, values) -> str:
-    """
-    Renders a list-like field.
-    """
-
-    if not values:
-        return ""
-
-    if isinstance(values, str):
-        values = [values]
-
-    if not isinstance(values, list):
-        values = [str(values)]
-
-    items = "".join(
-        f"<li>{escape_html(str(value))}</li>"
-        for value in values
-        if value
-    )
-
-    if not items:
-        return ""
-
-    return f"""
-    <div style="margin-bottom: 8px;">
-      <strong>{escape_html(label)}:</strong>
-      <ul style="margin-top: 4px; padding-left: 18px;">
-        {items}
-      </ul>
-    </div>
-    """
-
-def render_value_block(label: str, value) -> str:
-    """
-    Renders one simple value.
-    """
-
-    if not value:
-        return ""
-
-    if isinstance(value, list):
-        value = ", ".join(str(item) for item in value if item)
-
-    return f"""
-    <div style="margin-bottom: 8px;">
-      <strong>{escape_html(label)}:</strong><br />
-      {escape_html(str(value))}
-    </div>
-    """
-
-def escape_html(value: str) -> str:
-    """
-    Minimal HTML escaping to avoid broken preview markup.
-    """
-
-    return (
-        str(value)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&#x27;")
-    )
 
 def handle_extend_request(extend_request: dict) -> dict:
     """
