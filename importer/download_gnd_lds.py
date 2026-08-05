@@ -15,6 +15,7 @@ GND_LDS_SOURCES: Final[dict[str, str]] = {
     # authorities-gnd-werk_lds.jsonld.gz.
     # Daher nutzen wir vorerst den datierten JSON-LD-Abzug.
     "werk": "https://data.dnb.de/opendata/authorities-gnd-werk_lds_20260217.jsonld.gz",
+    "entityfacts": "https://data.dnb.de/opendata/authorities-gnd_entityfacts.ndjson.gz",
 }
 
 DEFAULT_OUTPUT_DIR: Final[str] = "data/raw"

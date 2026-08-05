@@ -36,6 +36,8 @@ services:
 
 volumes:
   opensearch-data:
+    external: true
+    name: local_reconciliation_api_opensearch-data
 
 networks:
   reconciliation-net:

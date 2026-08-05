@@ -77,6 +77,24 @@ def index_source(
 
     run_command(command)
 
+def index_entityfacts(
+    limit: int | None = None,
+    chunk_size: int | None = None,
+) -> None:
+    command = [
+        sys.executable,
+        "-m",
+        "indexer.index_entityfacts",
+    ]
+
+    if limit is not None:
+        command.extend(["--limit", str(limit)])
+
+    if chunk_size is not None:
+        command.extend(["--chunk-size", str(chunk_size)])
+
+    run_command(command)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -101,6 +119,12 @@ def main() -> None:
         "--skip-person",
         action="store_true",
         help="Skip the large person source.",
+    )
+
+    parser.add_argument(
+        "--skip-entityfacts",
+        action="store_true",
+        help="Skip EntityFacts enrichment after LDS indexing.",
     )
 
     args = parser.parse_args()
@@ -133,6 +157,18 @@ def main() -> None:
         first = False
 
     log("Finished full GND LDS indexing")
+
+    if args.skip_entityfacts:
+        log("Skipping EntityFacts enrichment")
+    else:
+        log("Starting EntityFacts enrichment")
+
+        index_entityfacts(
+            limit=args.limit,
+            chunk_size=args.chunk_size,
+        )
+
+        log("Finished EntityFacts enrichment")
 
 
 if __name__ == "__main__":

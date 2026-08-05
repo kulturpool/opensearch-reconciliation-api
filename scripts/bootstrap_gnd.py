@@ -14,6 +14,9 @@ import os
 INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
 GND_FORCE_REINDEX = os.getenv("GND_FORCE_REINDEX", "false").lower() == "true"
 
+GND_INDEX_ENTITYFACTS = os.getenv("GND_INDEX_ENTITYFACTS", "true").lower() == "true"
+GND_ENTITYFACTS_ONLY_TYPE = os.getenv("GND_ENTITYFACTS_ONLY_TYPE") or None
+
 OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "opensearch")
 OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
 
@@ -285,6 +288,46 @@ def check_only() -> None:
     else:
         log("Initial setup is not required.")
 
+def download_entityfacts_if_needed() -> None:
+    entityfacts_file = Path("data/raw/authorities-gnd_entityfacts.ndjson.gz")
+
+    if entityfacts_file.exists():
+        log("EntityFacts dump already exists. Skipping download.")
+        return
+
+    log("Downloading EntityFacts dump")
+
+    run_command(
+        [
+            sys.executable,
+            "-m",
+            "importer.download_gnd_lds",
+            "--source",
+            "entityfacts",
+        ]
+    )
+
+def index_entityfacts_enrichment(limit: int | None = None) -> None:
+    if not GND_INDEX_ENTITYFACTS:
+        log("EntityFacts enrichment disabled. Skipping.")
+        return
+
+    command = [
+        sys.executable,
+        "-m",
+        "indexer.index_entityfacts",
+    ]
+
+    if GND_ENTITYFACTS_ONLY_TYPE:
+        command.extend(["--only-type", GND_ENTITYFACTS_ONLY_TYPE])
+
+    if limit is not None:
+        command.extend(["--limit", str(limit)])
+
+    log("Starting EntityFacts enrichment")
+    run_command(command)
+    log("Finished EntityFacts enrichment")
+
 
 def run_init(limit: int | None = None) -> None:
     ensure_directories()
@@ -293,9 +336,11 @@ def run_init(limit: int | None = None) -> None:
     log("Starting initial GND setup")
 
     download_missing_gnd_files()
+    download_entityfacts_if_needed()
     fetch_property_registry_if_needed()
     fetch_vocab_labels_if_needed()
     build_full_index(limit=limit)
+    index_entityfacts_enrichment(limit=limit)
     write_initialized_state()
 
     log("Initial GND setup completed")

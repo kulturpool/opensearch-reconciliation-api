@@ -40,50 +40,82 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GND_TYPES = [ # Definition of the GND types, adapted to the existing reconcilition services - check if they fit the data
+GND_TYPES = [
     {
-        "id": "DifferentiatedPerson",
-        "name": "Individualisierte Person"
+        "id": "AuthorityResource",
+        "name": "Normdatenressource",
     },
     {
         "id": "CorporateBody",
-        "name": "Körperschaft"
+        "name": "Körperschaft",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
     },
     {
         "id": "ConferenceOrEvent",
-        "name": "Konferenz oder Veranstaltung"
-    },
-    {
-        "id": "PlaceOrGeographicName",
-        "name": "Geografikum"
+        "name": "Konferenz oder Veranstaltung",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
     },
     {
         "id": "SubjectHeading",
-        "name": "Schlagwort"
+        "name": "Schlagwort",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
     },
     {
         "id": "Work",
-        "name": "Werk"
+        "name": "Werk",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
+    },
+    {
+        "id": "PlaceOrGeographicName",
+        "name": "Geografikum",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
+    },
+    {
+        "id": "DifferentiatedPerson",
+        "name": "Individualisierte Person",
+        "broader": [
+            {
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
+            }
+        ],
     },
     {
         "id": "Family",
-        "name": "Familie"
-    },
-    {
-        "id": "AuthorityResource",
-        "name": "Normdatenressource"
-    },
-    {
-        "id": "TerritorialCorporateBodyOrAdministrativeUnit",
-        "name": "Territorial Corporate Body or Administrative Unit",
+        "name": "Familie",
         "broader": [
             {
-                "id": "PlaceOrGeographicName",
-                "name": "Place or Geographic Name"
+                "id": "AuthorityResource",
+                "name": "Normdatenressource",
             }
-        ]
-    }
-] 
+        ],
+    },
+]
 
 GND_PROPERTIES = [ # Definition of the GND properties, adapt accordingly!
     {

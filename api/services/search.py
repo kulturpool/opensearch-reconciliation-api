@@ -14,6 +14,11 @@ OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
 
 INDEX_NAME = "gnd"
 
+AUTHORITY_RESOURCE_TYPE = {
+    "id": "AuthorityResource",
+    "name": "Authority Resource",
+}
+
 GND_TYPE_LABELS = {
     "SubjectHeadingSensoStricto": {
         "name": "Sachbegriff",
@@ -78,6 +83,13 @@ GND_TYPE_LABELS = {
             "name": "Work",
         },
     },
+    "Family": {
+        "name": "Familie",
+        "broader": {
+            "id": "AuthorityResource",
+            "name": "Normdatenressource",
+        },
+    },
 }
 
 GND_TYPE_LABELS.update(
@@ -113,6 +125,10 @@ GND_TYPE_LABELS.update(
     }
 )
 
+GND_TYPE_LABELS["AuthorityResource"] = {
+    "name": "Authority Resource",
+}
+
 GND_TYPE_ALIASES = {
     "Person": [
         "DifferentiatedPerson",
@@ -122,6 +138,14 @@ GND_TYPE_ALIASES = {
         "CollectivePseudonym",
         "Gods",
         "Spirits",
+    ],
+
+    "DifferentiatedPerson": [
+        "DifferentiatedPerson",
+    ],
+
+    "Family": [
+        "Family",
     ],
 
     "CorporateBody": [
@@ -349,7 +373,7 @@ def build_search_body(
 
     filter_clauses: list[dict[str, Any]] = []
 
-    if entity_type:
+    if entity_type and entity_type != "AuthorityResource":
         allowed_types = GND_TYPE_ALIASES.get(entity_type, [entity_type])
 
         filter_clauses.append(
@@ -720,32 +744,46 @@ def token_match_score(
 
 def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
     """
-    Converts entity type values into OpenRefine-style type objects.
+    Converts stored GND type values into OpenRefine-style type objects.
 
-    Keeps the original fine-grained GND type as id, but adds readable labels
-    and broader types where known.
+    Every GND record is also returned as AuthorityResource, matching the
+    behavior of the public GND/lobid reconciliation API more closely.
     """
 
     if not entity_types:
-        return []
+        entity_types = []
 
     if isinstance(entity_types, str):
         entity_types = [entity_types]
 
     if not isinstance(entity_types, list):
-        return []
+        entity_types = []
 
-    formatted_types = []
+    formatted_types: list[dict[str, Any]] = [
+        AUTHORITY_RESOURCE_TYPE
+    ]
+
+    seen_type_ids = {
+        AUTHORITY_RESOURCE_TYPE["id"]
+    }
 
     for entity_type in entity_types:
         type_id = str(entity_type)
 
+        if not type_id:
+            continue
+
+        if type_id in seen_type_ids:
+            continue
+
+        seen_type_ids.add(type_id)
+
         mapping = GND_TYPE_LABELS.get(type_id)
 
         if mapping:
-            type_object = {
+            type_object: dict[str, Any] = {
                 "id": type_id,
-                "name": mapping["name"],
+                "name": mapping.get("name", type_id),
             }
 
             broader = mapping.get("broader")
@@ -754,6 +792,7 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
                 type_object["broader"] = [broader]
 
             formatted_types.append(type_object)
+
         else:
             formatted_types.append(
                 {
@@ -770,17 +809,13 @@ def candidate_matches_requested_type(
 ) -> bool:
     """
     Checks whether a candidate's type matches the requested OpenRefine type.
-
-    Supports:
-    - exact type matches
-    - broad type aliases via GND_TYPE_ALIASES
-    - candidates with a single type string
-    - candidates with a list of type strings
-    - candidates with OpenRefine-style type dicts
     """
 
     if not requested_type:
         return False
+
+    if requested_type == "AuthorityResource":
+        return True
 
     candidate_types = source.get("type", [])
 
