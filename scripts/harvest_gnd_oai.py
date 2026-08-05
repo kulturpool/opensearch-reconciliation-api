@@ -574,11 +574,19 @@ def main() -> None:
     try:
         stats = harvest_oai()
         log(f"OAI harvest completed: {stats}")
+
     except Exception as error:
         state = load_state()
+
         state["last_error"] = str(error)
         state["last_failed_update"] = timestamp()
+
+        # Preserve last_oai_harvest intentionally.
+        # Do not advance it after a failed update.
         write_state(state)
+
+        log(f"OAI harvest failed: {error}")
+
         raise
 
 

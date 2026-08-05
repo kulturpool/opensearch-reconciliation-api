@@ -28,6 +28,16 @@ from api.services.vocab_resolver import resolve_gnd_vocab_uri
 from fastapi.responses import HTMLResponse
 from api.services.preview import render_preview_for_id
 
+from pathlib import Path
+from fastapi.responses import JSONResponse
+import json
+
+from typing import Any
+from fastapi import Body
+
+
+UPDATE_STATE_FILE = Path("data/state/update_state.json")
+
 app = FastAPI(
     title="Local GND Reconciliation API",
     version="0.1.0",
@@ -526,6 +536,56 @@ def extend_get(
 
     return handle_extend_request(extend_request)
 
+@app.post("/extend")
+async def extend_post(request: Request):
+    """
+    Handles POST-based OpenRefine data extension requests.
+
+    Supports:
+    - application/json
+    - application/x-www-form-urlencoded with field 'extend'
+    """
+
+    content_type = request.headers.get("content-type", "")
+
+    if "application/json" in content_type:
+        try:
+            extend_request = await request.json()
+        except Exception as error:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Invalid JSON body",
+                    "details": str(error),
+                },
+            )
+
+        return handle_extend_request(extend_request)
+
+    form = await request.form()
+    extend = form.get("extend")
+
+    if not extend:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Missing JSON body or form field: 'extend'"
+            },
+        )
+
+    try:
+        extend_request = json.loads(extend)
+    except json.JSONDecodeError as error:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": "Invalid JSON in 'extend' form field",
+                "details": str(error),
+            },
+        )
+
+    return handle_extend_request(extend_request)
+
 @app.get("/reconcile")
 def reconcile_get(
     queries: str | None = Query(default=None),
@@ -583,6 +643,34 @@ async def reconcile_post(request: Request):
 @app.post("/extend")
 async def extend_post(request: Request):
     return await parse_and_handle_root_post(request)
+
+
+@app.get("/status/update")
+def get_update_status():
+    if not UPDATE_STATE_FILE.exists():
+        return JSONResponse(
+            {
+                "enabled": True,
+                "status": "not_run_yet",
+                "message": "No OAI update has been executed yet.",
+            }
+        )
+
+    try:
+        state = json.loads(
+            UPDATE_STATE_FILE.read_text(encoding="utf-8")
+        )
+    except Exception as error:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": "Could not read update state.",
+                "error": str(error),
+            },
+        )
+
+    return state
 
 
 def handle_reconciliation_queries(

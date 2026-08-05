@@ -1,174 +1,52 @@
 # Local GND Reconciliation API
 
-A local, OpenRefine-compatible reconciliation service for the **Gemeinsame Normdatei (GND)** using DNB GND LDS dumps, FastAPI and OpenSearch.
+Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Der Service lädt die GND-Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt eine OpenRefine-kompatible Reconciliation API bereit.
 
-The service lets you reconcile names, places, corporate bodies, works, subject headings and other GND entities locally in OpenRefine. It also supports OpenRefine data extension, so you can add columns from reconciled GND values such as preferred names, variant names, life dates, affiliated bodies, places, professions, broader terms and many other GND properties.
+## Features
 
----
-
-## Current status
-
-Implemented:
-
-- Local GND LDS download and indexing pipeline
-- Streaming JSON-LD import into OpenSearch
-- FastAPI reconciliation service
-- OpenRefine-compatible service manifest
-- `GET /` and `POST /` reconciliation endpoint
-- `/reconcile` compatibility aliases
-- `/suggest/entity`
-- `/suggest/type`
-- `/suggest/property`
-- `/properties`
-- `/preview` and `/preview/{id}`
-- `/extend` and root `POST /` data extension
-- Dynamic property registry based on the public GND/lobid reconciliation API
-- Dynamic property value lookup via `propertiesFlat`
-- GND URI resolution for extended values
-- GND vocabulary label resolution, for example geographic area codes
-- Reconciled entity values in OpenRefine data extension where applicable
-- Configurable data extension settings in OpenRefine:
-  - `content = literal`
-  - `content = id`
-  - `limit`
-- Runtime Docker Compose setup
-- DevContainer setup
-- Bootstrap script for first-run setup
-- Persistent local `data/` folder
-- Persistent OpenSearch index via Docker volume
-
-Currently intentionally deferred:
-
-- Image enrichment in previews
-- EntityFacts enrichment
-- OAI-PMH incremental updates
-- Production-grade scoring calibration
-- Automated regression test suite
+- Lokale GND-Reconciliation für OpenRefine
+- Automatischer Download und Indexaufbau beim ersten Start
+- Persistenter lokaler Suchindex in OpenSearch
+- OpenRefine-kompatible Reconciliation API
+- Type Suggest, Entity Suggest und Property Suggest
+- Extend API für `Add columns from reconciled values`
+- Entity Preview inklusive Link zum GND-Datensatz
+- EntityFacts-Enrichment, u.a. für `Family`, `sameAs`, `depiction`, `associatedCountry`
+- Automatische tägliche OAI-Updates ohne vollständigen Reindex
+- Docker Compose Runtime Setup
+- DevContainer für Entwicklung
 
 ---
 
-## Architecture
+## Voraussetzungen
 
-```text
-DNB GND LDS dumps
-        ↓
-Downloader
-        ↓
-Streaming JSON-LD parser
-        ↓
-Normalizer
-        ↓
-OpenSearch index
-        ↓
-FastAPI reconciliation API
-        ↓
-OpenRefine
-```
+Benötigt wird:
 
-### Main components
+- Docker
+- Docker Compose
+- OpenRefine
 
-```text
-api/
-  FastAPI app and OpenRefine-compatible API endpoints
-
-api/services/
-  Search, properties, labels, vocabulary resolution and preview rendering
-
-importer/
-  Download and normalization code for GND LDS data
-
-indexer/
-  OpenSearch mapping and streaming indexer
-
-scripts/
-  Bootstrap, full indexing and container startup scripts
-
-config/
-  Local property registry and vocabulary label cache
-
-data/
-  Runtime data, logs and state files
-  This directory is not versioned in git
-```
+Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand längere Zeit dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
+Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3GB.
 
 ---
 
-## Data sources
+## Schnellstart
 
-The service uses the DNB GND LDS full dumps from:
+### 1. Repository klonen
 
-```text
-https://data.dnb.de/opendata/
+```bash
+git clone <REPOSITORY_URL>
+cd <REPOSITORY_NAME>
 ```
 
-The type-specific GND LDS dumps are used for:
-
-- `person`
-- `koerperschaft`
-- `kongress`
-- `geografikum`
-- `sachbegriff`
-- `werk`
-
-For `werk`, a dated JSON-LD dump can be used if no stable undated JSON-LD link is available.
-
-The public GND/lobid reconciliation API is used as a reference for property proposals and OpenRefine behaviour:
-
-```text
-https://reconcile.gnd.network
-```
-
----
-
-## Runtime data and persistence
-
-The `data/` directory is intentionally not tracked by git.
-
-It is created automatically on first run:
-
-```text
-data/
-├── raw/
-├── processed/
-├── state/
-└── logs/
-```
-
-### What is stored where?
-
-```text
-data/raw/
-  Downloaded GND LDS dump files
-
-data/state/gnd_state.json
-  Bootstrap state and import status
-
-data/logs/
-  Bootstrap and API logs
-
-OpenSearch Docker volume
-  Actual OpenSearch index files
-```
-
-The OpenSearch index is not stored directly in the repository. It is stored in the OpenSearch Docker volume, normally mounted inside the OpenSearch container at:
-
-```text
-/usr/share/opensearch/data
-```
-
-Do not run `docker compose down -v` unless you intentionally want to delete the OpenSearch index volume.
-
----
-
-## Environment configuration
-
-Create a `.env` file from `.env.example`:
+### 2. Environment-Datei erstellen
 
 ```bash
 cp .env.example .env
 ```
 
-Recommended runtime values:
+Typische Standardwerte:
 
 ```env
 API_PORT=8083
@@ -177,560 +55,417 @@ PUBLIC_BASE_URL=http://127.0.0.1:8083
 
 OPENSEARCH_HOST=opensearch
 OPENSEARCH_PORT=9200
-GND_INDEX_NAME=gnd
 
-GND_AUTO_BOOTSTRAP=true
 GND_FORCE_REINDEX=false
+GND_INDEX_ENTITYFACTS=true
+GND_ENTITYFACTS_ONLY_TYPE=
+
+GND_AUTO_UPDATE=true
+GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INITIAL_DELAY_SECONDS=300
+
+GND_OAI_BASE_URL=https://services.dnb.de/oai/repository
+GND_OAI_METADATA_PREFIX=RDFxml
+GND_OAI_SET=authorities
+GND_OAI_OVERLAP_MINUTES=60
+
+GND_OAI_REQUEST_TIMEOUT_SECONDS=300
+GND_OAI_REQUEST_MAX_RETRIES=6
+GND_OAI_REQUEST_BACKOFF_SECONDS=10
+GND_OAI_PAGE_DELAY_SECONDS=2
 ```
 
-If port `8083` is already used, choose another host port, for example:
-
-```env
-API_PORT=8083
-HOST_API_PORT=8084
-PUBLIC_BASE_URL=http://127.0.0.1:8084
-```
-
-In that case OpenRefine should use:
-
-```text
-http://127.0.0.1:8084
-```
-
----
-
-## Running with Docker Compose
-
-The runtime setup is intended for users who want to run the service without opening the DevContainer.
-
-### Start
+### 3. Runtime-Container starten
 
 ```bash
 docker compose -f docker-compose.runtime.yml up --build
 ```
 
-### Start in background
+Beim ersten Start passiert automatisch:
 
-```bash
-docker compose -f docker-compose.runtime.yml up --build -d
-```
+1. lokale Datenordner werden erstellt
+2. GND-LDS-Dumps werden heruntergeladen
+3. GND-Daten werden in OpenSearch indexiert
+4. EntityFacts werden als Enrichment ergänzt
+5. der OAI-Update-Scheduler wird gestartet, falls `GND_AUTO_UPDATE=true`
+6. die API startet auf dem konfigurierten Port, standardmäßig `8083`
 
-### Show logs
-
-```bash
-docker compose -f docker-compose.runtime.yml logs -f
-```
-
-Only API logs:
-
-```bash
-docker compose -f docker-compose.runtime.yml logs -f gnd-api
-```
-
-Only OpenSearch logs:
-
-```bash
-docker compose -f docker-compose.runtime.yml logs -f opensearch
-```
-
-### Stop
-
-```bash
-docker compose -f docker-compose.runtime.yml down
-```
-
-Do not use `-v` unless you want to delete the OpenSearch index volume.
+Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
 
 ---
 
-## First startup behaviour
+## OpenRefine verbinden
 
-On startup, the container runs:
-
-```bash
-python scripts/bootstrap_gnd.py --auto
-```
-
-The bootstrap script:
-
-1. Creates the local `data/` folders if missing
-2. Waits for OpenSearch
-3. Checks if the GND index exists
-4. Checks `data/state/gnd_state.json`
-5. If this is the first run:
-   - downloads missing GND LDS dumps
-   - fetches the property registry if needed
-   - fetches vocabulary labels if needed
-   - builds the full OpenSearch index
-   - writes bootstrap state
-6. If the index is already initialized:
-   - skips full setup
-   - starts the API immediately
-
-Expected log line after a completed full import:
+In OpenRefine:
 
 ```text
-State written. Indexed documents: 10,197,852
-```
-
-The exact number can vary depending on the dump version and normalization logic.
-
----
-
-## Forcing a reindex
-
-To force a full reindex on next start, set in `.env`:
-
-```env
-GND_FORCE_REINDEX=true
-```
-
-Then run:
-
-```bash
-docker compose -f docker-compose.runtime.yml down
-docker compose -f docker-compose.runtime.yml up --build
-```
-
-After successful reindexing, set it back to:
-
-```env
-GND_FORCE_REINDEX=false
-```
-
----
-
-## DevContainer workflow
-
-The DevContainer is still useful for development.
-
-Open the project in VS Code and run:
-
-```text
-Dev Containers: Reopen in Container
-```
-
-The DevContainer can use:
-
-```json
-"postStartCommand": "bash scripts/start_dev_services.sh"
-```
-
-This starts bootstrap checks and runs FastAPI with reload support.
-
----
-
-## Manual commands
-
-### Check bootstrap state
-
-```bash
-python scripts/bootstrap_gnd.py --check-only
-```
-
-### Run automatic bootstrap
-
-```bash
-python scripts/bootstrap_gnd.py --auto
-```
-
-### Run explicit initialization
-
-```bash
-python scripts/bootstrap_gnd.py --init
-```
-
-### Test initialization with limit per source
-
-```bash
-python scripts/bootstrap_gnd.py --init --limit 1000
-```
-
-### Download all GND LDS dumps
-
-```bash
-python -m importer.download_gnd_lds --source all
-```
-
-### Download one source
-
-```bash
-python -m importer.download_gnd_lds --source person
-python -m importer.download_gnd_lds --source sachbegriff
-python -m importer.download_gnd_lds --source geografikum
-```
-
-### Index all sources
-
-```bash
-python scripts/index_all_gnd_lds.py
-```
-
-### Index all sources with a test limit
-
-```bash
-python scripts/index_all_gnd_lds.py --limit 1000
-```
-
-### Index all sources except persons
-
-```bash
-python scripts/index_all_gnd_lds.py --skip-person
-```
-
----
-
-## OpenRefine setup
-
-Start OpenRefine and add the reconciliation service:
-
-```text
-Column menu
+Column
 → Reconcile
 → Start reconciling
 → Add Standard Service
 ```
 
-Service URL:
+Service URL eintragen:
 
 ```text
 http://127.0.0.1:8083
 ```
 
-If you use a different host port, for example `8084`, use:
+Wichtig: **Nicht** `/reconcile` anhängen.
 
-```text
-http://127.0.0.1:8084
-```
-
-Do not append `/reconcile`.
-
-Correct:
+Richtig:
 
 ```text
 http://127.0.0.1:8083
 ```
 
-Incorrect:
+Falsch:
 
 ```text
 http://127.0.0.1:8083/reconcile
 ```
 
----
-
-## Recommended OpenRefine workflow
-
-Example input data:
-
-```csv
-name
-Goethe
-Mark Twain
-Mozart
-Berlin
-Abakus
-Deutsche Nationalbibliothek
-Don Giovanni
-```
-
-Use a suitable type in OpenRefine where possible:
-
-```text
-Person
-Place or Geographic Name
-Corporate Body
-Subject Heading
-Work
-```
-
-For ambiguous values such as `Goethe`, `Berlin`, `Paris` or `Mozart`, type selection and detail columns improve results significantly.
+Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwendet werden.
 
 ---
 
-## Use values as identifiers
+## Typische Nutzung in OpenRefine
 
-OpenRefine's **Use values as identifiers...** can be used if a column already contains GND IDs such as:
+### Reconciliation starten
 
-```text
-118540238
-118624822
-4000030-8
-```
+1. Spalte auswählen, z.B. `name`
+2. Reconcile starten
+3. lokalen GND-Service auswählen
+4. passenden Typ wählen, z.B.:
+   - `Normdatenressource`
+   - `Individualisierte Person`
+   - `Körperschaft`
+   - `Konferenz oder Veranstaltung`
+   - `Geografikum`
+   - `Schlagwort`
+   - `Werk`
+   - `Familie`
 
-After using values as identifiers, you can add columns from reconciled values.
+### Zusätzliche Spalten hinzufügen
 
-Important: this workflow assumes values are valid identifiers. It is not a full reconciliation search.
-
-Useful checks:
-
-```bash
-curl "http://localhost:8083/preview?id=118540238"
-```
-
-```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"preferredName"}]}'
-```
-
----
-
-## Data extension
-
-After reconciliation in OpenRefine:
+Nach erfolgreicher Reconciliation:
 
 ```text
 Edit column
 → Add columns from reconciled values
 ```
 
-The local API supports:
+Beispiele für Properties:
 
-- dynamic property proposals
-- property suggestions
-- configurable data extension settings
-- ID or literal output
-- value limits
-- GND URI resolution
-- GND vocabulary label resolution
-- reconciled entity values for GND entity references where applicable
+- GND-ID
+- Bevorzugter Name
+- Variantenamen
+- Entitätstyp
+- Geburtsdatum
+- Sterbedatum
+- Beruf oder Tätigkeit
+- Wirkungsort
+- geografische Angaben
+- sameAs
+- biografische oder historische Informationen
+- Bildverweise, falls vorhanden, z.B. `depiction`
 
-Example:
+Beim Hinzufügen von Properties kann in OpenRefine über **Configure** u.a. gewählt werden:
 
-```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'extend={"ids":["118624822"],"properties":[{"id":"preferredName"},{"id":"variantName"},{"id":"dateOfBirth"},{"id":"dateOfDeath"}]}'
-```
-
-### Configure options in OpenRefine
-
-The manifest exposes property settings for data extension:
-
-```text
-Content:
-  literal
-  id
-
-Limit:
-  maximum number of returned values
-```
-
-`content = literal` returns readable values where possible.
-
-`content = id` returns stored identifiers or URI-like values.
+- Ausgabe als `literal`
+- Ausgabe als `id`
+- Limit der zurückgegebenen Werte
 
 ---
 
-## Property registry
+## Bereits vorhandene GND-IDs verwenden
 
-The local API can mirror the property suggestions of the public GND reconciliation API.
-
-Run:
-
-```bash
-python scripts/fetch_gnd_property_registry.py
-```
-
-This creates:
+Wenn eine Spalte bereits GND-IDs enthält, kann in OpenRefine verwendet werden:
 
 ```text
-config/gnd_properties.json
+Reconcile
+→ Use values as identifiers
 ```
 
-Used by:
+Beispielwerte:
 
 ```text
-/properties
-/suggest/property
+118540238
+118624822
+1036893200
 ```
+
+Danach können über **Add columns from reconciled values** zusätzliche Informationen aus der lokalen GND ergänzt werden.
 
 ---
 
-## Vocabulary labels
+## API testen
 
-Controlled GND vocabulary values, for example geographic area codes, can be resolved locally.
-
-Run:
-
-```bash
-python scripts/fetch_gnd_vocab_labels.py
-```
-
-This creates:
-
-```text
-config/gnd_vocab_labels.json
-```
-
-Example conversion:
-
-```text
-https://d-nb.info/standards/vocab/gnd/geographic-area-code#XA-AT
-→ Österreich (XA-AT)
-```
-
----
-
-## Preview
-
-The preview is implemented in:
-
-```text
-api/services/preview.py
-```
-
-The preview is generic and type-aware.
-
-It supports:
-
-- broad type detection
-- different field profiles for:
-  - Person
-  - CorporateBody
-  - ConferenceOrEvent
-  - PlaceOrGeographicName
-  - SubjectHeading
-  - Work
-- GND URI label resolution
-- GND vocabulary label resolution
-- clickable links
-- readable literals
-
-Image display is currently optional and not a core feature. It will only render if image-like properties are available in the local index. Image enrichment is deferred for a later EntityFacts enrichment step.
-
-Preview endpoints:
-
-```text
-/preview?id=<gnd_id>
-/preview/<gnd_id>
-```
-
-Example:
-
-```bash
-curl "http://localhost:8083/preview?id=1036893200"
-```
-
----
-
-## Reconciliation scoring
-
-The scoring currently combines:
-
-- exact identifier matches
-- preferred name matches
-- variant name matches
-- token overlap
-- substring matches
-- OpenSearch fallback score
-- optional type bonus
-- optional property/detail-column bonus from OpenRefine
-
-OpenRefine's option:
-
-```text
-Also use relevant details from other columns
-```
-
-is supported by reading reconciliation query `properties` and applying a generic property-matching bonus against top-level fields and `propertiesFlat`.
-
-The scoring is still under active tuning. Some score distributions can still differ from the public GND/lobid API.
-
----
-
-## API examples
-
-### Service manifest
+### Service Manifest
 
 ```bash
 curl http://localhost:8083/
 ```
 
-### Reconcile GET
+### Reconciliation
 
 ```bash
-curl "http://localhost:8083/reconcile?query=Goethe"
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'
 ```
 
-### Reconcile POST
+### Extend testen
 
 ```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'queries={"q1":{"query":"Goethe","type":"Person"}}'
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"dateOfBirth"},{"id":"dateOfDeath"}]}'
 ```
 
-### Reconcile POST with detail properties
+### Preview testen
 
 ```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'queries={"q1":{"query":"Goethe","type":"Person","properties":[{"pid":"dateOfBirth","v":"1749"},{"pid":"dateOfDeath","v":"1832"}]}}'
+curl "http://localhost:8083/preview?id=118540238"
 ```
 
-### Suggest entity
+### Update-Status testen
+
+```bash
+curl "http://localhost:8083/status/update"
+```
+
+---
+
+## API-Endpunkte
+
+Der Service implementiert eine OpenRefine-kompatible Reconciliation API. OpenRefine nutzt viele dieser Endpunkte automatisch über das Service Manifest. Die folgenden Beispiele sind vor allem für Tests, Debugging und Integration mit anderen Clients gedacht.
+
+### Service Manifest
+
+```bash
+curl "http://localhost:8083/"
+```
+
+Liefert das Service Manifest, über das OpenRefine erkennt, welche Funktionen der Service unterstützt.
+
+---
+
+### Reconciliation Query
+
+Standard-Reconciliation über den Root-Endpunkt:
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'
+```
+
+Beispiel für den generischen Typ `AuthorityResource`:
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Goethe","type":"AuthorityResource"}}'
+```
+
+Beispiel für Familien:
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Acker","type":"Family"}}'
+```
+
+Falls ein `/reconcile`-Alias in der API aktiviert ist, kann alternativ auch dieser Endpunkt verwendet werden:
+
+```bash
+curl -X POST "http://localhost:8083/reconcile" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'
+```
+
+---
+
+### Reconciliation mit mehreren Queries
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'queries={"q1":{"query":"Goethe","type":"DifferentiatedPerson"},"q2":{"query":"Berlin","type":"PlaceOrGeographicName"}}'
+```
+
+---
+
+### Entity Suggest
 
 ```bash
 curl "http://localhost:8083/suggest/entity?prefix=Goethe"
 ```
 
-### Suggest type
+Liefert Entitätsvorschläge für OpenRefine, z.B. während der manuellen Suche oder beim Auswählen von Kandidaten.
+
+Optional kann ein Typ mitgegeben werden:
 
 ```bash
-curl "http://localhost:8083/suggest/type?prefix=Person"
-```
-
-### Suggest property
-
-```bash
-curl "http://localhost:8083/suggest/property?prefix=beruf"
-```
-
-### Property proposals
-
-```bash
-curl "http://localhost:8083/properties?type=Person&limit=50"
-```
-
-### Extend
-
-```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"dateOfBirth"},{"id":"dateOfDeath"}]}'
-```
-
-### Extend with settings
-
-```bash
-curl -X POST "http://localhost:8083/"   -H "Content-Type: application/x-www-form-urlencoded"   --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"geographicAreaCode","settings":{"content":"literal","limit":"1"}}]}'
+curl "http://localhost:8083/suggest/entity?prefix=Goethe&type=DifferentiatedPerson"
 ```
 
 ---
 
-## Checking the index
-
-If OpenSearch is exposed to the host:
+### Type Suggest
 
 ```bash
-curl "http://localhost:9200/gnd/_count?pretty"
+curl "http://localhost:8083/suggest/type?prefix=Per"
 ```
 
-If OpenSearch is only available inside Docker Compose:
+Liefert verfügbare Typen für die Reconciliation. Die sichtbare Auswahl orientiert sich an der GND-Reconciliation-Auswahl und umfasst u.a.:
 
-```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api   curl "http://opensearch:9200/gnd/_count?pretty"
+```text
+AuthorityResource
+CorporateBody
+ConferenceOrEvent
+SubjectHeading
+Work
+PlaceOrGeographicName
+DifferentiatedPerson
+Family
 ```
 
-Index size and document count:
+---
+
+### Property Suggest
 
 ```bash
-curl "http://localhost:9200/_cat/indices/gnd?v&h=index,docs.count,store.size"
+curl "http://localhost:8083/suggest/property?prefix=Name"
 ```
 
-Type distribution:
+Liefert verfügbare Properties, die in OpenRefine für **Add columns from reconciled values** verwendet werden können.
+
+Weitere Beispiele:
 
 ```bash
-curl "http://localhost:9200/gnd/_search?pretty"   -H "Content-Type: application/json"   -d '{
+curl "http://localhost:8083/suggest/property?prefix=date"
+```
+
+```bash
+curl "http://localhost:8083/suggest/property?prefix=sameAs"
+```
+
+---
+
+### Extend API über Root-Endpunkt
+
+OpenRefine verwendet die Extend API, um zusätzliche Spalten aus reconciled values zu erzeugen.
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"variantName"},{"id":"dateOfBirth"},{"id":"dateOfDeath"}]}'
+```
+
+Beispiel mit EntityFacts-Feldern:
+
+```bash
+curl -X POST "http://localhost:8083/" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode 'extend={"ids":["118540238"],"properties":[{"id":"sameAs"},{"id":"depiction"},{"id":"biographicalOrHistoricalInformation"}]}'
+```
+
+Falls ein separater `/extend`-Endpunkt aktiviert ist, kann alternativ ein JSON-Request verwendet werden:
+
+```bash
+curl -X POST "http://localhost:8083/extend" \
+  -H "Content-Type: application/json" \
+  -d '{"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"dateOfBirth"}]}'
+```
+
+---
+
+### Preview API
+
+```bash
+curl "http://localhost:8083/preview?id=118540238"
+```
+
+Liefert eine HTML-Vorschau für OpenRefine. Die Preview enthält je nach Datenlage u.a. bevorzugten Namen, Typ, GND-Link, biografische bzw. historische Informationen und Bildverweise wie `depiction`.
+
+---
+
+### Update Status API
+
+```bash
+curl "http://localhost:8083/status/update"
+```
+
+Liefert den aktuellen Status des täglichen OAI-Updateprozesses.
+
+Beispielhafte Antwort:
+
+```json
+{
+  "last_oai_harvest": "2026-08-05T09:25:52Z",
+  "last_successful_update": "2026-08-05T09:25:52Z",
+  "last_error": null,
+  "updates": {
+    "oai_records_seen": 738,
+    "changed": 738,
+    "deleted": 0,
+    "pages": 15
+  }
+}
+```
+
+Wenn noch kein Update durchgeführt wurde, meldet der Endpunkt entsprechend, dass noch kein Update-State vorliegt.
+
+---
+
+### OpenSearch Debug-Endpunkte
+
+Diese Endpunkte gehören nicht zur Reconciliation API, sind aber für lokale Tests hilfreich. Sie funktionieren innerhalb des Docker-Netzwerks über `opensearch:9200`.
+
+Dokumentanzahl prüfen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  curl "http://opensearch:9200/gnd/_count?pretty"
+```
+
+EntityFacts-Enrichment prüfen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  curl "http://opensearch:9200/gnd/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
     "size": 0,
+    "query": {
+      "term": {
+        "entityfactsEnriched": true
+      }
+    },
     "aggs": {
-      "types": {
+      "entityfacts_types": {
         "terms": {
-          "field": "type",
-          "size": 100
+          "field": "entityfactsType",
+          "size": 20
         }
+      }
+    }
+  }'
+```
+
+OAI-Updates prüfen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  curl "http://opensearch:9200/gnd/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "size": 0,
+    "query": {
+      "term": {
+        "oaiUpdated": true
       }
     }
   }'
@@ -738,33 +473,316 @@ curl "http://localhost:9200/gnd/_search?pretty"   -H "Content-Type: application/
 
 ---
 
+## Daten und Persistenz
+
+Die lokalen Daten werden nicht in Git versioniert.
+
+```text
+data/raw/
+  heruntergeladene GND- und EntityFacts-Dumps
+
+data/state/
+  Bootstrap- und Update-Status
+
+data/logs/
+  Logs
+
+OpenSearch Docker Volume
+  Suchindex
+```
+
+Bei einem normalen Neustart bleiben Daten und Index erhalten.
+
+Container stoppen:
+
+```bash
+docker compose -f docker-compose.runtime.yml down
+```
+
+Nicht verwenden, außer der Index soll wirklich gelöscht werden:
+
+```bash
+docker compose -f docker-compose.runtime.yml down -v
+```
+
+---
+
+## Index neu aufbauen
+
+Wenn der komplette Index inklusive EntityFacts neu aufgebaut werden soll:
+
+### 1. `.env` anpassen
+
+```env
+GND_FORCE_REINDEX=true
+GND_INDEX_ENTITYFACTS=true
+GND_ENTITYFACTS_ONLY_TYPE=
+```
+
+### 2. Neu starten
+
+```bash
+docker compose -f docker-compose.runtime.yml down
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+### 3. Danach wieder zurücksetzen
+
+Nach erfolgreichem Reindex:
+
+```env
+GND_FORCE_REINDEX=false
+```
+
+Sonst wird bei jedem Start erneut vollständig indexiert.
+
+---
+
+## Nur EntityFacts erneut anreichern
+
+Wenn der vorhandene LDS-Index erhalten bleiben soll und nur EntityFacts ergänzt werden sollen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  python scripts/enrich_with_entityfacts.py
+```
+
+Nur Families importieren:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  python scripts/enrich_with_entityfacts.py --only-type Family
+```
+
+---
+
+## Automatische tägliche OAI-Updates
+
+Wenn `GND_AUTO_UPDATE=true` gesetzt ist, startet der Container nach dem Bootstrap einen Hintergrund-Scheduler.
+
+Der Scheduler führt regelmäßig einen inkrementellen OAI-Harvest aus:
+
+```text
+DNB OAI-PMH ListRecords
+→ RDFxml direkt aus OAI verarbeiten
+→ geänderte GND-Datensätze normalisieren
+→ Bulk-Upsert in bestehenden OpenSearch-Index
+→ update_state.json aktualisieren
+```
+
+Dabei wird **kein vollständiger Reindex** durchgeführt.
+
+### Konfiguration
+
+```env
+GND_AUTO_UPDATE=true
+GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INITIAL_DELAY_SECONDS=300
+
+GND_OAI_BASE_URL=https://services.dnb.de/oai/repository
+GND_OAI_METADATA_PREFIX=RDFxml
+GND_OAI_SET=authorities
+GND_OAI_OVERLAP_MINUTES=60
+
+GND_OAI_REQUEST_TIMEOUT_SECONDS=300
+GND_OAI_REQUEST_MAX_RETRIES=6
+GND_OAI_REQUEST_BACKOFF_SECONDS=10
+GND_OAI_PAGE_DELAY_SECONDS=2
+```
+
+### Status prüfen
+
+Über die API:
+
+```bash
+curl "http://127.0.0.1:8083/status/update"
+```
+
+Direkt im Container:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  cat data/state/update_state.json
+```
+
+### Scheduler-Log prüfen
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  tail -f data/logs/update_scheduler.log
+```
+
+### Testintervall verwenden
+
+Für einen kurzen Funktionstest kann das Intervall temporär reduziert werden:
+
+```env
+GND_UPDATE_INTERVAL_HOURS=0.01
+GND_UPDATE_INITIAL_DELAY_SECONDS=10
+```
+
+`0.01` Stunden entsprechen ca. 36 Sekunden.
+
+Nach dem Test wieder zurücksetzen:
+
+```env
+GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INITIAL_DELAY_SECONDS=300
+```
+
+### Fehlerverhalten
+
+Wenn ein OAI-Update fehlschlägt, wird `last_oai_harvest` nicht fortgeschrieben.
+
+Fehlerinformationen werden gespeichert in:
+
+```text
+data/state/update_state.json
+```
+
+Beispiel:
+
+```json
+{
+  "last_failed_update": "2026-08-05T09:30:00Z",
+  "last_error": "Fehlermeldung"
+}
+```
+
+Dadurch arbeitet der nächste Lauf wieder ab dem letzten erfolgreichen Harvest-Zeitpunkt weiter.
+
+---
+
+## Status prüfen
+
+### Container
+
+```bash
+docker compose -f docker-compose.runtime.yml ps
+```
+
+### Logs
+
+```bash
+docker compose -f docker-compose.runtime.yml logs -f
+```
+
+Nur API:
+
+```bash
+docker compose -f docker-compose.runtime.yml logs -f gnd-api
+```
+
+### Dokumentanzahl im Index
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  curl "http://opensearch:9200/gnd/_count?pretty"
+```
+
+---
+
+## DevContainer und Runtime-Volume
+
+Runtime und DevContainer können dasselbe OpenSearch-Volume verwenden, damit der GND-Index nicht doppelt aufgebaut werden muss.
+
+Beispiel für `.devcontainer/docker-compose.yml`:
+
+```yaml
+volumes:
+  opensearch-data:
+    external: true
+    name: local_reconciliation_api_opensearch-data
+```
+
+Wichtig:
+
+> Wenn Runtime und DevContainer dasselbe OpenSearch-Volume verwenden, dürfen nicht beide OpenSearch-Container gleichzeitig laufen.
+
+Vor Wechsel zu DevContainer:
+
+```bash
+docker compose -f docker-compose.runtime.yml down
+```
+
+Vor Wechsel zu Runtime:
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml down
+```
+
+Dann Runtime starten:
+
+```bash
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+---
+
+## Backup und Restore
+
+Für ein minimales Backup sollten gesichert werden:
+
+```text
+data/
+OpenSearch Docker Volume
+```
+
+OpenSearch-Volume anzeigen:
+
+```bash
+docker volume ls | grep opensearch
+```
+
+### Backup eines Volumes
+
+```bash
+mkdir -p backups
+
+docker run --rm \
+  -v local_reconciliation_api_opensearch-data:/from \
+  -v "$PWD/backups:/backup" \
+  alpine tar czf /backup/opensearch-data.tar.gz -C /from .
+```
+
+### Restore eines Volumes
+
+Vorher alle Container stoppen:
+
+```bash
+docker compose -f docker-compose.runtime.yml down
+```
+
+Dann Restore ausführen:
+
+```bash
+docker run --rm \
+  -v local_reconciliation_api_opensearch-data:/to \
+  -v "$PWD/backups:/backup" \
+  alpine sh -c "cd /to && tar xzf /backup/opensearch-data.tar.gz"
+```
+
+---
+
 ## Troubleshooting
 
-### Port 9200 already allocated
+### OpenRefine kann den Service nicht verbinden
 
-Error:
+Prüfen:
 
-```text
-Bind for 0.0.0.0:9200 failed: port is already allocated
+```bash
+curl http://localhost:8083/
 ```
 
-Cause: another OpenSearch container is already using host port `9200`.
-
-Fix options:
-
-- stop the other OpenSearch container
-- remove the host port mapping for OpenSearch in the runtime Compose file
-- map OpenSearch to another host port, for example `9201:9200`
-
-The API only needs internal Compose access to:
+Wenn das funktioniert, in OpenRefine den Service nochmal neu hinzufügen:
 
 ```text
-opensearch:9200
+http://127.0.0.1:8083
 ```
 
-### Port 8083 already allocated
+### Port 8083 ist belegt
 
-Use another host port in `.env`:
+In `.env` anderen Host-Port setzen:
 
 ```env
 API_PORT=8083
@@ -772,154 +790,147 @@ HOST_API_PORT=8084
 PUBLIC_BASE_URL=http://127.0.0.1:8084
 ```
 
-Then connect OpenRefine to:
+Dann starten:
+
+```bash
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+OpenRefine URL:
 
 ```text
 http://127.0.0.1:8084
 ```
 
-### Preview points to the wrong port
+### OpenSearch wird nicht gefunden
 
-Check the manifest:
+Prüfen, ob beide Container laufen:
 
 ```bash
-curl http://localhost:8083/
+docker compose -f docker-compose.runtime.yml ps
 ```
 
-Ensure `PUBLIC_BASE_URL` matches the host URL used by OpenRefine.
+Interne Namensauflösung testen:
 
-If the port changed, remove and re-add the reconciliation service in OpenRefine.
-
-### OpenRefine preview shows old content
-
-OpenRefine can cache service metadata.
-
-Remove the service and add it again:
-
-```text
-http://127.0.0.1:8083
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api getent hosts opensearch
 ```
 
-### Runtime code changes not visible
+In `.env` sollte stehen:
 
-The runtime Docker image copies source code into the image. After code changes, rebuild:
+```env
+OPENSEARCH_HOST=opensearch
+OPENSEARCH_PORT=9200
+```
+
+### Scheduler läuft nicht
+
+Prüfen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  ps aux | grep update_scheduler
+```
+
+Log prüfen:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api \
+  tail -f data/logs/update_scheduler.log
+```
+
+In `.env` prüfen:
+
+```env
+GND_AUTO_UPDATE=true
+```
+
+### OAI-Update schlägt fehl
+
+Status prüfen:
+
+```bash
+curl "http://127.0.0.1:8083/status/update"
+```
+
+Oder direkt:
+
+```bash
+cat data/state/update_state.json
+```
+
+Wenn `last_error` gesetzt ist, wird `last_oai_harvest` nicht fortgeschrieben. Der nächste Lauf versucht erneut ab dem letzten erfolgreichen Harvest-Zeitpunkt weiterzuarbeiten.
+
+### Änderungen im Code werden nicht übernommen
+
+Runtime-Container neu bauen:
 
 ```bash
 docker compose -f docker-compose.runtime.yml down
 docker compose -f docker-compose.runtime.yml up --build
 ```
 
-### Data extension returns URIs instead of labels
+---
 
-Check whether the target entity exists in the local index:
+## Entwicklungsnotizen
+
+### Manuelles OAI-Update im DevContainer testen
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api   curl "http://opensearch:9200/gnd/_doc/<GND_ID>?pretty"
+GND_OAI_SET=authorities \
+GND_OAI_METADATA_PREFIX=RDFxml \
+GND_OAI_BASE_URL=https://services.dnb.de/oai/repository \
+python scripts/harvest_gnd_oai.py
 ```
 
-If the target exists, URI resolution should normally return a readable label.
+### OAI-Update-State zurücksetzen
 
-For vocabulary values, ensure the vocabulary cache exists:
-
-```text
-config/gnd_vocab_labels.json
+```bash
+rm -f data/state/update_state.json
+rm -f data/state/oai_changed_records.jsonl
+rm -f data/state/oai_deleted_ids.jsonl
 ```
 
----
+Oder ein bestimmtes Startdatum setzen:
 
-## Update strategy
-
-Currently implemented:
-
-```text
-Initial full import
-Bootstrap state detection
-Reusing existing dumps and index across restarts
-Manual forced full reindex
-```
-
-Planned:
-
-```text
-Remote dump update detection
-Interactive update confirmation
-Shadow index strategy
-OAI-PMH / GND change service incremental updates
-Redirect/deletion handling
-```
-
-The long-term goal is to avoid full reindexing when only incremental changes are available.
-
----
-
-## Future work
-
-Planned improvements:
-
-- Better scoring calibration against the public GND/lobid API
-- Regression tests for common reconciliation cases
-- EntityFacts enrichment
-- Better preview enrichment
-- Optional image support via enriched sources
-- OAI-PMH incremental update harvesting
-- Redirect and deletion handling
-- Shadow-index updates with alias switching
-- Packaged Docker release for simple reuse by other users
-
----
-
-## Useful files
-
-```text
-api/main.py
-  FastAPI routes and service manifest
-
-api/services/search.py
-  OpenSearch queries, scoring and result formatting
-
-api/services/properties.py
-  Dynamic property values and proposals
-
-api/services/property_registry.py
-  Local mirrored GND property registry
-
-api/services/property_labels.py
-  Human-readable labels for properties
-
-api/services/vocab_resolver.py
-  GND vocabulary URI label resolution
-
-api/services/preview.py
-  Generic type-aware preview rendering
-
-importer/download_gnd_lds.py
-  GND LDS dump downloader
-
-importer/normalize_gnd_lds.py
-  JSON-LD normalization
-
-indexer/index_gnd_lds.py
-  OpenSearch index creation and streaming import
-
-scripts/bootstrap_gnd.py
-  First-run setup and state handling
-
-scripts/index_all_gnd_lds.py
-  Full indexing workflow for all sources
-
-scripts/start_dev_services.sh
-  DevContainer startup helper
-
-scripts/start_container_services.sh
-  Runtime container startup helper
+```bash
+cat > data/state/update_state.json <<'JSON'
+{
+  "last_oai_harvest": "2026-08-04T00:00:00Z"
+}
+JSON
 ```
 
 ---
 
-## References
+## Nicht Teil des aktuellen MVP
 
-- DNB Open Data: `https://data.dnb.de/opendata/`
-- Public GND Reconciliation Service: `https://reconcile.gnd.network`
-- OpenRefine Reconciliation API documentation: `https://openrefine.org/docs/technical-reference/reconciliation-api`
-- Reconciliation Service API v0.2: `https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/`
-- GND Geographic Area Codes: `https://d-nb.info/standards/vocab/gnd/geographic-area-code`
+Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können später ergänzt werden:
+
+- Excel-Upload zur direkten Datei-Anreicherung
+- Integration weiterer Normdatenquellen als eigene Reconciliation-Quellen
+- eigene Weboberfläche
+- Hochverfügbarkeits- oder Clusterbetrieb
+- Schreibzugriffe auf die GND
+- eigener EntityFacts-Dump-Refresh unabhängig vom GND-OAI-Update
+- CI-Test-Suite und automatisierte Regressionstests
+
+---
+
+## Hinweise
+
+- Der erste Import ist groß und dauert.
+- Spätere Starts sind deutlich schneller.
+- `data/` und das OpenSearch-Volume sollten nicht gelöscht werden, wenn der Index erhalten bleiben soll.
+- EntityFacts werden als zusätzliche Enrichment-Schicht verwendet.
+- Werke und Schlagwörter kommen weiterhin primär aus den GND-LDS-Dumps.
+- Familien werden über EntityFacts ergänzt.
+- Tägliche OAI-Updates aktualisieren den bestehenden Index inkrementell und lösen keinen vollständigen Reindex aus.
+
+---
+
+## Datenquellen und Lizenzhinweis
+
+Die GND-Daten und EntityFacts stammen aus den offenen Datenangeboten der Deutschen Nationalbibliothek.
+
+Bitte die jeweils geltenden Nutzungsbedingungen der Datenquellen beachten.
