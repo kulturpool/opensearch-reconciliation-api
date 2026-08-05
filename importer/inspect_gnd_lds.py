@@ -126,8 +126,33 @@ def inspect_with_ijson(path: Path, max_items: int = 3) -> None:
                     if found >= max_items:
                         break
 
-        except Exception as error:
-            print(f"Could not parse path '{item_path}': {error}")
+        except FileNotFoundError as error:
+            print(f"Could not parse path '{item_path}': file not found: {error}")
+            print()
+            continue
+
+        except PermissionError as error:
+            print(f"Could not parse path '{item_path}': permission denied: {error}")
+            print()
+            continue
+
+        except gzip.BadGzipFile as error:
+            print(f"Could not parse path '{item_path}': invalid gzip file: {error}")
+            print()
+            continue
+
+        except EOFError as error:
+            print(f"Could not parse path '{item_path}': truncated gzip file: {error}")
+            print()
+            continue
+
+        except ijson.JSONError as error:
+            print(f"Could not parse path '{item_path}': JSON parse error: {error}")
+            print()
+            continue
+
+        except OSError as error:
+            print(f"Could not parse path '{item_path}': I/O error: {error}")
             print()
             continue
 
@@ -174,8 +199,18 @@ def inspect_top_level_keys(path: Path) -> None:
                 if len(keys) >= 20:
                     break
 
-    except Exception as error:
-        print(f"Could not inspect top-level keys: {error}")
+    except (FileNotFoundError, PermissionError, OSError) as error:
+        print(f"Could not inspect top-level keys: file read error: {error}")
+        print()
+        return
+
+    except (gzip.BadGzipFile, EOFError) as error:
+        print(f"Could not inspect top-level keys: gzip error: {error}")
+        print()
+        return
+
+    except ijson.JSONError as error:
+        print(f"Could not inspect top-level keys: JSON parse error: {error}")
         print()
         return
 

@@ -133,7 +133,7 @@ def load_records(input_file: str) -> list[dict[str, Any]]:
         records = json.load(file)
 
     if not isinstance(records, list):
-        raise ValueError("Input file must contain a JSON array of records.")
+        raise TypeError("Input file must contain a JSON array of records.")
 
     return records
 

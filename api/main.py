@@ -34,6 +34,7 @@ import json
 
 from typing import Any
 from fastapi import Body
+from json import JSONDecodeError
 
 
 UPDATE_STATE_FILE = Path("data/state/update_state.json")
@@ -551,7 +552,7 @@ async def extend_post(request: Request):
     if "application/json" in content_type:
         try:
             extend_request = await request.json()
-        except Exception as error:
+        except JSONDecodeError as error:
             return JSONResponse(
                 status_code=400,
                 content={
@@ -640,11 +641,6 @@ async def reconcile_post(request: Request):
     return await parse_and_handle_root_post(request)
 
 
-@app.post("/extend")
-async def extend_post(request: Request):
-    return await parse_and_handle_root_post(request)
-
-
 @app.get("/status/update")
 def get_update_status():
     if not UPDATE_STATE_FILE.exists():
@@ -660,12 +656,32 @@ def get_update_status():
         state = json.loads(
             UPDATE_STATE_FILE.read_text(encoding="utf-8")
         )
-    except Exception as error:
+
+    except FileNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "status": "not_found",
+                "message": "Update state file does not exist.",
+            },
+        )
+
+    except json.JSONDecodeError as error:
         return JSONResponse(
             status_code=500,
             content={
                 "status": "error",
-                "message": "Could not read update state.",
+                "message": "Update state file contains invalid JSON.",
+                "error": str(error),
+            },
+        )
+
+    except OSError as error:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": "Could not read update state file.",
                 "error": str(error),
             },
         )
