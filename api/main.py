@@ -37,11 +37,90 @@ from json import JSONDecodeError
 from api.services.properties import handle_extend_request
 
 
+from api.models.openapi_models import ExtendRequest, ExtendResponse
+
+from api.models.openapi_models import UpdateStatusResponse
+
+
 UPDATE_STATE_FILE = Path("data/state/update_state.json")
+
+tags_metadata = [
+    {
+        "name": "OpenRefine",
+        "description": "OpenRefine-compatible reconciliation endpoints.",
+    },
+    {
+        "name": "Suggest",
+        "description": "Entity, type and property suggestion endpoints.",
+    },
+    {
+        "name": "Extend",
+        "description": "Data extension endpoints for reconciled values.",
+    },
+    {
+        "name": "Preview",
+        "description": "HTML preview endpoint for OpenRefine.",
+    },
+    {
+        "name": "Status",
+        "description": "Operational status endpoints.",
+    },
+]
+
+OPENREFINE_POST_OPENAPI_EXTRA: dict[str, Any] = {
+    "requestBody": {
+        "required": True,
+        "content": {
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "queries": {
+                            "type": "string",
+                            "description": "JSON object containing OpenRefine reconciliation queries.",
+                            "example": '{"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}',
+                        },
+                        "extend": {
+                            "type": "string",
+                            "description": "JSON object containing OpenRefine data extension request.",
+                            "example": '{"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"dateOfBirth"}]}',
+                        },
+                    },
+                }
+            }
+        },
+    }
+}
+
+OPENAPI_DESCRIPTION = """
+Local GND Reconciliation API for OpenRefine.
+
+This service provides:
+- OpenRefine-compatible reconciliation
+- entity, type and property suggest endpoints
+- data extension / Add columns from reconciled values
+- preview endpoint
+- local GND index backed by OpenSearch
+- EntityFacts enrichment
+- daily incremental OAI updates
+"""
 
 app = FastAPI(
     title="Local GND Reconciliation API",
+    summary="Local OpenRefine-compatible reconciliation service for GND.",
+    description=OPENAPI_DESCRIPTION,
     version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    contact={
+        "name": "Kulturpool",
+        "url": "https://kulturpool.at",
+    },
+    license_info={
+        "name": "See repository license and DNB data terms",
+    },
+    openapi_tags=tags_metadata,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -290,18 +369,52 @@ def service_manifest_response() -> dict:
         }
     }
 
-@app.get("/")
+@app.get(
+    "/",
+    tags=["OpenRefine"],
+    summary="Service manifest, reconciliation query, or extend query",
+    description=(
+        "Root endpoint according to the OpenRefine Reconciliation API. "
+        "Without parameters it returns the service manifest. "
+        "With `queries` it handles a reconciliation batch. "
+        "With `query` it handles a simple entity query. "
+        "With `extend` it handles a data extension request."
+    ),
+    operation_id="openrefine_root_get",
+)
 def root_get(
-    queries: str | None = Query(default=None),
-    query: str | None = Query(default=None),
-    extend: str | None = Query(default=None),
-    limit: int = Query(default=5),
+    queries: str | None = Query(
+        default=None,
+        description="JSON-encoded OpenRefine reconciliation query batch.",
+        examples=[
+            '{"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'
+        ],
+    ),
+    query: str | None = Query(
+        default=None,
+        description="Simple query string for quick entity search.",
+        examples=["Goethe"],
+    ),
+    extend: str | None = Query(
+        default=None,
+        description="JSON-encoded OpenRefine data extension request.",
+        examples=[
+            '{"ids":["118540238"],"properties":[{"id":"preferredName"},{"id":"dateOfBirth"}]}'
+        ],
+    ),
+    limit: int = Query(
+        default=5,
+        ge=1,
+        le=100,
+        description="Maximum number of candidates to return.",
+    ),
 ):
     """
     Root endpoint according to Reconciliation API v0.2.
 
     GET /              -> service manifest
     GET /?queries=...  -> reconciliation query batch
+    GET /?query=...    -> simple entity query
     GET /?extend=...   -> data extension query
     """
 
@@ -346,7 +459,18 @@ def root_get(
 
     return service_manifest_response()
 
-@app.post("/")
+@app.post(
+    "/",
+    tags=["OpenRefine"],
+    summary="OpenRefine reconciliation or extend request",
+    description=(
+        "Handles OpenRefine-compatible form-encoded POST requests. "
+        "Use the `queries` form field for reconciliation and the `extend` "
+        "form field for data extension."
+    ),
+    operation_id="openrefine_root_post",
+    openapi_extra=OPENREFINE_POST_OPENAPI_EXTRA,
+)
 async def root_post(request: Request):
     """
     Root POST endpoint according to Reconciliation API v0.2.
@@ -358,12 +482,16 @@ async def root_post(request: Request):
 
     return await parse_and_handle_root_post(request)
 
-@app.head("/")
+@app.head(
+    "/",
+    include_in_schema=False,
+)
 def service_manifest_head():
     """
     Allows HEAD checks for the service manifest endpoint.
     Some clients or diagnostic tools may use HEAD before GET.
     """
+
     return Response(status_code=200)
 
 
@@ -377,7 +505,10 @@ def health():
         "status": "ok"
     }
 
-@app.get("/preview", response_class=HTMLResponse)
+@app.get("/preview", response_class=HTMLResponse,
+         tags=['Preview'],
+         summary='preview a GND entity',
+         description='Returns an HTML preview for a given GND entity.')
 def preview_by_query(id: str = Query(...)):
     html, status_code = render_preview_for_id(id)
 
@@ -387,7 +518,10 @@ def preview_by_query(id: str = Query(...)):
     )
 
 
-@app.get("/preview/{gnd_id}", response_class=HTMLResponse)
+@app.get("/preview/{gnd_id}", response_class=HTMLResponse,
+         tags=['Preview'],
+         summary='preview a GND entity by ID',
+         description='Returns an HTML preview for a given GND entity by its GND ID.')
 def preview_by_path(gnd_id: str):
     html, status_code = render_preview_for_id(gnd_id)
 
@@ -396,7 +530,12 @@ def preview_by_path(gnd_id: str):
         status_code=status_code,
     )
 
-@app.get("/suggest/entity")
+@app.get(
+    "/suggest/entity",
+    tags=["Suggest"],
+    summary="Suggest GND entities",
+    description="Returns entity suggestions for OpenRefine based on a prefix.",
+)
 def suggest_entity(
     prefix: str = Query(default=""),
     cursor: int = Query(default=0),
@@ -440,7 +579,12 @@ def suggest_entity(
         "result": suggestions
     }
 
-@app.get("/suggest/type")
+@app.get(
+    "/suggest/type",
+    tags=["Suggest"],
+    summary="Suggest GND types",
+    description="Returns available GND entity types.",
+)
 def suggest_type(
     prefix: str = Query(default=""),
     cursor: int = Query(default=0),
@@ -475,7 +619,12 @@ def suggest_type(
         "result": matching_types[cursor : cursor + limit]
     }
 
-@app.get("/suggest/property")
+@app.get(
+    "/suggest/property",
+    tags=["Suggest"],
+    summary="Suggest extend properties",
+    description="Returns available properties for Add columns from reconciled values.",
+)
 def suggest_property(
     prefix: str = Query(default=""),
     cursor: int = Query(default=0),
@@ -537,27 +686,41 @@ def extend_get(
 
     return handle_extend_request(extend_request)
 
-@app.post("/extend")
+@app.post(
+    "/extend",
+    tags=["Extend"],
+    summary="Extend reconciled GND entities",
+    description="Returns additional property values for already reconciled GND IDs.",
+    response_model=ExtendResponse,
+)
 async def extend_post(request: Request):
-    """
-    Handles POST-based OpenRefine data extension requests.
-
-    Supports:
-    - application/json
-    - application/x-www-form-urlencoded with field 'extend'
-    """
-
     content_type = request.headers.get("content-type", "")
 
     if "application/json" in content_type:
         try:
             extend_request = await request.json()
-        except JSONDecodeError as error:
+        except json.JSONDecodeError as error:
             return JSONResponse(
                 status_code=400,
                 content={
                     "error": "Invalid JSON body",
                     "details": str(error),
+                },
+            )
+        except UnicodeDecodeError as error:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "Invalid request body encoding",
+                    "details": str(error),
+                },
+            )
+
+        if not isinstance(extend_request, dict):
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": "JSON body must be an object",
                 },
             )
 
@@ -570,7 +733,7 @@ async def extend_post(request: Request):
         return JSONResponse(
             status_code=400,
             content={
-                "error": "Missing JSON body or form field: 'extend'"
+                "error": "Missing JSON body or form field: 'extend'",
             },
         )
 
@@ -587,20 +750,33 @@ async def extend_post(request: Request):
 
     return handle_extend_request(extend_request)
 
-@app.get("/reconcile")
+@app.post(
+    "/extend/json",
+    tags=["Extend"],
+    summary="Extend reconciled GND entities with JSON body",
+    response_model=ExtendResponse,
+)
+def extend_json(payload: ExtendRequest):
+    return handle_extend_request(payload.model_dump())
+
+@app.get(
+    "/reconcile",
+    tags=["OpenRefine"],
+    summary="GET reconciliation query alias",
+    description="GET alias for reconciliation query batches using the `queries` query parameter.",
+    operation_id="openrefine_reconcile_get",
+)
 def reconcile_get(
-    queries: str | None = Query(default=None),
-    query: str | None = Query(default=None),
-    limit: int = Query(default=5),
+    queries: str | None = Query(
+        default=None,
+        description="JSON-encoded OpenRefine reconciliation query batch.",
+    ),
+    query: str | None = Query(
+        default=None,
+        description="Simple query string for quick entity search.",
+    ),
+    limit: int = Query(default=5, ge=1, le=100),
 ):
-    """
-    Handles GET-based reconciliation requests.
-
-    Supports:
-    1. OpenRefine-style batched requests via ?queries={...}
-    2. Simple test requests via ?query=Goethe
-    """
-
     if queries:
         try:
             parsed_queries = json.loads(queries)
@@ -619,13 +795,11 @@ def reconcile_get(
         )
 
     if query:
-        results = search_gnd(
-            query=query,
-            limit=limit,
-        )
-
         return {
-            "result": results
+            "result": search_gnd(
+                query=query,
+                limit=limit,
+            )
         }
 
     return JSONResponse(
@@ -636,12 +810,32 @@ def reconcile_get(
     )
 
 
-@app.post("/reconcile")
+@app.post(
+    "/reconcile",
+    tags=["OpenRefine"],
+    summary="Reconciliation query alias",
+    description=(
+        "Alias for OpenRefine-compatible reconciliation requests. "
+        "Accepts the same form-encoded `queries` payload as `POST /`."
+    ),
+    operation_id="openrefine_reconcile_post",
+    openapi_extra=OPENREFINE_POST_OPENAPI_EXTRA,
+)
 async def reconcile_post(request: Request):
+    """
+    POST /reconcile alias for OpenRefine reconciliation requests.
+    """
+
     return await parse_and_handle_root_post(request)
 
 
-@app.get("/status/update")
+@app.get(
+    "/status/update",
+    tags=["Status"],
+    summary="Get OAI update status",
+    description="Returns the state of the daily incremental OAI update process.",
+    response_model=UpdateStatusResponse | dict,
+)
 def get_update_status():
     if not UPDATE_STATE_FILE.exists():
         return JSONResponse(
