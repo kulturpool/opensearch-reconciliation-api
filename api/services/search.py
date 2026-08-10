@@ -225,6 +225,7 @@ def search_gnd(
         query: The search query, e.g. "Goethe".
         limit: Maximum number of results.
         entity_type: Optional GND entity type filter, e.g. "Person".
+        properties: Optional list of property filters
 
     Returns:
         A list of candidate matches.
