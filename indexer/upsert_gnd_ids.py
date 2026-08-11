@@ -1,11 +1,15 @@
 import argparse
 import json
+import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
+
+# Add parent directory to path to allow imports from config
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from opensearchpy import OpenSearch, helpers
 

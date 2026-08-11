@@ -1,6 +1,11 @@
 import json
+import sys
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs
+
+# Add parent directory to path to allow imports from config
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware

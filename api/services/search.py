@@ -1,5 +1,10 @@
 import re
+import sys
+from pathlib import Path
 from typing import Any
+
+# Add parent directory to path to allow imports from config
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from opensearchpy import OpenSearch
 from opensearchpy.exceptions import NotFoundError, OpenSearchException

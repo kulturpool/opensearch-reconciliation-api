@@ -1,8 +1,12 @@
 import argparse
 import gzip
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+
+# Add parent directory to path to allow imports from config
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import ijson
 from opensearchpy import OpenSearch, helpers
@@ -75,6 +79,24 @@ INDEX_SETTINGS: dict[str, Any] = {
             "availableProperties": {
                 "type": "keyword",
             },
+            "dateOfBirth": {
+                "type": "keyword",
+            },
+            "dateOfDeath": {
+                "type": "keyword",
+            },
+            "dateOfEstablishment": {
+                "type": "keyword",
+            },
+            "dateOfTermination": {
+                "type": "keyword",
+            },
+            "dateOfProduction": {
+                "type": "keyword",
+            },
+            "dateOfPublication": {
+                "type": "keyword",
+            },
             "propertiesFlat": {
                 "type": "nested",
                 "properties": {
@@ -117,8 +139,9 @@ INDEX_SETTINGS: dict[str, Any] = {
 
 
 JSONLD_ITEM_PATHS = [
-    "@graph.item",
-    "item",
+    "item.item",  # For nested array structure: [[{...}, {...}], [...], ...]
+    "@graph.item",  # For @graph-wrapped structure: {"@graph": [{...}]}
+    "item",  # For simple array structure: [{...}, {...}]
 ]
 
 

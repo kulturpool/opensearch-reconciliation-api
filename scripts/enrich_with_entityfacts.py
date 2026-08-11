@@ -4,6 +4,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Add parent directory to path to allow imports from config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from config import DATA_DIR
 
 LOG_DIR = DATA_DIR / "logs"
