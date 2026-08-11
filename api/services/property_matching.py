@@ -249,6 +249,7 @@ def score_property_match(
     - exact identifier/URI match: 10
     - exact normalized literal match: 8
     - compact identifier match: 8
+    - shared year between date-like values (e.g. "1749" vs "1749-08-28"): 7
     - containment match: 5
     - token overlap match: 3
     """
@@ -297,6 +298,18 @@ def compare_property_values(
     if expected_id and actual_id and expected_id == actual_id:
         return 10
 
+    # Date-aware comparison: values like "1749" and "1749-08-28" refer to the
+    # same date at different precision (e.g. a spreadsheet column only has the
+    # birth year, while the index stores the full date). Treat overlapping
+    # years as a match instead of falling through to plain substring/token
+    # comparison, which would either miss the match (year not a full-string
+    # containment of a "DD.MM.YYYY" formatted date) or, conversely, wrongly
+    # give partial credit to unrelated dates that happen to share digits.
+    date_score = compare_date_like_values(expected_raw, actual_raw)
+
+    if date_score is not None:
+        return date_score
+
     expected_norm = normalize_text(expected_raw)
     actual_norm = normalize_text(actual_raw)
 
@@ -317,6 +330,69 @@ def compare_property_values(
     if overlap >= 0.5:
         return 3
 
+    return 0
+
+
+DATE_APPROXIMATION_WORDS_RE = re.compile(
+    r"\b(ca|circa|approx|approximately|um|vor|nach|before|after)\b\.?",
+    re.IGNORECASE,
+)
+YEAR_RE = re.compile(r"(?<!\d)\d{3,4}(?!\d)")
+
+
+def looks_date_like(value: str) -> bool:
+    """
+    Heuristically checks whether a value represents a date (possibly with
+    reduced precision, ranges, or approximation markers), regardless of the
+    property it came from.
+
+    Examples that should be considered date-like:
+    - "1749"
+    - "1749-08-28"
+    - "28.08.1749"
+    - "1749-1832" (range)
+    - "ca. 1749", "vor 1749"
+
+    Plain text (names, places, etc.) will not match this pattern.
+    """
+
+    cleaned = DATE_APPROXIMATION_WORDS_RE.sub("", value.lower())
+    cleaned = cleaned.replace("?", "").strip()
+
+    if not cleaned:
+        return False
+
+    return bool(re.fullmatch(r"[\d\-./\s]+", cleaned)) and bool(YEAR_RE.search(cleaned))
+
+
+def compare_date_like_values(expected: str, actual: str) -> int | None:
+    """
+    Compares two values as dates when both look date-like.
+
+    Returns:
+    - a score (>0) when at least one year is shared between both values,
+      e.g. a requested birth year matches within a full birth date
+    - 0 when both values are dates but share no common year (a genuine
+      mismatch, e.g. different birth years)
+    - None when the values aren't both date-like, so the caller should fall
+      back to the generic text comparison instead
+    """
+
+    if not looks_date_like(expected) or not looks_date_like(actual):
+        return None
+
+    expected_years = set(YEAR_RE.findall(expected))
+    actual_years = set(YEAR_RE.findall(actual))
+
+    if not expected_years or not actual_years:
+        return None
+
+    if expected_years & actual_years:
+        # Shared year, e.g. "1749" vs "1749-08-28" - treat as a solid match
+        # even though precision differs.
+        return 7
+
+    # Both are dates, but no year in common - a real mismatch.
     return 0
 
 
