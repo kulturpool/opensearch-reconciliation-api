@@ -1,4 +1,13 @@
+# =============================================================================
+# Docker Compose Konfiguration für Production/Runtime
+# =============================================================================
+# Dieser Setup ist für Production/Deployment optimiert.
+# Für Entwicklung bitte den DevContainer verwenden (.devcontainer/)!
+
 services:
+  # ---------------------------------------------------------------------------
+  # Init Service: Datenordner vorbereiten
+  # ---------------------------------------------------------------------------
   init-data:
     image: alpine:3.20
     command: >
@@ -11,38 +20,67 @@ services:
       - ./data:/data
     restart: "no"
 
+  # ---------------------------------------------------------------------------
+  # GND API Service: Hauptanwendung
+  # ---------------------------------------------------------------------------
   gnd-api:
     build:
       context: .
       dockerfile: Dockerfile
+    
+    # Environment-Variablen aus .env laden
     env_file:
       - .env
+    
+    # Nur kritische Variablen explizit überschreiben
     environment:
       # Core service configuration
       OPENSEARCH_HOST: ${OPENSEARCH_HOST:-opensearch}
       OPENSEARCH_PORT: ${OPENSEARCH_PORT:-9200}
       API_PORT: ${API_PORT:-8083}
-      # All other variables are automatically loaded from .env file
-      # Defaults are handled by config.py
+      # Alle anderen Variablen werden automatisch aus .env geladen
+      # Defaults werden von config.py verwaltet
+    
+    # Port Mapping: Host -> Container
     ports:
       - "${HOST_API_PORT:-8083}:${API_PORT:-8083}"
+    
+    # Volumes für persistente Daten
     volumes:
-      - ./data:/app/data
-      - ./config:/app/config
+      - ./data:/app/data        # GND-Daten und State
+      - ./config:/app/config    # Konfigurationsdateien
+    
+    # Dependencies
     depends_on:
       init-data:
         condition: service_completed_successfully
       opensearch:
         condition: service_healthy
+    
+    # Automatisch neustarten bei Fehler
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # OpenSearch Service: Suchmaschine für GND-Index
+  # ---------------------------------------------------------------------------
   opensearch:
     image: opensearchproject/opensearch:2
+    
     environment:
+      # Single-Node Setup (für lokale/kleine Deployments)
       discovery.type: single-node
+      
+      # Security deaktiviert (nur für lokale Nutzung!)
+      # Für Production mit öffentlichem Zugriff: Security aktivieren!
       plugins.security.disabled: "true"
+      
+      # Admin-Passwort (erforderlich, auch wenn Security disabled ist)
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-LocalDevPassword123!}
+      
+      # Java Memory Settings (anpassen je nach Server-RAM)
       OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms2g -Xmx2g}
+    
+    # Resource Limits für OpenSearch
     ulimits:
       memlock:
         soft: -1
@@ -50,15 +88,24 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    
+    # Persistentes Volume für GND-Index
+    # WICHTIG: Shared mit DevContainer für schnellere Entwicklung
     volumes:
       - ./data/opensearch:/usr/share/opensearch/data
+    
+    # Init-Service muss zuerst laufen
     depends_on:
       init-data:
         condition: service_completed_successfully
+    
+    # Health Check für Container-Startup
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:9200 >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 60
       start_period: 30s
+    
+    # Automatisch neustarten bei Fehler
     restart: unless-stopped

@@ -1,21 +1,38 @@
+# Docker Compose Konfiguration für die Entwicklungsumgebung
+# ============================================================
+# Dieser Setup ist NUR für die lokale Entwicklung mit VS Code DevContainers.
+# Für Production/Runtime bitte docker-compose.runtime.yml verwenden!
+
 services:
 
+  # DevContainer: Entwicklungsumgebung mit Python und Tools
   devcontainer:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
 
+    # Arbeitsverzeichnis als Volume mounten (cached für bessere Performance)
     volumes:
       - ..:/workspace:cached
 
+    # Container läuft dauerhaft
     command: sleep infinity
 
+    # Netzwerkzugriff auf OpenSearch
     depends_on:
       - opensearch
+
+    # Umgebungsvariablen für Entwicklung
+    environment:
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+      - API_PORT=8083
+      - PYTHONUNBUFFERED=1
 
     networks:
       - reconciliation-net
 
+  # OpenSearch: Lokale Suchmaschine für GND-Index
   opensearch:
     image: opensearchproject/opensearch:2
 
@@ -23,21 +40,40 @@ services:
       - discovery.type=single-node
       - plugins.security.disabled=true
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=LocalDevPassword123!
+      - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g
 
+    # Ports für direkten Zugriff
     ports:
-      - "9200:9200"
-      - "9600:9600"
+      - "9200:9200"  # REST API
+      - "9600:9600"  # Performance Analyzer
 
+    # Persistentes Volume für GND-Index
+    # WICHTIG: Dieses Volume wird mit docker-compose.runtime.yml geteilt!
+    # Dadurch muss der GND-Index nicht doppelt aufgebaut werden.
     volumes:
       - opensearch-data:/usr/share/opensearch/data
+
+    # Resource Limits für OpenSearch
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
 
     networks:
       - reconciliation-net
 
+# Volumes
 volumes:
   opensearch-data:
+    # Externes Volume: Wird mit docker-compose.runtime.yml geteilt
+    # Vorteil: GND-Index muss nur einmal gebaut werden
+    # Nachteil: Runtime und DevContainer dürfen nicht gleichzeitig laufen
     external: true
     name: local_reconciliation_api_opensearch-data
 
+# Netzwerk
 networks:
   reconciliation-net:

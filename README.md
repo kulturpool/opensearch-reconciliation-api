@@ -2,7 +2,15 @@
 
 Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Der Service lädt die GND-Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt eine OpenRefine-kompatible Reconciliation API bereit.
 
-http://127.0.0.1:8083/docs#/
+**API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs)
+
+## 📚 Dokumentation
+
+- **[README.md](README.md)** (dieses Dokument): Schnellstart, Nutzung, API-Referenz
+- **[ENTWICKLUNG.md](ENTWICKLUNG.md)**: Entwicklungsumgebung, Code-Qualität, Best Practices
+- **[.devcontainer/README.md](.devcontainer/README.md)**: DevContainer-Spezifische Dokumentation
+
+---
 
 ## Features
 
@@ -93,6 +101,85 @@ Beim ersten Start passiert automatisch:
 6. die API startet auf dem konfigurierten Port, standardmäßig `8083`
 
 Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
+
+---
+
+## Entwicklung vs. Production
+
+Dieses Repository unterstützt **zwei verschiedene Modi**:
+
+### 🏭 Production/Runtime (docker-compose.runtime.yml)
+
+**Verwendung**: Deployment, Production, regelmäßige Nutzung
+
+```bash
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+**Eigenschaften**:
+- ✅ Optimiertes, kleines Docker Image (Multi-Stage Build)
+- ✅ Code wird beim Build in das Image kopiert
+- ✅ Automatischer Start mit Healthcheck
+- ✅ Minimale Dependencies
+- ❌ Keine Code-Änderungen ohne Rebuild
+- ❌ Keine Entwickler-Tools
+
+**Verwendung für**:
+- Produktive Nutzung mit OpenRefine
+- Server-Deployment
+- Langzeitbetrieb mit automatischen Updates
+
+---
+
+### 🔧 Entwicklung (DevContainer)
+
+**Verwendung**: Lokale Code-Entwicklung mit VS Code
+
+**Voraussetzung**: VS Code mit Extension **Dev Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers))
+
+**Verwendung**:
+1. Repository in VS Code öffnen
+2. Command Palette: `Ctrl+Shift+P`
+3. `Dev Containers: Reopen in Container`
+
+**Eigenschaften**:
+- ✅ Workspace-Ordner live gemountet
+- ✅ Code-Änderungen sofort aktiv (Hot Reload)
+- ✅ Vorinstallierte VS Code Extensions
+- ✅ Entwickler-Tools (vim, httpie, jq, etc.)
+- ✅ Integriertes Debugging
+- ✅ Python-Linting und Formatting (Ruff)
+
+**Verwendung für**:
+- API-Entwicklung
+- Testing neuer Features
+- Debugging
+- Code-Refactoring
+
+---
+
+### 📦 Gemeinsames OpenSearch Volume
+
+**Wichtig**: Beide Modi teilen sich das gleiche OpenSearch-Volume!
+
+**Vorteil**: GND-Index muss nur einmal gebaut werden (~3 GB Download + Indexierung)
+
+**Nachteil**: Runtime und DevContainer dürfen **nicht gleichzeitig** laufen
+
+**Wechsel von Runtime zu DevContainer**:
+```bash
+docker compose -f docker-compose.runtime.yml down
+# Dann in VS Code: "Reopen in Container"
+```
+
+**Wechsel von DevContainer zu Runtime**:
+```bash
+# In VS Code: "Reopen Folder Locally"
+docker compose -f .devcontainer/docker-compose.yml down
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+**Details**: Siehe [.devcontainer/README.md](.devcontainer/README.md)
 
 ---
 

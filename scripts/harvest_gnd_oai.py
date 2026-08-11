@@ -25,6 +25,8 @@ from config import (
     GND_OAI_REQUEST_TIMEOUT_SECONDS,
     GND_OAI_SET,
     INDEX_NAME,
+    OPENSEARCH_HOST,
+    OPENSEARCH_PORT,
 )
 
 STATE_DIR = DATA_DIR / "state"
@@ -365,11 +367,8 @@ def soft_delete_ids(ids: list[str]) -> None:
     # Import here so this script can also be used just for harvesting/debugging.
     from opensearchpy import OpenSearch, helpers
 
-    host = os.getenv("OPENSEARCH_HOST", "opensearch")
-    port = int(os.getenv("OPENSEARCH_PORT", "9200"))
-
     client = OpenSearch(
-        hosts=[{"host": host, "port": port}],
+        hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
         http_compress=True,
         use_ssl=False,
         verify_certs=False,

@@ -1,36 +1,82 @@
 {
+  // Name des DevContainers (wird in VS Code angezeigt)
   "name": "local-reconciliation-api",
 
+  // Docker Compose Konfiguration für die Entwicklungsumgebung
   "dockerComposeFile": "docker-compose.yml",
 
+  // Hauptservice für den DevContainer
   "service": "devcontainer",
 
+  // Services, die automatisch gestartet werden
   "runServices": [
     "devcontainer",
     "opensearch"
   ],
 
+  // Arbeitsverzeichnis im Container
   "workspaceFolder": "/workspace",
 
+  // Aktion beim Schließen: stoppt alle Services
   "shutdownAction": "stopCompose",
 
+  // Nach Container-Erstellung: Python-Pakete installieren
   "postCreateCommand": "pip install --upgrade pip && pip install -r requirements-dev.txt",
 
-  // "postStartCommand": "python scripts/bootstrap_gnd.py --auto",
-
+  // Nach Container-Start: Bootstrap-Skript ausführen
+  // Dies startet die API und führt ggf. den initialen GND-Import durch
   "postStartCommand": "bash scripts/start_dev_services.sh",
 
+  // VS Code Anpassungen
   "customizations": {
     "vscode": {
+      // Automatisch installierte Extensions
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-azuretools.vscode-docker",
         "redhat.vscode-yaml",
-        "humao.rest-client"
-      ]
+        "humao.rest-client",
+        "charliermarsh.ruff"
+      ],
+      // Python-spezifische Einstellungen
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+          }
+        },
+        "files.watcherExclude": {
+          "**/data/**": true,
+          "**/.ruff_cache/**": true
+        }
+      }
     }
   },
 
-  "remoteUser": "vscode"
+  // Benutzer im Container
+  "remoteUser": "vscode",
+
+  // Port-Forwarding (wird automatisch erkannt, aber hier explizit definiert)
+  "forwardPorts": [8083, 9200],
+
+  // Port-Beschreibungen
+  "portsAttributes": {
+    "8083": {
+      "label": "GND Reconciliation API",
+      "onAutoForward": "notify"
+    },
+    "9200": {
+      "label": "OpenSearch",
+      "onAutoForward": "silent"
+    }
+  }
 }
