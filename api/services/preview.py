@@ -12,11 +12,10 @@ from html import escape
 from typing import Any
 from urllib.parse import unquote
 
-from api.services.property_labels import property_label
 from api.services.properties import get_property_values_from_record
+from api.services.property_labels import property_label
 from api.services.search import GND_TYPE_ALIASES, get_gnd_record_by_id
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
-
 
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 
@@ -491,11 +490,7 @@ def build_image_html(image_url: str | None) -> str:
 
     safe_image_url = escape(str(image_url), quote=True)
 
-    return (
-        '<div class="image-box">'
-        f'<img src="{safe_image_url}" alt="" />'
-        '</div>'
-    )
+    return f'<div class="image-box"><img src="{safe_image_url}" alt="" /></div>'
 
 
 def format_preview_values(prop_id: str, value: Any) -> str:

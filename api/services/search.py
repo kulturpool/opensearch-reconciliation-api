@@ -1,18 +1,11 @@
+import re
 from typing import Any
 
 from opensearchpy import OpenSearch
-
-import os
-import re
+from opensearchpy.exceptions import NotFoundError, OpenSearchException
 
 from api.services.property_matching import calculate_property_bonus
-
-INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
-
-OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "opensearch")
-OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
-
-INDEX_NAME = "gnd"
+from config import INDEX_NAME, OPENSEARCH_HOST, OPENSEARCH_PORT
 
 AUTHORITY_RESOURCE_TYPE = {
     "id": "AuthorityResource",
@@ -139,28 +132,23 @@ GND_TYPE_ALIASES = {
         "Gods",
         "Spirits",
     ],
-
     "DifferentiatedPerson": [
         "DifferentiatedPerson",
     ],
-
     "Family": [
         "Family",
     ],
-
     "CorporateBody": [
         "CorporateBody",
         "Company",
         "MusicalCorporateBody",
         "OrganOfCorporateBody",
     ],
-
     "ConferenceOrEvent": [
         "ConferenceOrEvent",
         "SeriesOfConferenceOrEvent",
         "HistoricSingleEventOrEra",
     ],
-
     "PlaceOrGeographicName": [
         "PlaceOrGeographicName",
         "TerritorialCorporateBodyOrAdministrativeUnit",
@@ -172,14 +160,12 @@ GND_TYPE_ALIASES = {
         "WayBorderOrLine",
         "BuildingOrMemorial",
     ],
-
     "SubjectHeading": [
         "SubjectHeadingSensoStricto",
         "ProductNameOrBrandName",
         "EthnographicName",
         "SoftwareProduct",
     ],
-
     "Work": [
         "Work",
         "MusicalWork",
@@ -213,7 +199,7 @@ def search_gnd(
     query: str,
     limit: int = 5,
     entity_type: str | None = None,
-    properties: list[dict[str, Any]] | None = None, 
+    properties: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Searches the local GND OpenSearch index.
@@ -246,11 +232,13 @@ def search_gnd(
         body=search_body,
     )
 
-    return format_search_results(response=response, 
-                                query=query,
-                                requested_type=entity_type,
-                                requested_properties=properties or []
-                                )
+    return format_search_results(
+        response=response,
+        query=query,
+        requested_type=entity_type,
+        requested_properties=properties or [],
+    )
+
 
 def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
     """
@@ -271,14 +259,13 @@ def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
             index=INDEX_NAME,
             id=gnd_id.strip(),
         )
-    except Exception:
+    except (NotFoundError, OpenSearchException):
         return None
 
     if not response.get("found"):
         return None
 
     return response.get("_source")
-
 
 
 def build_search_body(
@@ -299,56 +286,17 @@ def build_search_body(
     properties = properties or []
 
     should_clauses: list[dict[str, Any]] = [
-        {
-            "term": {
-                "id": {
-                    "value": query,
-                    "boost": 20
-                }
-            }
-        },
-        {
-            "term": {
-                "preferredName.keyword": {
-                    "value": query,
-                    "boost": 15
-                }
-            }
-        },
-        {
-            "term": {
-                "preferredName.lowercase": {
-                    "value": query.lower(),
-                    "boost": 12
-                }
-            }
-        },
-        {
-            "term": {
-                "variantName.keyword": {
-                    "value": query,
-                    "boost": 10
-                }
-            }
-        },
-        {
-            "term": {
-                "variantName.lowercase": {
-                    "value": query.lower(),
-                    "boost": 8
-                }
-            }
-        },
+        {"term": {"id": {"value": query, "boost": 20}}},
+        {"term": {"preferredName.keyword": {"value": query, "boost": 15}}},
+        {"term": {"preferredName.lowercase": {"value": query.lower(), "boost": 12}}},
+        {"term": {"variantName.keyword": {"value": query, "boost": 10}}},
+        {"term": {"variantName.lowercase": {"value": query.lower(), "boost": 8}}},
         {
             "multi_match": {
                 "query": query,
-                "fields": [
-                    "preferredName^5",
-                    "variantName^3",
-                    "id^10"
-                ],
+                "fields": ["preferredName^5", "variantName^3", "id^10"],
                 "operator": "and",
-                "boost": 5
+                "boost": 5,
             }
         },
         {
@@ -360,13 +308,13 @@ def build_search_body(
                     "professionOrOccupation^2",
                     "placeOfBirth",
                     "placeOfDeath",
-                    "id^5"
+                    "id^5",
                 ],
                 "fuzziness": "AUTO",
                 "operator": "or",
-                "boost": 1
+                "boost": 1,
             }
-        }
+        },
     ]
 
     property_should_clauses = build_property_should_clauses(properties)
@@ -377,14 +325,7 @@ def build_search_body(
     if entity_type and entity_type != "AuthorityResource":
         allowed_types = GND_TYPE_ALIASES.get(entity_type, [entity_type])
 
-        filter_clauses.append(
-            {
-                "terms": {
-                    "type": allowed_types
-                }
-            }
-        )
-
+        filter_clauses.append({"terms": {"type": allowed_types}})
 
     return {
         "size": limit,
@@ -396,6 +337,7 @@ def build_search_body(
             }
         },
     }
+
 
 def build_property_should_clauses(
     properties: list[dict[str, Any]],
@@ -455,11 +397,7 @@ def build_property_should_clauses(
                         "query": {
                             "bool": {
                                 "must": [
-                                    {
-                                        "term": {
-                                            "propertiesFlat.id": prop_id
-                                        }
-                                    },
+                                    {"term": {"propertiesFlat.id": prop_id}},
                                     {
                                         "match_phrase": {
                                             "propertiesFlat.value": {
@@ -478,6 +416,7 @@ def build_property_should_clauses(
 
     return clauses
 
+
 def extract_property_value_for_query(value: Any) -> str | None:
     """
     Converts OpenRefine property values into a searchable string.
@@ -492,13 +431,10 @@ def extract_property_value_for_query(value: Any) -> str | None:
         return None
 
     if isinstance(value, dict):
-        return (
-            value.get("id")
-            or value.get("name")
-            or value.get("str")
-        )
+        return value.get("id") or value.get("name") or value.get("str")
 
     return str(value)
+
 
 def format_search_results(
     response: dict[str, Any],
@@ -553,6 +489,7 @@ def format_search_results(
     )
 
     return results
+
 
 def apply_match_decision(
     results: list[dict[str, Any]],
@@ -626,8 +563,7 @@ def normalize_score(
         variant_names = [variant_names]
 
     variant_names_normalized = [
-        normalize_text_for_scoring(str(value))
-        for value in variant_names
+        normalize_text_for_scoring(str(value)) for value in variant_names
     ]
 
     base_score = 0
@@ -710,6 +646,7 @@ def normalize_score(
 
     return min(final_score, 100)
 
+
 def normalize_text_for_scoring(value: Any) -> str:
     """
     Normalizes text for scoring:
@@ -720,6 +657,7 @@ def normalize_text_for_scoring(value: Any) -> str:
 
     value = str(value or "").strip().lower()
     return " ".join(value.split())
+
 
 def token_match_score(
     query: str,
@@ -742,7 +680,6 @@ def token_match_score(
     return len(overlap) / len(query_tokens)
 
 
-
 def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
     """
     Converts stored GND type values into OpenRefine-style type objects.
@@ -760,13 +697,9 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
     if not isinstance(entity_types, list):
         entity_types = []
 
-    formatted_types: list[dict[str, Any]] = [
-        AUTHORITY_RESOURCE_TYPE
-    ]
+    formatted_types: list[dict[str, Any]] = [AUTHORITY_RESOURCE_TYPE]
 
-    seen_type_ids = {
-        AUTHORITY_RESOURCE_TYPE["id"]
-    }
+    seen_type_ids = {AUTHORITY_RESOURCE_TYPE["id"]}
 
     for entity_type in entity_types:
         type_id = str(entity_type)
@@ -804,6 +737,7 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
 
     return formatted_types
 
+
 def candidate_matches_requested_type(
     source: dict[str, Any],
     requested_type: str | None,
@@ -831,9 +765,9 @@ def candidate_matches_requested_type(
     )
 
     return any(
-        candidate_type in allowed_types
-        for candidate_type in normalized_candidate_types
+        candidate_type in allowed_types for candidate_type in normalized_candidate_types
     )
+
 
 def normalize_candidate_types(candidate_types: Any) -> list:
     """

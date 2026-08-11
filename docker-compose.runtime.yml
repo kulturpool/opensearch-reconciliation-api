@@ -1,37 +1,64 @@
 services:
+  init-data:
+    image: alpine:3.20
+    command: >
+      sh -c "
+      mkdir -p /data/raw /data/processed /data/state /data/logs /data/opensearch &&
+      chown -R 1000:1000 /data/opensearch &&
+      chmod -R u+rwX,g+rwX /data/opensearch
+      "
+    volumes:
+      - ./data:/data
+    restart: "no"
+
   gnd-api:
     build:
       context: .
       dockerfile: Dockerfile
-
     env_file:
       - .env
-
+    environment:
+      # Core service configuration
+      OPENSEARCH_HOST: ${OPENSEARCH_HOST:-opensearch}
+      OPENSEARCH_PORT: ${OPENSEARCH_PORT:-9200}
+      API_PORT: ${API_PORT:-8083}
+      # All other variables are automatically loaded from .env file
+      # Defaults are handled by config.py
     ports:
       - "${HOST_API_PORT:-8083}:${API_PORT:-8083}"
-
     volumes:
       - ./data:/app/data
       - ./config:/app/config
-
     depends_on:
-      - opensearch
-
+      init-data:
+        condition: service_completed_successfully
+      opensearch:
+        condition: service_healthy
     restart: unless-stopped
 
   opensearch:
     image: opensearchproject/opensearch:2
-
     environment:
-      - discovery.type=single-node
-      - plugins.security.disabled=true
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=LocalDevPassword123!
-      - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g
-
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-LocalDevPassword123!}
+      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms2g -Xmx2g}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     volumes:
-      - opensearch-data:/usr/share/opensearch/data
-
+      - ./data/opensearch:/usr/share/opensearch/data
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
     restart: unless-stopped
-
-volumes:
-  opensearch-data:

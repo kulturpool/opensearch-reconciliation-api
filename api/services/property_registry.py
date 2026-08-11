@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 REGISTRY_PATH = Path("config/gnd_properties.json")
 
 

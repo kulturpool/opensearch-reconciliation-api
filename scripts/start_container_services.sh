@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 mkdir -p data/logs data/state data/raw data/processed
 
 echo "[CONTAINER] Running GND bootstrap..."
-python scripts/bootstrap_gnd.py --auto
+python -m scripts.bootstrap_gnd --auto
 
 if [ "${GND_AUTO_UPDATE:-true}" = "true" ]; then
   echo "[CONTAINER] Starting daily update scheduler..."
 
-  nohup python scripts/update_scheduler.py \
+  nohup python -m scripts.update_scheduler \
     > data/logs/update_scheduler.log 2>&1 &
 
   echo $! > data/state/update_scheduler.pid

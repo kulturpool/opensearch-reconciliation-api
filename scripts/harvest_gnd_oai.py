@@ -1,34 +1,34 @@
 import json
-import os
 import re
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.error
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from config import (
+    DATA_DIR,
+    GND_OAI_BASE_URL,
+    GND_OAI_METADATA_PREFIX,
+    GND_OAI_OVERLAP_MINUTES,
+    GND_OAI_PAGE_DELAY_SECONDS,
+    GND_OAI_REQUEST_BACKOFF_SECONDS,
+    GND_OAI_REQUEST_MAX_RETRIES,
+    GND_OAI_REQUEST_TIMEOUT_SECONDS,
+    GND_OAI_SET,
+    INDEX_NAME,
+)
 
-STATE_DIR = Path("data/state")
-LOG_DIR = Path("data/logs")
+STATE_DIR = DATA_DIR / "state"
+LOG_DIR = DATA_DIR / "logs"
 UPDATE_STATE_FILE = STATE_DIR / "update_state.json"
 CHANGED_IDS_FILE = STATE_DIR / "oai_changed_ids.jsonl"
 DELETED_IDS_FILE = STATE_DIR / "oai_deleted_ids.jsonl"
-
-OAI_BASE_URL = os.getenv(
-    "GND_OAI_BASE_URL",
-    "https://services.dnb.de/oai/repository",
-)
-
-OAI_SET = os.getenv("GND_OAI_SET") or None
-OAI_METADATA_PREFIX = os.getenv("GND_OAI_METADATA_PREFIX", "RDFxml")
-OAI_OVERLAP_MINUTES = int(os.getenv("GND_OAI_OVERLAP_MINUTES", "60"))
-
-INDEX_NAME = os.getenv("GND_INDEX_NAME", "gnd")
 
 
 OAI_NS = {
@@ -47,26 +47,10 @@ GND_ID_VALID_PATTERN = re.compile(r"^[0-9Xx][0-9Xx-]*$")
 
 CHANGED_RECORDS_FILE = STATE_DIR / "oai_changed_records.jsonl"
 
-OAI_REQUEST_TIMEOUT_SECONDS = int(
-    os.getenv("GND_OAI_REQUEST_TIMEOUT_SECONDS", "300")
-)
-
-OAI_REQUEST_MAX_RETRIES = int(
-    os.getenv("GND_OAI_REQUEST_MAX_RETRIES", "6")
-)
-
-OAI_REQUEST_BACKOFF_SECONDS = float(
-    os.getenv("GND_OAI_REQUEST_BACKOFF_SECONDS", "10")
-)
-
-OAI_PAGE_DELAY_SECONDS = float(
-    os.getenv("GND_OAI_PAGE_DELAY_SECONDS", "2")
-)
-
 
 def timestamp() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
+    return (
+        datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
 
@@ -128,13 +112,15 @@ def get_harvest_window(state: dict[str, Any]) -> tuple[str, str]:
     last_harvest = state.get("last_oai_harvest")
 
     if last_harvest:
-        from_dt = parse_utc(last_harvest) - timedelta(minutes=OAI_OVERLAP_MINUTES)
+        from_dt = parse_utc(last_harvest) - timedelta(minutes=GND_OAI_OVERLAP_MINUTES)
     else:
         # First incremental run: use last full import if available, otherwise yesterday.
         last_full_import = state.get("last_full_import")
 
         if last_full_import:
-            from_dt = parse_utc(last_full_import) - timedelta(minutes=OAI_OVERLAP_MINUTES)
+            from_dt = parse_utc(last_full_import) - timedelta(
+                minutes=GND_OAI_OVERLAP_MINUTES
+            )
         else:
             from_dt = now - timedelta(days=1)
 
@@ -144,7 +130,7 @@ def get_harvest_window(state: dict[str, Any]) -> tuple[str, str]:
 
 
 def build_oai_url(params: dict[str, str]) -> str:
-    return OAI_BASE_URL + "?" + urllib.parse.urlencode(params)
+    return GND_OAI_BASE_URL + "?" + urllib.parse.urlencode(params)
 
 
 def fetch_url(url: str, timeout: int | None = None) -> bytes:
@@ -155,7 +141,7 @@ def fetch_url(url: str, timeout: int | None = None) -> bytes:
     requests and individual requests can occasionally time out.
     """
 
-    request_timeout = timeout or OAI_REQUEST_TIMEOUT_SECONDS
+    request_timeout = timeout or GND_OAI_REQUEST_TIMEOUT_SECONDS
 
     request = urllib.request.Request(
         url,
@@ -166,7 +152,7 @@ def fetch_url(url: str, timeout: int | None = None) -> bytes:
 
     last_error: Exception | None = None
 
-    for attempt in range(1, OAI_REQUEST_MAX_RETRIES + 1):
+    for attempt in range(1, GND_OAI_REQUEST_MAX_RETRIES + 1):
         try:
             with urllib.request.urlopen(request, timeout=request_timeout) as response:
                 return response.read()
@@ -176,43 +162,43 @@ def fetch_url(url: str, timeout: int | None = None) -> bytes:
 
             if error.code == 429:
                 wait_seconds = max(
-                    OAI_REQUEST_BACKOFF_SECONDS * attempt,
+                    GND_OAI_REQUEST_BACKOFF_SECONDS * attempt,
                     120,
                 )
             else:
-                wait_seconds = OAI_REQUEST_BACKOFF_SECONDS * attempt
+                wait_seconds = GND_OAI_REQUEST_BACKOFF_SECONDS * attempt
 
             log(
                 f"OAI HTTP error for {url}: {error}. "
-                f"Retry {attempt}/{OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
+                f"Retry {attempt}/{GND_OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
             )
 
             time.sleep(wait_seconds)
 
         except urllib.error.URLError as error:
             last_error = error
-            wait_seconds = OAI_REQUEST_BACKOFF_SECONDS * attempt
+            wait_seconds = GND_OAI_REQUEST_BACKOFF_SECONDS * attempt
 
             log(
                 f"OAI URL error for {url}: {error}. "
-                f"Retry {attempt}/{OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
+                f"Retry {attempt}/{GND_OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
             )
 
             time.sleep(wait_seconds)
 
         except TimeoutError as error:
             last_error = error
-            wait_seconds = OAI_REQUEST_BACKOFF_SECONDS * attempt
+            wait_seconds = GND_OAI_REQUEST_BACKOFF_SECONDS * attempt
 
             log(
                 f"OAI timeout for {url}: {error}. "
-                f"Retry {attempt}/{OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
+                f"Retry {attempt}/{GND_OAI_REQUEST_MAX_RETRIES} in {wait_seconds}s"
             )
 
             time.sleep(wait_seconds)
 
     raise RuntimeError(
-        f"OAI request failed after {OAI_REQUEST_MAX_RETRIES} retries: {url}. "
+        f"OAI request failed after {GND_OAI_REQUEST_MAX_RETRIES} retries: {url}. "
         f"Last error: {last_error}"
     )
 
@@ -230,11 +216,11 @@ def fetch_oai_list_records(
     else:
         params = {
             "verb": "ListRecords",
-            "metadataPrefix": OAI_METADATA_PREFIX,
+            "metadataPrefix": GND_OAI_METADATA_PREFIX,
         }
 
-        if OAI_SET:
-            params["set"] = OAI_SET
+        if GND_OAI_SET:
+            params["set"] = GND_OAI_SET
 
         if from_time:
             params["from"] = from_time
@@ -293,7 +279,9 @@ def extract_gnd_id_from_text(text: str) -> str | None:
 
 def extract_gnd_id_from_oai_record(record: ET.Element) -> str | None:
     # 1. Try header identifier.
-    header_identifier = record.findtext("oai:header/oai:identifier", default="", namespaces=OAI_NS)
+    header_identifier = record.findtext(
+        "oai:header/oai:identifier", default="", namespaces=OAI_NS
+    )
     gnd_id = extract_gnd_id_from_text(header_identifier)
 
     if gnd_id:
@@ -334,6 +322,7 @@ def reset_output_files() -> None:
     for path in [CHANGED_IDS_FILE, CHANGED_RECORDS_FILE, DELETED_IDS_FILE]:
         if path.exists():
             path.unlink()
+
 
 def extract_metadata_xml(record: ET.Element) -> str | None:
     """
@@ -439,6 +428,7 @@ def run_upsert_changed_ids(ids_file: Path) -> None:
     log("RUN " + " ".join(command))
     subprocess.run(command, check=True)
 
+
 def run_upsert_changed_records(records_file: Path) -> None:
     if not records_file.exists() or records_file.stat().st_size == 0:
         log("No changed OAI records to upsert.")
@@ -536,8 +526,8 @@ def harvest_oai() -> dict[str, Any]:
             break
 
         # Be polite to the provider.
-        if OAI_PAGE_DELAY_SECONDS > 0:
-            time.sleep(OAI_PAGE_DELAY_SECONDS)
+        if GND_OAI_PAGE_DELAY_SECONDS > 0:
+            time.sleep(GND_OAI_PAGE_DELAY_SECONDS)
 
     deleted_list = sorted(deleted_ids)
     changed_list = sorted(changed_ids - deleted_ids)

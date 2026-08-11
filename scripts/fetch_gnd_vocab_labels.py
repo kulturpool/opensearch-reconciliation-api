@@ -3,7 +3,6 @@ from pathlib import Path
 
 import rdflib
 
-
 OUTPUT_FILE = Path("config/gnd_vocab_labels.json")
 
 VOCAB_SOURCES = {

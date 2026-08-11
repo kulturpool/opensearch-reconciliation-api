@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 GND_VOCAB_PREFIX = "https://d-nb.info/standards/vocab/gnd/"
 VOCAB_LABELS_PATH = Path("config/gnd_vocab_labels.json")
 

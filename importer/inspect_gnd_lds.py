@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 DEFAULT_INPUT = "data/raw/authorities-gnd-sachbegriff_lds.jsonld.gz"
 
 
@@ -69,7 +68,9 @@ def detect_json_start(path: Path) -> None:
     print()
 
 
-def load_small_top_level_object(path: Path, max_chars: int = 2_000_000) -> dict[str, Any] | list[Any] | None:
+def load_small_top_level_object(
+    path: Path, max_chars: int = 2_000_000
+) -> dict[str, Any] | list[Any] | None:
     """
     Attempts to load a small initial portion as JSON.
 

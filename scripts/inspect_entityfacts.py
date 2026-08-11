@@ -5,8 +5,9 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from config import DATA_DIR
 
-DEFAULT_INPUT = Path("data/raw/authorities-gnd_entityfacts.ndjson.gz")
+DEFAULT_INPUT = DATA_DIR / "raw" / "authorities-gnd_entityfacts.ndjson.gz"
 
 
 def compact_type(value: str) -> str:
@@ -44,26 +45,15 @@ def normalize_type(value: str) -> str:
 
 
 def extract_types(record: dict[str, Any]) -> list[str]:
-    raw_types = (
-        record.get("@type")
-        or record.get("type")
-        or []
-    )
+    raw_types = record.get("@type") or record.get("type") or []
 
-    return [
-        normalize_type(value)
-        for value in as_list(raw_types)
-        if value
-    ]
+    return [normalize_type(value) for value in as_list(raw_types) if value]
+
 
 def record_contains_family_marker(record: dict[str, Any]) -> bool:
     text = json.dumps(record, ensure_ascii=False).lower()
 
-    return (
-        "family" in text
-        or "familie" in text
-        or "familien" in text
-    )
+    return "family" in text or "familie" in text or "familien" in text
 
 
 def main() -> None:
@@ -155,7 +145,9 @@ def main() -> None:
 
                 print()
                 print("=" * 80)
-                print(f"Possible family-related record by marker search {marker_printed}")
+                print(
+                    f"Possible family-related record by marker search {marker_printed}"
+                )
                 print("=" * 80)
                 print(json.dumps(record, ensure_ascii=False, indent=2))
 

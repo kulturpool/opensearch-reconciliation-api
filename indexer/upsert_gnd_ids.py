@@ -1,23 +1,26 @@
 import argparse
 import json
-import os
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
-import time
-import urllib.error
 
 from opensearchpy import OpenSearch, helpers
 
-
-GND_URI_PREFIX = "https://d-nb.info/gnd/"
-DEFAULT_INDEX = os.getenv("GND_INDEX_NAME", "gnd")
-JSONLD_URL_TEMPLATE = os.getenv(
-    "GND_RECORD_JSONLD_URL_TEMPLATE",
-    "https://d-nb.info/gnd/{id}/about/lds.jsonld",
+from config import (
+    GND_RECORD_JSONLD_URL_TEMPLATE,
+    GND_UPSERT_FAILED_IDS_FILE,
+    GND_UPSERT_REQUEST_BACKOFF_SECONDS,
+    GND_UPSERT_REQUEST_DELAY_SECONDS,
+    GND_UPSERT_REQUEST_MAX_RETRIES,
+    INDEX_NAME,
+    OPENSEARCH_HOST,
+    OPENSEARCH_PORT,
 )
 
+GND_URI_PREFIX = "https://d-nb.info/gnd/"
 GND_NS = "https://d-nb.info/standards/elementset/gnd#"
 
 
@@ -59,29 +62,10 @@ TYPE_MAP = {
     "Work": "Work",
 }
 
-REQUEST_DELAY_SECONDS = float(
-    os.getenv("GND_UPSERT_REQUEST_DELAY_SECONDS", "0.25")
-)
-
-REQUEST_MAX_RETRIES = int(
-    os.getenv("GND_UPSERT_REQUEST_MAX_RETRIES", "5")
-)
-
-REQUEST_BACKOFF_SECONDS = float(
-    os.getenv("GND_UPSERT_REQUEST_BACKOFF_SECONDS", "2")
-)
-
-FAILED_IDS_FILE = Path(
-    os.getenv("GND_UPSERT_FAILED_IDS_FILE", "data/state/oai_failed_ids.jsonl")
-)
-
 
 def get_opensearch_client() -> OpenSearch:
-    host = os.getenv("OPENSEARCH_HOST", "opensearch")
-    port = int(os.getenv("OPENSEARCH_PORT", "9200"))
-
     return OpenSearch(
-        hosts=[{"host": host, "port": port}],
+        hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
         http_compress=True,
         use_ssl=False,
         verify_certs=False,
@@ -100,7 +84,7 @@ def fetch_json(url: str, timeout: int = 120) -> Any:
 
     last_error = None
 
-    for attempt in range(1, REQUEST_MAX_RETRIES + 1):
+    for attempt in range(1, GND_UPSERT_REQUEST_MAX_RETRIES + 1):
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return json.loads(response.read().decode("utf-8"))
@@ -111,11 +95,11 @@ def fetch_json(url: str, timeout: int = 120) -> Any:
             if error.code == 404:
                 raise
 
-            wait_seconds = REQUEST_BACKOFF_SECONDS * attempt
+            wait_seconds = GND_UPSERT_REQUEST_BACKOFF_SECONDS * attempt
 
             print(
                 f"[WARN] HTTP error for {url}: {error}. "
-                f"Retry {attempt}/{REQUEST_MAX_RETRIES} in {wait_seconds}s",
+                f"Retry {attempt}/{GND_UPSERT_REQUEST_MAX_RETRIES} in {wait_seconds}s",
                 flush=True,
             )
 
@@ -123,11 +107,11 @@ def fetch_json(url: str, timeout: int = 120) -> Any:
 
         except urllib.error.URLError as error:
             last_error = error
-            wait_seconds = REQUEST_BACKOFF_SECONDS * attempt
+            wait_seconds = GND_UPSERT_REQUEST_BACKOFF_SECONDS * attempt
 
             print(
                 f"[WARN] URL error for {url}: {error}. "
-                f"Retry {attempt}/{REQUEST_MAX_RETRIES} in {wait_seconds}s",
+                f"Retry {attempt}/{GND_UPSERT_REQUEST_MAX_RETRIES} in {wait_seconds}s",
                 flush=True,
             )
 
@@ -137,7 +121,7 @@ def fetch_json(url: str, timeout: int = 120) -> Any:
 
 
 def fetch_gnd_jsonld(gnd_id: str) -> Any:
-    url = JSONLD_URL_TEMPLATE.format(id=urllib.parse.quote(gnd_id))
+    url = GND_RECORD_JSONLD_URL_TEMPLATE.format(id=urllib.parse.quote(gnd_id))
     return fetch_json(url)
 
 
@@ -307,7 +291,9 @@ def compact_property_id(prop_id: str) -> str:
     return prop_id
 
 
-def build_properties_flat(record: dict[str, Any]) -> tuple[list[str], list[dict[str, str]]]:
+def build_properties_flat(
+    record: dict[str, Any],
+) -> tuple[list[str], list[dict[str, str]]]:
     available = []
     flat = []
 
@@ -471,14 +457,14 @@ def upsert_ids(
 
             fetched += 1
 
-        except Exception as error:
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, KeyError, ValueError, OSError) as error:
             skipped += 1
             write_failed_id(gnd_id, error)
             print(f"[WARN] Failed to fetch/upsert {gnd_id}: {error}", flush=True)
 
         finally:
-            if REQUEST_DELAY_SECONDS > 0:
-                time.sleep(REQUEST_DELAY_SECONDS)
+            if GND_UPSERT_REQUEST_DELAY_SECONDS > 0:
+                time.sleep(GND_UPSERT_REQUEST_DELAY_SECONDS)
 
         if len(actions) >= chunk_size:
             write_actions(client, actions, chunk_size)
@@ -514,10 +500,11 @@ def write_actions(
 
     print(f"[UPSERT] Bulk success: {success_count}, errors: {error_count}", flush=True)
 
-def write_failed_id(gnd_id: str, error: Exception) -> None:
-    FAILED_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    with FAILED_IDS_FILE.open("a", encoding="utf-8") as file:
+def write_failed_id(gnd_id: str, error: Exception) -> None:
+    GND_UPSERT_FAILED_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    with GND_UPSERT_FAILED_IDS_FILE.open("a", encoding="utf-8") as file:
         file.write(
             json.dumps(
                 {
@@ -544,7 +531,7 @@ def main() -> None:
 
     parser.add_argument(
         "--index",
-        default=DEFAULT_INDEX,
+        default=INDEX_NAME,
         help="OpenSearch index name.",
     )
 

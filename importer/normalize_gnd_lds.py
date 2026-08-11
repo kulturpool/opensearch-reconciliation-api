@@ -1,6 +1,5 @@
-from typing import Any
 import html
-
+from typing import Any
 
 GND_NS = "https://d-nb.info/standards/elementset/gnd#"
 RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -245,7 +244,7 @@ def extract_values_from_fields(
     record: dict[str, Any],
     fields: list[str],
     node_map: dict[str, dict[str, Any]] | None = None,
-    ) -> list[str]:
+) -> list[str]:
     values: list[str] = []
 
     for field in fields:
@@ -364,7 +363,6 @@ def deduplicate_preserving_order(values: list[str]) -> list[str]:
     return result
 
 
-
 def extract_label_or_sequence_values(
     record: dict[str, Any],
     node_map: dict[str, dict[str, Any]] | None = None,
@@ -462,6 +460,7 @@ def extract_label_from_record(
 
     return None
 
+
 def compact_gnd_property_id(uri: str) -> str | None:
     """
     Converts a full GND property URI to a compact property id.
@@ -478,6 +477,7 @@ def compact_gnd_property_id(uri: str) -> str | None:
         return None
 
     return uri.split("#")[-1]
+
 
 def extract_all_gnd_properties(
     record: dict[str, Any],

@@ -5,7 +5,6 @@ from typing import Any
 
 from opensearchpy import OpenSearch, helpers
 
-
 DEFAULT_INDEX_NAME = "gnd"
 DEFAULT_INPUT_FILE = "data/raw/sample_gnd.json"
 
@@ -25,6 +24,7 @@ def get_opensearch_client() -> OpenSearch:
         verify_certs=False,
         ssl_show_warn=False,
     )
+
 
 # TODO: Check if this mapping is correct or if we can improve it
 def create_index(client: OpenSearch, index_name: str, recreate: bool = False) -> None:
@@ -59,49 +59,24 @@ def create_index(client: OpenSearch, index_name: str, recreate: bool = False) ->
         },
         "mappings": {
             "properties": {
-                "id": {
-                    "type": "keyword"
-                },
-                "uri": {
-                    "type": "keyword"
-                },
+                "id": {"type": "keyword"},
+                "uri": {"type": "keyword"},
                 "preferredName": {
                     "type": "text",
                     "analyzer": "gnd_text_analyzer",
-                    "fields": {
-                        "keyword": {
-                            "type": "keyword"
-                        }
-                    },
+                    "fields": {"keyword": {"type": "keyword"}},
                 },
-                "variantName": {
-                    "type": "text",
-                    "analyzer": "gnd_text_analyzer"
-                },
-                "type": {
-                    "type": "keyword"
-                },
-                "dateOfBirth": {
-                    "type": "keyword"
-                },
-                "dateOfDeath": {
-                    "type": "keyword"
-                },
+                "variantName": {"type": "text", "analyzer": "gnd_text_analyzer"},
+                "type": {"type": "keyword"},
+                "dateOfBirth": {"type": "keyword"},
+                "dateOfDeath": {"type": "keyword"},
                 "professionOrOccupation": {
                     "type": "text",
-                    "analyzer": "gnd_text_analyzer"
+                    "analyzer": "gnd_text_analyzer",
                 },
-                "placeOfBirth": {
-                    "type": "text",
-                    "analyzer": "gnd_text_analyzer"
-                },
-                "placeOfDeath": {
-                    "type": "text",
-                    "analyzer": "gnd_text_analyzer"
-                },
-                "source": {
-                    "type": "keyword"
-                },
+                "placeOfBirth": {"type": "text", "analyzer": "gnd_text_analyzer"},
+                "placeOfDeath": {"type": "text", "analyzer": "gnd_text_analyzer"},
+                "source": {"type": "keyword"},
             }
         },
     }

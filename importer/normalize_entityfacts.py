@@ -1,7 +1,6 @@
 from typing import Any
 from urllib.parse import unquote
 
-
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 
 
@@ -167,11 +166,7 @@ def extract_variant_names(record: dict[str, Any]) -> list:
 
     if isinstance(value, list):
         return deduplicate_preserving_order(
-            [
-                str(item)
-                for item in value
-                if item is not None
-            ]
+            [str(item) for item in value if item is not None]
         )
 
     return [str(value)]
@@ -257,11 +252,7 @@ def extract_values(value: Any) -> list:
         if raw_id:
             values.append(str(raw_id))
 
-        label = (
-            value.get("preferredName")
-            or value.get("label")
-            or value.get("name")
-        )
+        label = value.get("preferredName") or value.get("label") or value.get("name")
 
         if label:
             values.append(str(label))

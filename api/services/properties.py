@@ -1,14 +1,17 @@
-from typing import Any
 import re
+from typing import Any
 
 from opensearchpy import OpenSearchException
 
 from api.services.property_labels import property_label
-from api.services.search import GND_TYPE_ALIASES, INDEX_NAME, client
-from api.services.search import format_entity_types
-from api.services.search import get_gnd_record_by_id
+from api.services.search import (
+    GND_TYPE_ALIASES,
+    INDEX_NAME,
+    client,
+    format_entity_types,
+    get_gnd_record_by_id,
+)
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
-
 
 GND_URI_RE = re.compile(r"https?://d-nb\.info/gnd/([^/#?\s\"<>]+)")
 GND_ID_RE = re.compile(r"^[0-9Xx][0-9Xx-]*$")
@@ -117,29 +120,14 @@ def get_property_proposals_from_index(
 
     if entity_type:
         allowed_types = GND_TYPE_ALIASES.get(entity_type, [entity_type])
-        body["query"] = {
-            "bool": {
-                "filter": [
-                    {
-                        "terms": {
-                            "type": allowed_types
-                        }
-                    }
-                ]
-            }
-        }
+        body["query"] = {"bool": {"filter": [{"terms": {"type": allowed_types}}]}}
 
     response = client.search(
         index=INDEX_NAME,
         body=body,
     )
 
-    buckets = (
-        response
-        .get("aggregations", {})
-        .get("properties", {})
-        .get("buckets", [])
-    )
+    buckets = response.get("aggregations", {}).get("properties", {}).get("buckets", [])
 
     properties = []
 
@@ -241,11 +229,7 @@ def resolve_gnd_entity(gnd_id: str) -> dict[str, Any] | None:
 
     source = response.get("_source", {})
 
-    name = (
-        source.get("preferredName")
-        or source.get("name")
-        or gnd_id
-    )
+    name = source.get("preferredName") or source.get("name") or gnd_id
 
     entity_type = source.get("type")
 
@@ -481,11 +465,7 @@ def format_extend_values(
     value_string = str(value)
 
     if content == "id":
-        return [
-            {
-                "str": format_identifier_value(value_string)
-            }
-        ]
+        return [{"str": format_identifier_value(value_string)}]
 
     formatted_value = format_extend_value(
         raw_value=value_string,
@@ -498,11 +478,7 @@ def format_extend_values(
     if not formatted_value:
         return []
 
-    return [
-        {
-            "str": str(formatted_value)
-        }
-    ]
+    return [{"str": str(formatted_value)}]
 
 
 def get_extend_property_settings(prop: dict) -> dict:
@@ -559,28 +535,17 @@ def format_extend_dict_value(
     """
     Formats dict values for OpenRefine extend output.
     """
-    identifier = (
-        value.get("id")
-        or value.get("@id")
-        or value.get("uri")
-    )
+    identifier = value.get("id") or value.get("@id") or value.get("uri")
 
     if content == "id":
         identifier_or_value = (
-            identifier
-            or value.get("value")
-            or value.get("str")
-            or value.get("name")
+            identifier or value.get("value") or value.get("str") or value.get("name")
         )
 
         if identifier_or_value is None:
             return []
 
-        return [
-            {
-                "str": format_identifier_value(str(identifier_or_value))
-            }
-        ]
+        return [{"str": format_identifier_value(str(identifier_or_value))}]
 
     if identifier is not None:
         formatted_identifier = format_extend_value(
@@ -610,11 +575,7 @@ def format_extend_dict_value(
     if isinstance(formatted_label, dict):
         return [formatted_label]
 
-    return [
-        {
-            "str": str(formatted_label)
-        }
-    ]
+    return [{"str": str(formatted_label)}]
 
 
 def deduplicate_extend_cells(values: list) -> list:
@@ -628,9 +589,7 @@ def deduplicate_extend_cells(values: list) -> list:
     entity_names = {
         item.get("name")
         for item in values
-        if isinstance(item, dict)
-        and item.get("id")
-        and item.get("name")
+        if isinstance(item, dict) and item.get("id") and item.get("name")
     }
 
     seen = set()

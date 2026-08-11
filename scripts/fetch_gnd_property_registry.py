@@ -3,7 +3,6 @@ from pathlib import Path
 
 import requests
 
-
 BASE_URL = "https://reconcile.gnd.network"
 
 GND_TYPES = [

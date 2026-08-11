@@ -1,48 +1,26 @@
 import json
+from typing import Any
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from api.services.search import get_gnd_record_by_id, search_gnd
-from fastapi.middleware.cors import CORSMiddleware
-
-from html import escape
-from api.services.properties import get_property_values_from_record
-
-from api.services.property_labels import property_label
-
-from api.services.properties import (
-    get_property_proposals_from_index,
-    get_property_values_from_record,
-    suggest_properties_from_index,
+from api.models.openapi_models import (
+    ExtendRequest,
+    ExtendResponse,
+    UpdateStatusResponse,
 )
-
+from api.services.preview import render_preview_for_id
+from api.services.properties import handle_extend_request
 from api.services.property_registry import (
     get_registry_properties_for_type,
     suggest_registry_properties,
 )
+from api.services.search import get_gnd_record_by_id, search_gnd
+from config import DATA_DIR
 
-from fastapi.responses import HTMLResponse
-from api.services.preview import render_preview_for_id
-
-from pathlib import Path
-from fastapi.responses import JSONResponse
-import json
-
-from typing import Any
-from fastapi import Body
-from json import JSONDecodeError
-
-from api.services.properties import handle_extend_request
-
-
-from api.models.openapi_models import ExtendRequest, ExtendResponse
-
-from api.models.openapi_models import UpdateStatusResponse
-
-
-UPDATE_STATE_FILE = Path("data/state/update_state.json")
+UPDATE_STATE_FILE = DATA_DIR / "state" / "update_state.json"
 
 tags_metadata = [
     {
@@ -207,51 +185,18 @@ GND_TYPES = [
     },
 ]
 
-GND_PROPERTIES = [ # Definition of the GND properties, adapt accordingly!
-    {
-        "id": "id",
-        "name": "GND ID"
-    },
-    {
-        "id": "uri",
-        "name": "URI"
-    },
-    {
-        "id": "preferredName",
-        "name": "Preferred Name"
-    },
-    {
-        "id": "variantName",
-        "name": "Variant Names"
-    },
-    {
-        "id": "type",
-        "name": "Entity Type"
-    },
-    {
-        "id": "dateOfBirth",
-        "name": "Date of Birth"
-    },
-    {
-        "id": "dateOfDeath",
-        "name": "Date of Death"
-    },
-    {
-        "id": "professionOrOccupation",
-        "name": "Profession or Occupation"
-    },
-    {
-        "id": "placeOfBirth",
-        "name": "Place of Birth"
-    },
-    {
-        "id": "placeOfDeath",
-        "name": "Place of Death"
-    },
-    {
-        "id": "source",
-        "name": "Source"
-    }
+GND_PROPERTIES = [  # Definition of the GND properties, adapt accordingly!
+    {"id": "id", "name": "GND ID"},
+    {"id": "uri", "name": "URI"},
+    {"id": "preferredName", "name": "Preferred Name"},
+    {"id": "variantName", "name": "Variant Names"},
+    {"id": "type", "name": "Entity Type"},
+    {"id": "dateOfBirth", "name": "Date of Birth"},
+    {"id": "dateOfDeath", "name": "Date of Death"},
+    {"id": "professionOrOccupation", "name": "Profession or Occupation"},
+    {"id": "placeOfBirth", "name": "Place of Birth"},
+    {"id": "placeOfDeath", "name": "Place of Death"},
+    {"id": "source", "name": "Source"},
 ]
 
 BASE_URL = "http://127.0.0.1:8083"
@@ -305,6 +250,7 @@ RELATION_PROPERTY_TYPES = {
     },
 }
 
+
 def service_manifest_response() -> dict:
     return {
         "versions": ["0.2"],
@@ -313,32 +259,21 @@ def service_manifest_response() -> dict:
         "schemaSpace": "https://d-nb.info/gnd/",
         "defaultTypes": GND_TYPES,
         "batchSize": 50,
-        "view": {
-            "url": "https://d-nb.info/gnd/{{id}}"
-        },
+        "view": {"url": "https://d-nb.info/gnd/{{id}}"},
         "preview": {
             "url": f"{BASE_URL}/preview/{{{{id}}}}",
             "width": 430,
-            "height": 300
+            "height": 300,
         },
         "suggest": {
-            "entity": {
-                "service_url": BASE_URL,
-                "service_path": "/suggest/entity"
-            },
-            "type": {
-                "service_url": BASE_URL,
-                "service_path": "/suggest/type"
-            },
-            "property": {
-                "service_url": BASE_URL,
-                "service_path": "/suggest/property"
-            }
+            "entity": {"service_url": BASE_URL, "service_path": "/suggest/entity"},
+            "type": {"service_url": BASE_URL, "service_path": "/suggest/type"},
+            "property": {"service_url": BASE_URL, "service_path": "/suggest/property"},
         },
         "extend": {
             "propose_properties": {
                 "service_url": BASE_URL,
-                "service_path": "/properties"
+                "service_path": "/properties",
             },
             "property_settings": [
                 {
@@ -346,7 +281,7 @@ def service_manifest_response() -> dict:
                     "label": "Limit",
                     "type": "number",
                     "default": 0,
-                    "help_text": "Maximum number of values to return per row. Use 0 for no limit."
+                    "help_text": "Maximum number of values to return per row. Use 0 for no limit.",
                 },
                 {
                     "name": "content",
@@ -355,19 +290,14 @@ def service_manifest_response() -> dict:
                     "default": "literal",
                     "help_text": "Return either identifiers/URIs or readable literal labels.",
                     "choices": [
-                        {
-                            "value": "id",
-                            "name": "ID"
-                        },
-                        {
-                            "value": "literal",
-                            "name": "Literal"
-                        }
-                    ]
-                }
-            ]
-        }
+                        {"value": "id", "name": "ID"},
+                        {"value": "literal", "name": "Literal"},
+                    ],
+                },
+            ],
+        },
     }
+
 
 @app.get(
     "/",
@@ -386,9 +316,7 @@ def root_get(
     queries: str | None = Query(
         default=None,
         description="JSON-encoded OpenRefine reconciliation query batch.",
-        examples=[
-            '{"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'
-        ],
+        examples=['{"q1":{"query":"Goethe","type":"DifferentiatedPerson"}}'],
     ),
     query: str | None = Query(
         default=None,
@@ -459,6 +387,7 @@ def root_get(
 
     return service_manifest_response()
 
+
 @app.post(
     "/",
     tags=["OpenRefine"],
@@ -482,6 +411,7 @@ async def root_post(request: Request):
 
     return await parse_and_handle_root_post(request)
 
+
 @app.head(
     "/",
     include_in_schema=False,
@@ -501,14 +431,16 @@ def health():
     Simple health endpoint.
     """
 
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
 
-@app.get("/preview", response_class=HTMLResponse,
-         tags=['Preview'],
-         summary='preview a GND entity',
-         description='Returns an HTML preview for a given GND entity.')
+
+@app.get(
+    "/preview",
+    response_class=HTMLResponse,
+    tags=["Preview"],
+    summary="preview a GND entity",
+    description="Returns an HTML preview for a given GND entity.",
+)
 def preview_by_query(id: str = Query(...)):
     html, status_code = render_preview_for_id(id)
 
@@ -518,10 +450,13 @@ def preview_by_query(id: str = Query(...)):
     )
 
 
-@app.get("/preview/{gnd_id}", response_class=HTMLResponse,
-         tags=['Preview'],
-         summary='preview a GND entity by ID',
-         description='Returns an HTML preview for a given GND entity by its GND ID.')
+@app.get(
+    "/preview/{gnd_id}",
+    response_class=HTMLResponse,
+    tags=["Preview"],
+    summary="preview a GND entity by ID",
+    description="Returns an HTML preview for a given GND entity by its GND ID.",
+)
 def preview_by_path(gnd_id: str):
     html, status_code = render_preview_for_id(gnd_id)
 
@@ -529,6 +464,7 @@ def preview_by_path(gnd_id: str):
         content=html,
         status_code=status_code,
     )
+
 
 @app.get(
     "/suggest/entity",
@@ -551,9 +487,7 @@ def suggest_entity(
     """
 
     if not prefix or not prefix.strip():
-        return {
-            "result": []
-        }
+        return {"result": []}
 
     results = search_gnd(
         query=prefix,
@@ -575,9 +509,8 @@ def suggest_entity(
             }
         )
 
-    return {
-        "result": suggestions
-    }
+    return {"result": suggestions}
+
 
 @app.get(
     "/suggest/type",
@@ -609,15 +542,11 @@ def suggest_type(
             type_id = gnd_type["id"].lower()
             type_name = gnd_type["name"].lower()
 
-            if (
-                normalized_prefix in type_id
-                or normalized_prefix in type_name
-            ):
+            if normalized_prefix in type_id or normalized_prefix in type_name:
                 matching_types.append(gnd_type)
 
-    return {
-        "result": matching_types[cursor : cursor + limit]
-    }
+    return {"result": matching_types[cursor : cursor + limit]}
+
 
 @app.get(
     "/suggest/property",
@@ -640,6 +569,7 @@ def suggest_property(
         )
     }
 
+
 @app.get("/properties")
 def propose_properties(
     type: str = Query(default=""),
@@ -653,6 +583,7 @@ def propose_properties(
             limit=limit,
         ),
     }
+
 
 @app.get("/extend")
 def extend_get(
@@ -668,9 +599,7 @@ def extend_get(
     if not extend:
         return JSONResponse(
             status_code=400,
-            content={
-                "error": "Missing required parameter: 'extend'"
-            },
+            content={"error": "Missing required parameter: 'extend'"},
         )
 
     try:
@@ -685,6 +614,7 @@ def extend_get(
         )
 
     return handle_extend_request(extend_request)
+
 
 @app.post(
     "/extend",
@@ -750,6 +680,7 @@ async def extend_post(request: Request):
 
     return handle_extend_request(extend_request)
 
+
 @app.post(
     "/extend/json",
     tags=["Extend"],
@@ -758,6 +689,7 @@ async def extend_post(request: Request):
 )
 def extend_json(payload: ExtendRequest):
     return handle_extend_request(payload.model_dump())
+
 
 @app.get(
     "/reconcile",
@@ -804,9 +736,7 @@ def reconcile_get(
 
     return JSONResponse(
         status_code=400,
-        content={
-            "error": "Missing required parameter: 'queries' or 'query'"
-        },
+        content={"error": "Missing required parameter: 'queries' or 'query'"},
     )
 
 
@@ -847,9 +777,7 @@ def get_update_status():
         )
 
     try:
-        state = json.loads(
-            UPDATE_STATE_FILE.read_text(encoding="utf-8")
-        )
+        state = json.loads(UPDATE_STATE_FILE.read_text(encoding="utf-8"))
 
     except FileNotFoundError:
         return JSONResponse(
@@ -907,9 +835,7 @@ def handle_reconciliation_queries(
             query_limit = query_object.get("limit", limit)
 
         else:
-            response[query_id] = {
-                "result": []
-            }
+            response[query_id] = {"result": []}
             continue
 
         results = search_gnd(
@@ -919,9 +845,7 @@ def handle_reconciliation_queries(
             properties=details,
         )
 
-        response[query_id] = {
-            "result": results
-        }
+        response[query_id] = {"result": results}
 
     return response
 
@@ -993,6 +917,7 @@ def gnd_uri_to_reconciled_value(value: str) -> dict | None:
         result["type"] = format_entity_types_for_extend(entity_type)
 
     return result
+
 
 def format_entity_types_for_extend(entity_types) -> list:
     """
@@ -1089,10 +1014,9 @@ async def parse_and_handle_root_post(request: Request):
 
     return JSONResponse(
         status_code=400,
-        content={
-            "error": "Missing 'queries' or 'extend' parameter"
-        },
+        content={"error": "Missing 'queries' or 'extend' parameter"},
     )
+
 
 def should_resolve_gnd_uri(prop_id: str) -> bool:
     return prop_id in {
@@ -1101,7 +1025,6 @@ def should_resolve_gnd_uri(prop_id: str) -> bool:
         "placeOfDeath",
         "placeOfActivity",
     }
-
 
 
 def extract_reconciliation_properties(query_object: dict) -> list:

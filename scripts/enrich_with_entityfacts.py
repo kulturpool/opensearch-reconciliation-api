@@ -4,8 +4,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from config import DATA_DIR
 
-LOG_DIR = Path("data/logs")
+LOG_DIR = DATA_DIR / "logs"
 LOG_FILE = LOG_DIR / "entityfacts_enrichment.log"
 
 

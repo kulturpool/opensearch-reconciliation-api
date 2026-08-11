@@ -2,7 +2,6 @@ import re
 import unicodedata
 from typing import Any
 
-
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 GND_VOCAB_PREFIX = "https://d-nb.info/standards/vocab/gnd/"
 

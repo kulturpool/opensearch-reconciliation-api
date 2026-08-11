@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from config import DATA_DIR
 
-STATE_DIR = Path("data/state")
+STATE_DIR = DATA_DIR / "state"
 UPDATE_STATE_FILE = STATE_DIR / "update_state.json"
 
 
@@ -18,9 +19,7 @@ def load_state() -> dict[str, Any]:
     if not UPDATE_STATE_FILE.exists():
         return {}
 
-    return json.loads(
-        UPDATE_STATE_FILE.read_text(encoding="utf-8")
-    )
+    return json.loads(UPDATE_STATE_FILE.read_text(encoding="utf-8"))
 
 
 def write_state(state: dict[str, Any]) -> None:

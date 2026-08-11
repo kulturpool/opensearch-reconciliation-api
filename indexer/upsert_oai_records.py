@@ -1,14 +1,13 @@
 import argparse
 import json
-import os
 from pathlib import Path
 from typing import Any
 
 from opensearchpy import OpenSearch, helpers
-from rdflib import Graph, RDF, URIRef
+from rdflib import RDF, Graph, URIRef
 
+from config import INDEX_NAME, OPENSEARCH_HOST, OPENSEARCH_PORT
 
-DEFAULT_INDEX = os.getenv("GND_INDEX_NAME", "gnd")
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 GND_NS = "https://d-nb.info/standards/elementset/gnd#"
 
@@ -51,11 +50,8 @@ TYPE_MAP = {
 
 
 def get_opensearch_client() -> OpenSearch:
-    host = os.getenv("OPENSEARCH_HOST", "opensearch")
-    port = int(os.getenv("OPENSEARCH_PORT", "9200"))
-
     return OpenSearch(
-        hosts=[{"host": host, "port": port}],
+        hosts=[{"host": OPENSEARCH_HOST, "port": OPENSEARCH_PORT}],
         http_compress=True,
         use_ssl=False,
         verify_certs=False,
@@ -297,7 +293,7 @@ def upsert_records(
 
             normalized_count += 1
 
-        except Exception as error:
+        except (KeyError, ValueError, AttributeError, TypeError) as error:
             skipped_count += 1
             print(
                 f"[WARN] Failed to normalize OAI record {item.get('id')}: {error}",
@@ -361,7 +357,7 @@ def main() -> None:
 
     parser.add_argument(
         "--index",
-        default=DEFAULT_INDEX,
+        default=INDEX_NAME,
         help="OpenSearch index name.",
     )
 

@@ -1,13 +1,17 @@
-import os
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from config import (
+    DATA_DIR,
+    GND_UPDATE_INITIAL_DELAY_SECONDS,
+    GND_UPDATE_INTERVAL_HOURS,
+)
 
-LOG_DIR = Path("data/logs")
-STATE_DIR = Path("data/state")
+LOG_DIR = DATA_DIR / "logs"
+STATE_DIR = DATA_DIR / "state"
 LOCK_FILE = STATE_DIR / "update.lock"
 
 
@@ -57,8 +61,8 @@ def run_update() -> None:
 def main() -> None:
     ensure_directories()
 
-    interval_hours = float(os.getenv("GND_UPDATE_INTERVAL_HOURS", "24"))
-    initial_delay_seconds = int(os.getenv("GND_UPDATE_INITIAL_DELAY_SECONDS", "300"))
+    interval_hours = GND_UPDATE_INTERVAL_HOURS
+    initial_delay_seconds = GND_UPDATE_INITIAL_DELAY_SECONDS
 
     interval_seconds = int(interval_hours * 3600)
 

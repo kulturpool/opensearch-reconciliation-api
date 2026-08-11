@@ -5,8 +5,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from config import DATA_DIR
 
-DEFAULT_INPUT = Path("data/raw/authorities-gnd_entityfacts.ndjson.gz")
+DEFAULT_INPUT = DATA_DIR / "raw" / "authorities-gnd_entityfacts.ndjson.gz"
 
 
 def as_list(value: Any) -> list:
@@ -34,11 +35,7 @@ def normalize_type(value: Any) -> str:
 def extract_types(record: dict[str, Any]) -> list:
     raw_types = record.get("@type") or record.get("type") or []
 
-    return [
-        normalize_type(value)
-        for value in as_list(raw_types)
-        if value
-    ]
+    return [normalize_type(value) for value in as_list(raw_types) if value]
 
 
 def compact_value_preview(value: Any, max_length: int = 120) -> str:
@@ -111,7 +108,9 @@ def main() -> None:
     type_counts: Counter[str] = Counter()
     field_counts_by_type: dict[str, Counter[str]] = defaultdict(Counter)
     examples_by_type: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    field_examples_by_type: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
+    field_examples_by_type: dict[str, dict[str, list[str]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
 
     total = 0
     invalid_json = 0

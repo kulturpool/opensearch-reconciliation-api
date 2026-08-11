@@ -2,6 +2,8 @@
 
 Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Der Service lädt die GND-Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt eine OpenRefine-kompatible Reconciliation API bereit.
 
+http://127.0.0.1:8083/docs#/
+
 ## Features
 
 - Lokale GND-Reconciliation für OpenRefine

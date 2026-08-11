@@ -4,7 +4,6 @@ from typing import Final
 
 import requests
 
-
 GND_LDS_SOURCES: Final[dict[str, str]] = {
     "geografikum": "https://data.dnb.de/opendata/authorities-gnd-geografikum_lds.jsonld.gz",
     "koerperschaft": "https://data.dnb.de/opendata/authorities-gnd-koerperschaft_lds.jsonld.gz",
@@ -101,8 +100,7 @@ def print_progress(
         percent = downloaded_bytes / total_bytes * 100
 
         print(
-            f"\r        {downloaded_mb:,.1f} MB / {total_mb:,.1f} MB "
-            f"({percent:5.1f}%)",
+            f"\r        {downloaded_mb:,.1f} MB / {total_mb:,.1f} MB ({percent:5.1f}%)",
             end="",
             flush=True,
         )
@@ -130,9 +128,7 @@ def download_source(
 
     if source not in GND_LDS_SOURCES:
         valid_sources = ", ".join(sorted(GND_LDS_SOURCES.keys()))
-        raise ValueError(
-            f"Unknown source: {source}. Valid sources: {valid_sources}"
-        )
+        raise ValueError(f"Unknown source: {source}. Valid sources: {valid_sources}")
 
     url = GND_LDS_SOURCES[source]
     filename = get_filename_from_url(url)
@@ -181,9 +177,7 @@ def list_sources() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Download DNB GND LDS JSON-LD dumps."
-    )
+    parser = argparse.ArgumentParser(description="Download DNB GND LDS JSON-LD dumps.")
 
     parser.add_argument(
         "--source",

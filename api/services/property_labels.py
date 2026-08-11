@@ -1,6 +1,5 @@
 import re
 
-
 PROPERTY_LABEL_OVERRIDES = {
     "id": "GND ID",
     "uri": "URI",
@@ -13,7 +12,6 @@ PROPERTY_LABEL_OVERRIDES = {
     "placeOfBirth": "Geburtsort",
     "placeOfDeath": "Sterbeort",
     "source": "Quelle",
-
     "gndIdentifier": "GND-ID",
     "academicDegree": "Akademischer Grad",
     "affiliation": "Affiliation",
