@@ -281,6 +281,7 @@ def build_full_index(limit: int | None = None) -> None:
     command = [
         sys.executable,
         "scripts/index_all_gnd_lds.py",
+        "--skip-entityfacts",  # EntityFacts is handled separately
     ]
 
     if limit is not None:
