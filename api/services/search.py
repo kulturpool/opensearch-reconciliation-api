@@ -184,7 +184,9 @@ def build_property_should_clauses(
     """
     Builds OpenSearch should clauses from OpenRefine reconciliation properties.
 
-    These clauses should boost matching candidates, not strictly filter them.
+    These clauses boost matching candidates at query time, making candidates
+    with matching properties rank higher in OpenSearch results.
+    The post-processing then applies penalties for mismatches.
     """
 
     clauses: list[dict[str, Any]] = []
@@ -198,6 +200,10 @@ def build_property_should_clauses(
 
         values = value if isinstance(value, list) else [value]
 
+        # Determine boost multiplier based on property importance
+        # Dates and IDs are very discriminating, so boost them more
+        boost_multiplier = get_property_boost_multiplier(prop_id)
+
         for item in values:
             item_value = extract_property_value_for_query(item)
 
@@ -210,7 +216,7 @@ def build_property_should_clauses(
                     "term": {
                         f"{prop_id}.keyword": {
                             "value": item_value,
-                            "boost": 8,
+                            "boost": 12 * boost_multiplier,
                         }
                     }
                 }
@@ -222,7 +228,7 @@ def build_property_should_clauses(
                     "match_phrase": {
                         prop_id: {
                             "query": item_value,
-                            "boost": 5,
+                            "boost": 8 * boost_multiplier,
                         }
                     }
                 }
@@ -241,7 +247,7 @@ def build_property_should_clauses(
                                         "match_phrase": {
                                             "propertiesFlat.value": {
                                                 "query": item_value,
-                                                "boost": 4,
+                                                "boost": 6 * boost_multiplier,
                                             }
                                         }
                                     },
@@ -254,6 +260,43 @@ def build_property_should_clauses(
             )
 
     return clauses
+
+
+def get_property_boost_multiplier(prop_id: str) -> float:
+    """
+    Returns a boost multiplier based on how discriminating a property is.
+
+    High-value properties like dates and IDs get higher multipliers
+    to make them more influential in OpenSearch scoring.
+    """
+    # High-discriminating fields: dates and identifiers
+    high_priority_fields = {
+        "dateOfBirth",
+        "dateOfDeath",
+        "dateOfEstablishment",
+        "dateOfTermination",
+        "dateOfPublication",
+        "dateOfProduction",
+        "dateOfConferenceOrEvent",
+        "id",
+        "gndIdentifier",
+    }
+
+    # Medium-discriminating fields: places and specific attributes
+    medium_priority_fields = {
+        "placeOfBirth",
+        "placeOfDeath",
+        "placeOfBusiness",
+        "placeOfActivity",
+        "gender",
+    }
+
+    if prop_id in high_priority_fields:
+        return 1.5  # 50% boost increase for dates/IDs
+    elif prop_id in medium_priority_fields:
+        return 1.25  # 25% boost increase for places
+    else:
+        return 1.0  # Normal boost
 
 
 def extract_property_value_for_query(value: Any) -> str | None:
@@ -463,11 +506,12 @@ def normalize_score(
         else:
             base_score = min(round(raw_score * 18), 72)
 
-    # 7. Property bonus, but capped
-    property_bonus, _property_features = calculate_property_bonus(
+    # 7. Property bonus and penalty
+    property_bonus, property_penalty, _property_features = calculate_property_bonus(
         source=source,
         requested_properties=requested_properties,
         max_bonus=12,
+        max_penalty=15,
     )
     if base_score < 60:
         property_bonus = min(property_bonus, 5)
@@ -481,7 +525,7 @@ def normalize_score(
     ):
         type_bonus = 3
 
-    final_score = base_score + property_bonus + type_bonus
+    final_score = base_score + property_bonus + type_bonus - property_penalty
 
     return min(final_score, 100)
 

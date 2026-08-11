@@ -10,21 +10,28 @@ def calculate_property_bonus(
     source: dict[str, Any],
     requested_properties: list[dict[str, Any]],
     max_bonus: int = 20,
-) -> tuple[int, list[dict[str, Any]]]:
+    max_penalty: int = 15,
+) -> tuple[int, int, list[dict[str, Any]]]:
     """
-    Calculates a generic score bonus from OpenRefine detail columns.
+    Calculates a generic score bonus and penalty from OpenRefine detail columns.
 
     Works for all properties, not only person-related fields.
 
+    Bonus: When property values match
+    Penalty: When property is requested, candidate HAS the property, but values don't match
+    No penalty: When candidate doesn't have the property at all
+
     Returns:
     - bonus score
+    - penalty score (positive number to subtract)
     - feature list for debugging
     """
 
     if not requested_properties:
-        return 0, []
+        return 0, 0, []
 
     total_bonus = 0
+    total_penalty = 0
     features: list[dict[str, Any]] = []
 
     for prop in requested_properties:
@@ -58,9 +65,60 @@ def calculate_property_bonus(
             }
         )
 
-        total_bonus += match_result["score"]
+        if match_result["matched"]:
+            # Property matches - add bonus
+            total_bonus += match_result["score"]
+        elif actual_values:
+            # Property requested, candidate HAS it, but doesn't match - penalty
+            # Scale penalty based on how important the property is
+            # Date fields get higher penalty since they're very discriminating
+            penalty = calculate_mismatch_penalty(prop_id, match_result["score"])
+            total_penalty += penalty
 
-    return min(total_bonus, max_bonus), features
+            features.append(
+                {
+                    "id": f"property_mismatch_penalty_{prop_id}",
+                    "value": penalty,
+                }
+            )
+
+    return min(total_bonus, max_bonus), min(total_penalty, max_penalty), features
+
+
+def calculate_mismatch_penalty(prop_id: str, match_score: int) -> int:
+    """
+    Calculates penalty for property mismatch based on property type.
+
+    Date fields and identifiers are more discriminating, so higher penalty.
+    """
+    # High-penalty fields: dates and identifiers
+    high_penalty_fields = [
+        "dateOfBirth",
+        "dateOfDeath",
+        "dateOfEstablishment",
+        "dateOfTermination",
+        "dateOfPublication",
+        "dateOfProduction",
+        "dateOfConferenceOrEvent",
+        "id",
+        "gndIdentifier",
+    ]
+
+    # Medium-penalty fields: places and specific attributes
+    medium_penalty_fields = [
+        "placeOfBirth",
+        "placeOfDeath",
+        "placeOfBusiness",
+        "placeOfActivity",
+        "gender",
+    ]
+
+    if prop_id in high_penalty_fields:
+        return 8  # Strong penalty for date/ID mismatch
+    elif prop_id in medium_penalty_fields:
+        return 5  # Moderate penalty
+    else:
+        return 3  # Small penalty for other fields
 
 
 def extract_requested_property_id(prop: dict[str, Any]) -> str | None:

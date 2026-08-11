@@ -8,6 +8,8 @@ Important:
 - Do NOT replace them with escaped forms such as &lt;a&gt; or &lt;div&gt;.
 """
 
+import json
+from datetime import datetime
 from html import escape
 from typing import Any
 from urllib.parse import unquote
@@ -16,6 +18,7 @@ from api.services.properties import get_property_values_from_record
 from api.services.property_labels import property_label
 from api.services.search import GND_TYPE_ALIASES, get_gnd_record_by_id
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
+from config import DATA_DIR
 
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 
@@ -136,6 +139,48 @@ PREVIEW_IMAGE_FIELDS = [
 ]
 
 
+def get_last_update_date() -> str | None:
+    """
+    Reads the last successful update date from update_state.json.
+    Returns a formatted German date string or None if unavailable.
+    """
+    update_state_file = DATA_DIR / "state" / "update_state.json"
+
+    try:
+        if not update_state_file.exists():
+            return None
+
+        with open(update_state_file, "r", encoding="utf-8") as f:
+            state = json.load(f)
+
+        last_update = state.get("last_successful_update")
+        if not last_update:
+            return None
+
+        # Parse ISO format date
+        dt = datetime.fromisoformat(last_update.replace("Z", "+00:00"))
+
+        # Format as German date: "11. August 2026"
+        months_de = [
+            "Januar",
+            "Februar",
+            "März",
+            "April",
+            "Mai",
+            "Juni",
+            "Juli",
+            "August",
+            "September",
+            "Oktober",
+            "November",
+            "Dezember",
+        ]
+        return f"{dt.day}. {months_de[dt.month - 1]} {dt.year}"
+
+    except (OSError, json.JSONDecodeError, ValueError, KeyError, IndexError):
+        return None
+
+
 def render_preview_for_id(gnd_id: str) -> tuple[str, int]:
     """
     Builds preview HTML and HTTP status for a GND identifier.
@@ -232,6 +277,12 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
     if broad_type:
         type_badge = f'<span class="type-badge">{escape(broad_type)}</span>'
 
+    # Get last update date
+    last_update = get_last_update_date()
+    update_footer = ""
+    if last_update:
+        update_footer = f'<div class="update-footer">Letzte Aktualisierung der Daten: {escape(last_update)}</div>'
+
     return f"""
 <!doctype html>
 <html>
@@ -320,6 +371,15 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
       a:hover {{
         text-decoration: underline;
       }}
+
+      .update-footer {{
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px solid #eee;
+        color: #888;
+        font-size: 11px;
+        text-align: right;
+      }}
     </style>
   </head>
   <body>
@@ -331,6 +391,7 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
           {make_html_link(uri, "GND " + gnd_id)}
         </div>
         {fields_html}
+        {update_footer}
       </div>
     </div>
   </body>
