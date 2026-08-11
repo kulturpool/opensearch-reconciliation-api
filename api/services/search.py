@@ -138,23 +138,38 @@ def build_search_body(
                 "boost": 5,
             }
         },
-        {
-            "multi_match": {
-                "query": query,
-                "fields": [
-                    "preferredName^4",
-                    "variantName^3",
-                    "professionOrOccupation^2",
-                    "placeOfBirth",
-                    "placeOfDeath",
-                    "id^5",
-                ],
-                "fuzziness": "AUTO",
-                "operator": "or",
-                "boost": 1,
-            }
-        },
     ]
+
+    # Fuzzy matching multiplies clause count by (terms * fields * expansions),
+    # which can exceed OpenSearch's default maxClauseCount (1024) for queries
+    # with many words (e.g. long titles/descriptions used as the name value).
+    # Cap expansions and skip fuzziness entirely once a query has too many
+    # terms to stay safely under that limit.
+    fuzzy_fields = [
+        "preferredName^4",
+        "variantName^3",
+        "professionOrOccupation^2",
+        "placeOfBirth",
+        "placeOfDeath",
+        "id^5",
+    ]
+    max_expansions = 20
+    max_fuzzy_terms = 6  # 6 terms * 6 fields * 20 expansions = 720 < 1024
+
+    if len(query.split()) <= max_fuzzy_terms:
+        should_clauses.append(
+            {
+                "multi_match": {
+                    "query": query,
+                    "fields": fuzzy_fields,
+                    "fuzziness": "AUTO",
+                    "max_expansions": max_expansions,
+                    "prefix_length": 1,
+                    "operator": "or",
+                    "boost": 1,
+                }
+            }
+        )
 
     property_should_clauses = build_property_should_clauses(properties)
     should_clauses.extend(property_should_clauses)
