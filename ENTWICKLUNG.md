@@ -169,13 +169,41 @@ Local_Reconciliation_API/
 |-------|-------|
 | `api/main.py` | FastAPI App, Route-Definitionen |
 | `api/constants.py` | GND-Typen, Properties, Konstanten |
-| `api/reconciliation_utils.py` | Reconciliation Helper-Funktionen |
-| `api/services/search.py` | OpenSearch-Integration, Scoring |
+| `api/reconciliation_utils.py` | Reconciliation Helper-Funktionen, Batch-Verarbeitung, Timing-Logs |
+| `api/services/search.py` | OpenSearch-Integration (inkl. `_msearch`-Batching), Scoring |
+| `api/services/property_matching.py` | Generischer Property-Vergleich/Scoring (Bonus/Penalty) |
 | `api/services/properties.py` | Extend API Implementation |
 | `api/services/preview.py` | HTML-Preview-Generierung |
 | `config/__init__.py` | Zentrale Konfiguration (Environment-Variablen) |
 | `indexer/index_gnd_lds.py` | Hauptlogik für GND-Indexierung |
 | `scripts/bootstrap_gnd.py` | Kompletter Setup-Prozess |
+
+---
+
+### Reconciliation-Performance und Scoring
+
+Für Details zur Batch-Verarbeitung (`_msearch`), reduzierten `_source`-Feldern und dem
+Scoring-/`match`-Verhalten bei zusätzlichen Properties (`dateOfBirth`, `dateOfDeath`, ...)
+siehe den Abschnitt **"Performance & Scoring"** in [README.md](README.md).
+
+Kurzfassung für Entwickler:
+
+- `api/reconciliation_utils.py::handle_reconciliation_queries` sammelt alle Queries eines
+  Batches und ruft `api/services/search.py::search_gnd_batch` einmal auf, statt
+  `search_gnd()` pro Zeile aufzurufen. Diese Funktion nutzt OpenSearch `_msearch`.
+- `build_search_body()` beschränkt `_source` auf die für die Reconciliation relevanten
+  Felder (siehe `RECONCILIATION_SOURCE_FIELDS`).
+- Datumsproperties (`dateOfBirth`/`dateOfDeath`/`dateOfBirthAndDeath`) sowie
+  `professionOrOccupation`/`placeOfBirth`/`placeOfDeath` nutzen günstige `term`/`prefix`/
+  `match_phrase`-Klauseln auf Top-Level-Feldern und überspringen den teuren
+  `propertiesFlat`-Nested-Join. Generische, unbekannte Properties nutzen den Nested-Join
+  weiterhin als Fallback, aber abgesichert durch einen günstigen `availableProperties`-Filter.
+- `normalize_score()` gewichtet Namensübereinstimmung (inkl. GND-typischer invertierter
+  Schreibweise) immer noch am stärksten; Property-Boni sind über
+  `max_property_bonus_for_base_score()` gedeckelt, damit Properties nur als zusätzliche
+  Evidenz wirken und keinen schwachen Namenstreffer künstlich zu `match: true` aufwerten.
+- Jeder Batch wird mit `batch_size`, `properties`, `total_ms`, `opensearch_ms` und
+  `postprocessing_ms` geloggt (siehe `logger.info(...)` in `reconciliation_utils.py`).
 
 ---
 

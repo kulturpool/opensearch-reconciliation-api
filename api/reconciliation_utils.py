@@ -6,6 +6,8 @@ parsing request data, and formatting responses.
 """
 
 import json
+import logging
+import time
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -14,7 +16,9 @@ from fastapi.responses import JSONResponse
 
 from api.constants import BASE_URL, GND_TYPES, GND_URI_PREFIX
 from api.services.properties import handle_extend_request
-from api.services.search import get_gnd_record_by_id, search_gnd
+from api.services.search import get_gnd_record_by_id, search_gnd_batch
+
+logger = logging.getLogger(__name__)
 
 
 def service_manifest_response() -> dict:
@@ -77,6 +81,10 @@ def handle_reconciliation_queries(
     """
     Processes OpenRefine-style batched reconciliation queries.
 
+    All queries in the batch are sent to OpenSearch in a single `_msearch`
+    request (instead of one `search()` call per query), which is what makes
+    large OpenRefine batches (e.g. 40k+ rows processed 50 at a time) fast.
+
     Args:
         queries: Dictionary of query ID to query object
         limit: Maximum results per query
@@ -84,13 +92,18 @@ def handle_reconciliation_queries(
     Returns:
         Dictionary mapping query IDs to result objects
     """
-    response = {}
+    batch_start = time.perf_counter()
+
+    query_ids: list[str] = []
+    query_specs: list[dict[str, Any]] = []
+    invalid_query_ids: list[str] = []
+    properties_used: set[str] = set()
 
     for query_id, query_object in queries.items():
         if isinstance(query_object, str):
             query_text = query_object
             entity_type = None
-            details = []
+            details: list[dict[str, Any]] = []
             query_limit = limit
 
         elif isinstance(query_object, dict):
@@ -100,17 +113,45 @@ def handle_reconciliation_queries(
             query_limit = query_object.get("limit", limit)
 
         else:
-            response[query_id] = {"result": []}
+            invalid_query_ids.append(query_id)
             continue
 
-        results = search_gnd(
-            query=query_text,
-            limit=query_limit,
-            entity_type=entity_type,
-            properties=details,
+        query_ids.append(query_id)
+        query_specs.append(
+            {
+                "query": query_text,
+                "limit": query_limit,
+                "entity_type": entity_type,
+                "properties": details,
+            }
         )
 
+        for detail in details:
+            pid = detail.get("pid")
+
+            if pid:
+                properties_used.add(str(pid))
+
+    results_per_query, timing = search_gnd_batch(query_specs)
+
+    response: dict[str, Any] = {
+        query_id: {"result": []} for query_id in invalid_query_ids
+    }
+
+    for query_id, results in zip(query_ids, results_per_query):
         response[query_id] = {"result": results}
+
+    total_ms = (time.perf_counter() - batch_start) * 1000
+
+    logger.info(
+        "reconciliation batch: batch_size=%d properties=%s total_ms=%.1f "
+        "opensearch_ms=%.1f postprocessing_ms=%.1f",
+        len(queries),
+        sorted(properties_used) if properties_used else "none",
+        total_ms,
+        timing.get("opensearch_ms", 0.0),
+        timing.get("postprocessing_ms", 0.0),
+    )
 
     return response
 

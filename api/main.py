@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,14 @@ from api.services.property_registry import (
 )
 from api.services.search import search_gnd
 from config import DATA_DIR
+
+# uvicorn only configures its own "uvicorn.*" loggers by default, so make sure
+# application loggers (e.g. reconciliation batch timing logs) actually get
+# emitted instead of being silently dropped by the root logger.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 UPDATE_STATE_FILE = DATA_DIR / "state" / "update_state.json"
 

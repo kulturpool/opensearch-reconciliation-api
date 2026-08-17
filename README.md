@@ -18,6 +18,8 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 - Automatischer Download und Indexaufbau beim ersten Start
 - Persistenter lokaler Suchindex in OpenSearch
 - OpenRefine-kompatible Reconciliation API
+- Batch-Reconciliation über OpenSearch `_msearch` (ein Request pro Batch statt pro Zeile) für schnelle Verarbeitung auch großer Datensätze (40.000+ Zeilen)
+- Zusätzliche Properties (z.B. `dateOfBirth`, `dateOfDeath`) verbessern die Trefferqualität, ohne die Suche zu verlangsamen
 - Type Suggest, Entity Suggest und Property Suggest
 - Extend API für `Add columns from reconciled values`
 - Entity Preview inklusive Link zum GND-Datensatz
@@ -383,6 +385,21 @@ curl -X POST "http://localhost:8083/" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode 'queries={"q1":{"query":"Goethe","type":"DifferentiatedPerson"},"q2":{"query":"Berlin","type":"PlaceOrGeographicName"}}'
 ```
+
+---
+
+### Performance & Scoring
+
+Alle Queries eines OpenRefine-Batches werden in einem einzigen OpenSearch `_msearch`-Request verarbeitet (statt eines Requests pro Zeile). Für jeden Kandidaten wird dabei nur eine reduzierte Feldauswahl (`id`, `uri`, `preferredName`, `variantName`, `type`, `dateOfBirth`, `dateOfDeath`, `dateOfBirthAndDeath`, `professionOrOccupation`, `placeOfBirth`, `placeOfDeath`, `propertiesFlat`) aus OpenSearch geladen. Das macht Batches mit vielen Zeilen (z.B. 40.000+ Personen-Datensätze) deutlich schneller als eine sequenzielle Verarbeitung.
+
+Zusätzliche Properties aus anderen OpenRefine-Spalten (insbesondere `dateOfBirth`, `dateOfDeath`) dienen als **unterstützende, zusätzliche Evidenz** und nicht als primäres Kriterium:
+
+- Der Namensabgleich (inkl. normalisierter, GND-typischer invertierter Schreibweise wie `"Goethe, Johann Wolfgang von"` vs. `"Johann Wolfgang von Goethe"`) bestimmt weiterhin den Großteil des Scores.
+- Übereinstimmende Properties (z.B. gleiches Geburts-/Sterbejahr, passender Typ) geben einen Bonus, der aber gedeckelt ist: Ein schwacher Namenstreffer kann durch Property-Übereinstimmungen nicht künstlich zu einem automatischen Match (`match: true`) aufgewertet werden.
+- Abweichende Properties (z.B. falsches Geburtsjahr) führen zu einem moderaten Score-Abzug; kleine Abweichungen (z.B. ein Jahr Unterschied) werden nicht hart bestraft, da GND-Datumsangaben teils ungenau/fuzzy sind.
+- `match: true` wird weiterhin konservativ vergeben: entweder bei eindeutig hohem Score mit ausreichendem Abstand zum nächsten Kandidaten, oder bei einem exakten normalisierten Namenstreffer, der zusätzlich durch Typ- oder Datumsübereinstimmung bestätigt wird.
+
+Die Serverlogs (`data/logs/` bzw. stdout) enthalten pro Batch eine Zeile mit `batch_size`, den verwendeten `properties`, sowie `total_ms`, `opensearch_ms` und `postprocessing_ms` zur Performance-Analyse.
 
 ---
 

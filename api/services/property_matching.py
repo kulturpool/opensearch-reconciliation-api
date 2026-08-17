@@ -90,11 +90,16 @@ def calculate_mismatch_penalty(prop_id: str, match_score: int) -> int:
     Calculates penalty for property mismatch based on property type.
 
     Date fields and identifiers are more discriminating, so higher penalty.
+    Penalties are intentionally moderate: GND properties (especially dates)
+    can be fuzzy/approximate, so a mismatch shouldn't overwhelm otherwise
+    strong name evidence.
+
+    Note: dateOfBirth/dateOfDeath/dateOfBirthAndDeath are scored separately
+    via dedicated logic in api.services.search.score_date_signals and are
+    excluded before reaching this generic path.
     """
     # High-penalty fields: dates and identifiers
     high_penalty_fields = [
-        "dateOfBirth",
-        "dateOfDeath",
         "dateOfEstablishment",
         "dateOfTermination",
         "dateOfPublication",
@@ -114,11 +119,11 @@ def calculate_mismatch_penalty(prop_id: str, match_score: int) -> int:
     ]
 
     if prop_id in high_penalty_fields:
-        return 8  # Strong penalty for date/ID mismatch
+        return 6  # Strong, but not overwhelming, penalty for date/ID mismatch
     elif prop_id in medium_penalty_fields:
-        return 5  # Moderate penalty
+        return 4  # Moderate penalty
     else:
-        return 3  # Small penalty for other fields
+        return 2  # Small penalty for other fields
 
 
 def extract_requested_property_id(prop: dict[str, Any]) -> str | None:
@@ -392,7 +397,18 @@ def compare_date_like_values(expected: str, actual: str) -> int | None:
         # even though precision differs.
         return 7
 
-    # Both are dates, but no year in common - a real mismatch.
+    # Off-by-one year: common transcription/approximation fuzziness (e.g.
+    # differing calendar conventions or slightly wrong source data).
+    # Give a little credit instead of treating it as a hard mismatch.
+    for expected_year in expected_years:
+        for actual_year in actual_years:
+            try:
+                if abs(int(expected_year) - int(actual_year)) <= 1:
+                    return 3
+            except ValueError:
+                continue
+
+    # Both are dates, with clearly different years - a real mismatch.
     return 0
 
 
