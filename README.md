@@ -10,6 +10,10 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 - **[ENTWICKLUNG.md](ENTWICKLUNG.md)**: Entwicklungsumgebung, Code-Qualität, Best Practices
 - **[.devcontainer/README.md](.devcontainer/README.md)**: DevContainer-Spezifische Dokumentation
 
+## 🔗 Verwandte Projekte
+
+- **[Reconciliation Web UI](https://git.kpool.at/kulturpool/development/ai/microservice-gnd-reconciliation-interface)**: Eigenständige Web-Oberfläche zum Hochladen von CSV/TSV/Excel-Dateien, Zuordnen von Spalten/Properties und Batch-Reconciliation gegen diese API (kein OpenRefine erforderlich).
+
 ---
 
 ## Features
