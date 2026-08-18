@@ -11,6 +11,7 @@ from config import (
     DATA_DIR,
     GND_UPDATE_INITIAL_DELAY_SECONDS,
     GND_UPDATE_INTERVAL_HOURS,
+    GND_UPDATE_LOCK_STALE_SECONDS,
 )
 
 LOG_DIR = DATA_DIR / "logs"
@@ -20,6 +21,13 @@ LOCK_FILE = STATE_DIR / "update.lock"
 
 def timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def parse_timestamp(value: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def ensure_directories() -> None:
@@ -36,11 +44,37 @@ def lock_exists() -> bool:
     return LOCK_FILE.exists()
 
 
+def lock_is_stale() -> bool:
+    if not LOCK_FILE.exists():
+        return False
+
+    try:
+        raw_timestamp = LOCK_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+
+    created_at = parse_timestamp(raw_timestamp)
+
+    if created_at is None:
+        return True
+
+    age_seconds = (datetime.now(timezone.utc) - created_at).total_seconds()
+
+    return age_seconds > GND_UPDATE_LOCK_STALE_SECONDS
+
+
 def acquire_lock() -> bool:
     ensure_directories()
 
     if lock_exists():
-        return False
+        if lock_is_stale():
+            log(
+                "Update lock is stale (older than "
+                f"{GND_UPDATE_LOCK_STALE_SECONDS}s). Removing and retrying."
+            )
+            LOCK_FILE.unlink()
+        else:
+            return False
 
     LOCK_FILE.write_text(timestamp(), encoding="utf-8")
     return True

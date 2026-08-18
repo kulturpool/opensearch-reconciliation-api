@@ -3,10 +3,15 @@ set -e
 
 mkdir -p data/logs data/state data/raw data/processed
 
-# Clean up stale lock file from previous runs
+# Clean up stale lock files from previous runs
 if [ -f "data/state/index_build.lock" ]; then
   echo "[START] Removing stale index build lock..."
   rm -f data/state/index_build.lock
+fi
+
+if [ -f "data/state/update.lock" ]; then
+  echo "[START] Removing stale update lock..."
+  rm -f data/state/update.lock
 fi
 
 echo "[START] Running GND bootstrap..."

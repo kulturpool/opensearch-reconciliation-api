@@ -62,6 +62,9 @@ GND_UPDATE_INITIAL_DELAY_SECONDS = int(
 )
 GND_UPDATE_MODE = os.getenv("GND_UPDATE_MODE", "oai")
 GND_UPDATE_LOCK_ENABLED = os.getenv("GND_UPDATE_LOCK_ENABLED", "true").lower() == "true"
+GND_UPDATE_LOCK_STALE_SECONDS = int(
+    os.getenv("GND_UPDATE_LOCK_STALE_SECONDS", str(6 * 60 * 60))
+)
 
 
 # =============================================================================

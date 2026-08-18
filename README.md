@@ -77,7 +77,7 @@ GND_INDEX_ENTITYFACTS=true
 GND_ENTITYFACTS_ONLY_TYPE=
 
 GND_AUTO_UPDATE=true
-GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INTERVAL_HOURS=168
 GND_UPDATE_INITIAL_DELAY_SECONDS=300
 
 GND_OAI_BASE_URL=https://services.dnb.de/oai/repository
@@ -686,7 +686,7 @@ Dabei wird **kein vollständiger Reindex** durchgeführt.
 
 ```env
 GND_AUTO_UPDATE=true
-GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INTERVAL_HOURS=168
 GND_UPDATE_INITIAL_DELAY_SECONDS=300
 
 GND_OAI_BASE_URL=https://services.dnb.de/oai/repository
@@ -698,6 +698,16 @@ GND_OAI_REQUEST_TIMEOUT_SECONDS=300
 GND_OAI_REQUEST_MAX_RETRIES=6
 GND_OAI_REQUEST_BACKOFF_SECONDS=10
 GND_OAI_PAGE_DELAY_SECONDS=2
+```
+
+Das Intervall ist standardmäßig auf eine Woche (168 Stunden) gesetzt, da die
+DNB-Daten in dieser Größenordnung aktualisiert werden. Falls der Scheduler
+beim Start einen `update.lock` aus einem abgebrochenen Lauf vorfindet, wird
+dieser als veraltet erkannt und entfernt, sobald er älter als
+`GND_UPDATE_LOCK_STALE_SECONDS` (Standard: 6 Stunden) ist:
+
+```env
+GND_UPDATE_LOCK_STALE_SECONDS=21600
 ```
 
 ### Status prüfen
@@ -736,7 +746,7 @@ GND_UPDATE_INITIAL_DELAY_SECONDS=10
 Nach dem Test wieder zurücksetzen:
 
 ```env
-GND_UPDATE_INTERVAL_HOURS=24
+GND_UPDATE_INTERVAL_HOURS=168
 GND_UPDATE_INITIAL_DELAY_SECONDS=300
 ```
 

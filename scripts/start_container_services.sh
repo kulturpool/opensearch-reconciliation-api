@@ -3,11 +3,16 @@ set -euo pipefail
 
 mkdir -p data/logs data/state data/raw data/processed
 
-# Clean up stale lock file from previous container runs
-# In containerized environments, any existing lock is from a crashed/interrupted build
+# Clean up stale lock files from previous container runs
+# In containerized environments, any existing lock is from a crashed/interrupted run
 if [ -f "data/state/index_build.lock" ]; then
   echo "[CONTAINER] Removing stale index build lock from previous run..."
   rm -f data/state/index_build.lock
+fi
+
+if [ -f "data/state/update.lock" ]; then
+  echo "[CONTAINER] Removing stale update lock from previous run..."
+  rm -f data/state/update.lock
 fi
 
 echo "[CONTAINER] Running GND bootstrap..."
