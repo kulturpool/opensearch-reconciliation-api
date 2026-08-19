@@ -203,6 +203,7 @@ Column
 → Add Standard Service
 ```
 ![Service in OpenRefine hinzufügen](docs/media/drop_down_reconciling.gif)
+Service in OpenRefine hinzufügen
 
 Service URL eintragen:
 
@@ -210,6 +211,7 @@ Service URL eintragen:
 http://127.0.0.1:8083
 ```
 ![Service URL eintrage](docs/media/add_new_standard_service.gif)
+Service URL eintragen
 
 Wichtig: **Nicht** `/reconcile` anhängen.
 
@@ -248,12 +250,16 @@ Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwe
    - `Familie`
 
 ![Reconciliation Typen auswählen](docs/media/individ_person.gif)
+Reconciliation Typen auswählen
 
 ![Zusätzlich Properties hinzufügen](docs/media/additional_properties.gif)
+Zusätzliche Properties hinzufügen
 
 ![Die Reconciliation starten](docs/media/start_reconciling.gif)
+Die Reconciliation starten
 
 ![Ergebnisse begutachten](docs/media/reconciliation_results.gif)
+Ergebnisse begutachten
 
 ### Zusätzliche Spalten hinzufügen
 
@@ -264,6 +270,14 @@ Edit column
 → Add columns from reconciled values
 ```
 ![Spalten für reconciled values hinzufügen](docs/media/add_column_from_recon.gif)
+Neue Spalten anhand der Reconciled Values hinzufügen
+
+![Neue Properties auswählen](docs/media/add_new_property.gif)
+Die neuen Properties auswählen
+
+![Neue Spalten begutachten](docs/media/results_new_property.gif)
+Neue Spalten begutachten
+
 
 Beispiele für Properties:
 
@@ -286,10 +300,6 @@ Beim Hinzufügen von Properties kann in OpenRefine über **Configure** u.a. gew�
 - Ausgabe als `id`
 - Limit der zurückgegebenen Werte
 
-![Neue Properties auswählen](docs/media/add_new_property.gif)
-
-![Neue Spalten begutachten](docs/media/results_new_property.gif)
-
 ---
 
 ## Bereits vorhandene GND-IDs verwenden
@@ -301,6 +311,7 @@ Reconcile
 → Use values as identifiers
 ```
 ![Werte als Identifikator verwenden](docs/media/use_values_as_identifiers.gif)
+Werte als Identifikatoren verwenden
 
 Beispielwerte:
 
@@ -310,8 +321,10 @@ Beispielwerte:
 1036893200
 ```
 ![Den richtigen Service auswählen](docs/media/service_selection.gif)
+Den richtigen Service auswählen
 
 ![Die Ergebnisse begutachten](docs/media/values_results.gif)
+Die Ergebnisse begutachten
 
 Danach können über **Add columns from reconciled values** zusätzliche Informationen aus der lokalen GND ergänzt werden.
 
