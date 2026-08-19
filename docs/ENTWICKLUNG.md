@@ -50,7 +50,7 @@ code .
 - GND-Index aufgebaut (falls nicht vorhanden)
 - API auf Port 8083 gestartet
 
-**Siehe**: [.devcontainer/README.md](.devcontainer/README.md) für Details
+**Siehe**: [.devcontainer/README.md](../.devcontainer/README.md) für Details
 
 ---
 
@@ -153,12 +153,17 @@ Local_Reconciliation_API/
 │
 ├── tests/                      # Tests (TODO: erweitern)
 │
+├── docs/                        # Zusätzliche Dokumentation
+│   ├── ENTWICKLUNG.md           # Dieses Dokument
+│   ├── ARCHITEKTUR.md           # Architektur- und Datenfluss-Dokumentation
+│   ├── CONTRIBUTING.md          # Beitragsrichtlinien
+│   └── CHANGELOG.md             # Änderungsprotokoll
+│
 ├── .env.example                # Environment-Variablen-Template
 ├── .gitignore
 ├── docker-compose.runtime.yml  # Production Docker Compose
 ├── Dockerfile                  # Production Docker Image
 ├── README.md                   # Hauptdokumentation
-├── ENTWICKLUNG.md             # Dieses Dokument
 └── requirements-dev.txt        # Python Dependencies
 
 ```
@@ -184,7 +189,7 @@ Local_Reconciliation_API/
 
 Für Details zur Batch-Verarbeitung (`_msearch`), reduzierten `_source`-Feldern und dem
 Scoring-/`match`-Verhalten bei zusätzlichen Properties (`dateOfBirth`, `dateOfDeath`, ...)
-siehe den Abschnitt **"Performance & Scoring"** in [README.md](README.md).
+siehe den Abschnitt **"Performance & Scoring"** in [README.md](../README.md).
 
 Kurzfassung für Entwickler:
 
@@ -702,6 +707,7 @@ if os.path.exists(state_file):
 ## Fragen und Probleme
 
 Bei Fragen oder Problemen:
-1. [README.md](README.md) konsultieren
-2. [.devcontainer/README.md](.devcontainer/README.md) für DevContainer-Probleme
-3. Issue im Repository öffnen
+1. [README.md](../README.md) konsultieren
+2. [.devcontainer/README.md](../.devcontainer/README.md) für DevContainer-Probleme
+3. [ARCHITEKTUR.md](ARCHITEKTUR.md) für Aufbau und Datenfluss
+4. Issue im Repository öffnen

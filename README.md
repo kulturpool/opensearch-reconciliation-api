@@ -1,13 +1,16 @@
-# Local GND Reconciliation API
+# GND Reconciliation API mit OpenSearch
 
 Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Der Service lädt die GND-Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt eine OpenRefine-kompatible Reconciliation API bereit.
 
-**API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs)
+**API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) CHANGE!
 
 ## 📚 Dokumentation
 
 - **[README.md](README.md)** (dieses Dokument): Schnellstart, Nutzung, API-Referenz
-- **[ENTWICKLUNG.md](ENTWICKLUNG.md)**: Entwicklungsumgebung, Code-Qualität, Best Practices
+- **[docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md)**: Entwicklungsumgebung, Code-Qualität, Best Practices
+- **[docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md)**: Architektur, Komponenten und Datenfluss
+- **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**: Beitragsrichtlinien für Pull Requests und Commits
+- **[docs/CHANGELOG.md](docs/CHANGELOG.md)**: Änderungsprotokoll
 - **[.devcontainer/README.md](.devcontainer/README.md)**: DevContainer-Spezifische Dokumentation
 
 ## 🔗 Verwandte Projekte
@@ -42,8 +45,8 @@ Benötigt wird:
 - Docker Compose
 - OpenRefine
 
-Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand längere Zeit dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
-Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3GB.
+Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand mehrere Stunden dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
+Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3.2GB, und der Index benötigt 25GB Speicherplatz.
 
 ---
 
@@ -168,7 +171,7 @@ docker compose -f docker-compose.runtime.yml up --build
 
 **Wichtig**: Beide Modi teilen sich das gleiche OpenSearch-Volume!
 
-**Vorteil**: GND-Index muss nur einmal gebaut werden (~3 GB Download + Indexierung)
+**Vorteil**: GND-Index muss nur einmal gebaut werden (~3 GB Download + 25 GB Indexierung)
 
 **Nachteil**: Runtime und DevContainer dürfen **nicht gleichzeitig** laufen
 
@@ -1027,9 +1030,7 @@ JSON
 
 Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können später ergänzt werden:
 
-- Excel-Upload zur direkten Datei-Anreicherung
 - Integration weiterer Normdatenquellen als eigene Reconciliation-Quellen
-- eigene Weboberfläche
 - Hochverfügbarkeits- oder Clusterbetrieb
 - Schreibzugriffe auf die GND
 - eigener EntityFacts-Dump-Refresh unabhängig vom GND-OAI-Update
@@ -1045,7 +1046,7 @@ Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können späte
 - EntityFacts werden als zusätzliche Enrichment-Schicht verwendet.
 - Werke und Schlagwörter kommen weiterhin primär aus den GND-LDS-Dumps.
 - Familien werden über EntityFacts ergänzt.
-- Tägliche OAI-Updates aktualisieren den bestehenden Index inkrementell und lösen keinen vollständigen Reindex aus.
+- Wöchentliche OAI-Updates aktualisieren den bestehenden Index inkrementell und lösen keinen vollständigen Reindex aus.
 
 ---
 
