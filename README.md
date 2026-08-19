@@ -202,7 +202,7 @@ Column
 → Start reconciling
 → Add Standard Service
 ```
-![Service in OpenRefine hinzufügen](docs/media/drop_down_reconciling.gif)
+![Service in OpenRefine hinzufügen](docs/media/drop_down_reconciling.gif) <br>
 Service in OpenRefine hinzufügen
 
 Service URL eintragen:
@@ -210,7 +210,7 @@ Service URL eintragen:
 ```text
 http://127.0.0.1:8083
 ```
-![Service URL eintrage](docs/media/add_new_standard_service.gif)
+![Service URL eintrage](docs/media/add_new_standard_service.gif)<br>
 Service URL eintragen
 
 Wichtig: **Nicht** `/reconcile` anhängen.
@@ -249,16 +249,16 @@ Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwe
    - `Werk`
    - `Familie`
 
-![Reconciliation Typen auswählen](docs/media/individ_person.gif)
+![Reconciliation Typen auswählen](docs/media/individ_person.gif)<br>
 Reconciliation Typen auswählen
 
-![Zusätzlich Properties hinzufügen](docs/media/additional_properties.gif)
+![Zusätzlich Properties hinzufügen](docs/media/additional_properties.gif)<br>
 Zusätzliche Properties hinzufügen
 
-![Die Reconciliation starten](docs/media/start_reconciling.gif)
+![Die Reconciliation starten](docs/media/start_reconciling.gif) <br>
 Die Reconciliation starten
 
-![Ergebnisse begutachten](docs/media/reconciliation_results.gif)
+![Ergebnisse begutachten](docs/media/reconciliation_results.gif)<br>
 Ergebnisse begutachten
 
 ### Zusätzliche Spalten hinzufügen
@@ -269,13 +269,13 @@ Nach erfolgreicher Reconciliation:
 Edit column
 → Add columns from reconciled values
 ```
-![Spalten für reconciled values hinzufügen](docs/media/add_column_from_recon.gif)
+![Spalten für reconciled values hinzufügen](docs/media/add_column_from_recon.gif)<br>
 Neue Spalten anhand der Reconciled Values hinzufügen
 
-![Neue Properties auswählen](docs/media/add_new_property.gif)
+![Neue Properties auswählen](docs/media/add_new_property.gif)<br>
 Die neuen Properties auswählen
 
-![Neue Spalten begutachten](docs/media/results_new_property.gif)
+![Neue Spalten begutachten](docs/media/results_new_property.gif)<br>
 Neue Spalten begutachten
 
 
@@ -310,7 +310,7 @@ Wenn eine Spalte bereits GND-IDs enthält, kann in OpenRefine verwendet werden:
 Reconcile
 → Use values as identifiers
 ```
-![Werte als Identifikator verwenden](docs/media/use_values_as_identifiers.gif)
+![Werte als Identifikator verwenden](docs/media/use_values_as_identifiers.gif)<br>
 Werte als Identifikatoren verwenden
 
 Beispielwerte:
@@ -320,10 +320,10 @@ Beispielwerte:
 118624822
 1036893200
 ```
-![Den richtigen Service auswählen](docs/media/service_selection.gif)
+![Den richtigen Service auswählen](docs/media/service_selection.gif)<br>
 Den richtigen Service auswählen
 
-![Die Ergebnisse begutachten](docs/media/values_results.gif)
+![Die Ergebnisse begutachten](docs/media/values_results.gif)<br>
 Die Ergebnisse begutachten
 
 Danach können über **Add columns from reconciled values** zusätzliche Informationen aus der lokalen GND ergänzt werden.
