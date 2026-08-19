@@ -202,12 +202,14 @@ Column
 → Start reconciling
 → Add Standard Service
 ```
+![Service in OpenRefine hinzufügen](docs/media/drop_down_reconciling.gif)
 
 Service URL eintragen:
 
 ```text
 http://127.0.0.1:8083
 ```
+![Service URL eintrage](docs/media/add_new_standard_service.gif)
 
 Wichtig: **Nicht** `/reconcile` anhängen.
 
@@ -224,6 +226,7 @@ http://127.0.0.1:8083/reconcile
 ```
 
 Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwendet werden.
+
 
 ---
 
@@ -244,6 +247,14 @@ Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwe
    - `Werk`
    - `Familie`
 
+![Reconciliation Typen auswählen](docs/media/individ_person.gif)
+
+![Zusätzlich Properties hinzufügen](docs/media/additional_properties.gif)
+
+![Die Reconciliation starten](docs/media/start_reconciling.gif)
+
+![Ergebnisse begutachten](docs/media/reconciliation_results.gif)
+
 ### Zusätzliche Spalten hinzufügen
 
 Nach erfolgreicher Reconciliation:
@@ -252,6 +263,7 @@ Nach erfolgreicher Reconciliation:
 Edit column
 → Add columns from reconciled values
 ```
+![Spalten für reconciled values hinzufügen](docs/media/add_column_from_recon.gif)
 
 Beispiele für Properties:
 
@@ -274,6 +286,10 @@ Beim Hinzufügen von Properties kann in OpenRefine über **Configure** u.a. gew�
 - Ausgabe als `id`
 - Limit der zurückgegebenen Werte
 
+![Neue Properties auswählen](docs/media/add_new_property.gif)
+
+![Neue Spalten begutachten](docs/media/results_new_property.gif)
+
 ---
 
 ## Bereits vorhandene GND-IDs verwenden
@@ -284,6 +300,7 @@ Wenn eine Spalte bereits GND-IDs enthält, kann in OpenRefine verwendet werden:
 Reconcile
 → Use values as identifiers
 ```
+![Werte als Identifikator verwenden](docs/media/use_values_as_identifiers.gif)
 
 Beispielwerte:
 
@@ -292,6 +309,9 @@ Beispielwerte:
 118624822
 1036893200
 ```
+![Den richtigen Service auswählen](docs/media/service_selection.gif)
+
+![Die Ergebnisse begutachten](docs/media/values_results.gif)
 
 Danach können über **Add columns from reconciled values** zusätzliche Informationen aus der lokalen GND ergänzt werden.
 
