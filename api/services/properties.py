@@ -17,6 +17,13 @@ GND_URI_RE = re.compile(r"https?://d-nb\.info/gnd/([^/#?\s\"<>]+)")
 GND_ID_RE = re.compile(r"^[0-9Xx][0-9Xx-]*$")
 GND_URI_PREFIX = "https://d-nb.info/gnd/"
 
+# Properties that represent the entity's OWN identifier rather than a
+# reference to another entity. Their raw value happens to look like a GND
+# ID/URI (e.g. gndIdentifier="118540238"), so without this guard
+# format_extend_value() would "resolve" it against the index, find the same
+# record, and return its preferredName instead of the plain number/URI.
+SELF_IDENTIFIER_PROPERTY_IDS = {"id", "uri", "gndIdentifier"}
+
 
 RELATION_PROPERTY_TYPES = {
     "affiliation": {
@@ -463,6 +470,13 @@ def format_extend_values(
         )
 
     value_string = str(value)
+
+    if prop_id in SELF_IDENTIFIER_PROPERTY_IDS:
+        # Always return the entity's own identifier as a plain literal,
+        # regardless of the requested content mode - it must never be
+        # turned into a reconciled entity object (see comment above
+        # SELF_IDENTIFIER_PROPERTY_IDS).
+        return [{"str": value_string}] if value_string else []
 
     if content == "id":
         return [{"str": format_identifier_value(value_string)}]
