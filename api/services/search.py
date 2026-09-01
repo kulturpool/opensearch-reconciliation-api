@@ -19,6 +19,28 @@ from config import INDEX_NAME, OPENSEARCH_HOST, OPENSEARCH_PORT
 
 logger = logging.getLogger(__name__)
 
+# Lets callers pass either a bare GND ID ("118540238") or a full GND URI
+# ("https://d-nb.info/gnd/118540238") wherever a direct identifier lookup is
+# expected - mirrors the same normalization already done for the /preview
+# endpoint in api/services/preview.py.
+GND_URI_PREFIX = "https://d-nb.info/gnd/"
+
+
+def normalize_gnd_identifier(value: str) -> str:
+    """
+    Strips the GND URI prefix from a value, if present.
+
+    "https://d-nb.info/gnd/118540238" -> "118540238"
+    "118540238" -> "118540238"
+    """
+
+    value = str(value or "").strip()
+
+    if value.startswith(GND_URI_PREFIX):
+        return value.replace(GND_URI_PREFIX, "").strip("/")
+
+    return value
+
 # Fields returned from OpenSearch during reconciliation. Keeping this list
 # narrow (instead of the full GND document) noticeably reduces the amount of
 # data OpenSearch has to fetch/serialize and we have to deserialize for every
@@ -122,8 +144,10 @@ def search_gnd(
     if not query or not query.strip():
         return []
 
+    normalized_query = normalize_gnd_identifier(query)
+
     search_body = build_search_body(
-        query=query.strip(),
+        query=normalized_query,
         limit=limit,
         entity_type=entity_type,
         properties=properties or [],
@@ -136,7 +160,7 @@ def search_gnd(
 
     return format_search_results(
         response=response,
-        query=query,
+        query=normalized_query,
         requested_type=entity_type,
         requested_properties=properties or [],
     )
@@ -174,6 +198,8 @@ def search_gnd_batch(
     msearch_body: list[dict[str, Any]] = []
     has_query: list[bool] = []
 
+    normalized_queries: list[str] = []
+
     for spec in query_specs:
         query_text = (spec.get("query") or "").strip()
 
@@ -181,12 +207,14 @@ def search_gnd_batch(
             has_query.append(False)
             continue
 
+        normalized_query = normalize_gnd_identifier(query_text)
+        normalized_queries.append(normalized_query)
         has_query.append(True)
 
         msearch_body.append({"index": INDEX_NAME})
         msearch_body.append(
             build_search_body(
-                query=query_text,
+                query=normalized_query,
                 limit=spec.get("limit", 5),
                 entity_type=spec.get("entity_type"),
                 properties=spec.get("properties") or [],
@@ -203,6 +231,7 @@ def search_gnd_batch(
 
     results: list[list[dict[str, Any]]] = []
     response_iter = iter(responses)
+    normalized_query_iter = iter(normalized_queries)
 
     postprocessing_start = time.perf_counter()
 
@@ -212,6 +241,7 @@ def search_gnd_batch(
             continue
 
         response = next(response_iter, {})
+        normalized_query = next(normalized_query_iter, spec.get("query"))
 
         if response.get("error"):
             logger.warning(
@@ -223,7 +253,7 @@ def search_gnd_batch(
         results.append(
             format_search_results(
                 response=response,
-                query=spec.get("query"),
+                query=normalized_query,
                 requested_type=spec.get("entity_type"),
                 requested_properties=spec.get("properties") or [],
             )
@@ -251,7 +281,7 @@ def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
     try:
         response = client.get(
             index=INDEX_NAME,
-            id=gnd_id.strip(),
+            id=normalize_gnd_identifier(gnd_id),
         )
     except (NotFoundError, OpenSearchException):
         return None
