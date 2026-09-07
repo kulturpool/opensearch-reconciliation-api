@@ -1,0 +1,348 @@
+{
+    "q0": {
+        "result": [
+            {
+                "id": "130585473X",
+                "name": "Goethe",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1154419746",
+                "name": "Goethe",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1253343926",
+                "name": "Goethe",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1112137505",
+                "name": "Goethe",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1159096295",
+                "name": "Goethe, Erich",
+                "score": 92,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "DifferentiatedPerson",
+                        "name": "Individualisierte Person",
+                        "broader": [
+                            {
+                                "id": "Person",
+                                "name": "Person"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "q1": {
+        "result": [
+            {
+                "id": "4005728-8",
+                "name": "Berlin",
+                "score": 100,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "TerritorialCorporateBodyOrAdministrativeUnit",
+                        "name": "Gebietsk\u00f6rperschaft / Verwaltungseinheit",
+                        "broader": [
+                            {
+                                "id": "PlaceOrGeographicName",
+                                "name": "Place or Geographic Name"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "MemberState",
+                        "name": "MemberState"
+                    }
+                ]
+            },
+            {
+                "id": "4087295-6",
+                "name": "Berlin (Ost)",
+                "score": 98,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "TerritorialCorporateBodyOrAdministrativeUnit",
+                        "name": "Gebietsk\u00f6rperschaft / Verwaltungseinheit",
+                        "broader": [
+                            {
+                                "id": "PlaceOrGeographicName",
+                                "name": "Place or Geographic Name"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "4849262-0",
+                "name": "Hauptbahnhof Berlin (Berlin)",
+                "score": 84,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "BuildingOrMemorial",
+                        "name": "Bauwerk oder Denkmal",
+                        "broader": [
+                            {
+                                "id": "PlaceOrGeographicName",
+                                "name": "Place or Geographic Name"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1364989344",
+                "name": "Raketenflugplatz Berlin (Berlin)",
+                "score": 84,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "BuildingOrMemorial",
+                        "name": "Bauwerk oder Denkmal",
+                        "broader": [
+                            {
+                                "id": "PlaceOrGeographicName",
+                                "name": "Place or Geographic Name"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "7666099-0",
+                "name": "Westhafen Berlin (Berlin)",
+                "score": 84,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "BuildingOrMemorial",
+                        "name": "Bauwerk oder Denkmal",
+                        "broader": [
+                            {
+                                "id": "PlaceOrGeographicName",
+                                "name": "Place or Geographic Name"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "q2": {
+        "result": [
+            {
+                "id": "11850553X",
+                "name": "Bach, Johann Sebastian",
+                "score": 100,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "DifferentiatedPerson",
+                        "name": "Individualisierte Person",
+                        "broader": [
+                            {
+                                "id": "Person",
+                                "name": "Person"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "136963781",
+                "name": "Bach, Johann Sebastian",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "DifferentiatedPerson",
+                        "name": "Individualisierte Person",
+                        "broader": [
+                            {
+                                "id": "Person",
+                                "name": "Person"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1287714854",
+                "name": "Johann Sebastian Bach",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1254293396",
+                "name": "Johann Sebastian Bach",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "124534767",
+                "name": "Bach, Johann Sebastian",
+                "score": 90,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "DifferentiatedPerson",
+                        "name": "Individualisierte Person",
+                        "broader": [
+                            {
+                                "id": "Person",
+                                "name": "Person"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

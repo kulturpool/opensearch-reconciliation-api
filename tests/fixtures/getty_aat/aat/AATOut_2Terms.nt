@@ -1,0 +1,6 @@
+<http://vocab.getty.edu/aat/300007466> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/aat/300007466-term1> .
+<http://vocab.getty.edu/aat/300007466-term1> <http://www.w3.org/2008/05/skos-xl#literalForm> "Painting"@en .
+<http://vocab.getty.edu/aat/300007466> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/aat/300007466-term2> .
+<http://vocab.getty.edu/aat/300007466-term2> <http://www.w3.org/2008/05/skos-xl#literalForm> "Painting (visual works)"@en .
+<http://vocab.getty.edu/aat/300264092> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/aat/300264092-term1> .
+<http://vocab.getty.edu/aat/300264092-term1> <http://www.w3.org/2008/05/skos-xl#literalForm> "Styles and Periods (Hierarchy Name)"@en .

@@ -21,6 +21,11 @@
 *.swo
 *~
 
+# Agent scratch notes (not part of the project, used to bridge context
+# across host <-> devcontainer VS Code windows, which have separate
+# extension storage)
+.agent-resume.md
+
 # OS
 .DS_Store
 Thumbs.db

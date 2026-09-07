@@ -1,0 +1,570 @@
+{
+    "type": "DifferentiatedPerson",
+    "limit": 200,
+    "properties": [
+        {
+            "id": "academicDegree",
+            "name": "Akademischer Grad"
+        },
+        {
+            "id": "acquaintanceshipOrFriendship",
+            "name": "Beziehung, Bekanntschaft, Freundschaft"
+        },
+        {
+            "id": "affiliation",
+            "name": "Affiliation"
+        },
+        {
+            "id": "affiliationAsLiteral",
+            "name": "Affiliation (Literal)"
+        },
+        {
+            "id": "biographicalOrHistoricalInformation",
+            "name": "Biografische oder historische Angaben"
+        },
+        {
+            "id": "broaderTermGeneral",
+            "name": "Oberbegriff allgemein"
+        },
+        {
+            "id": "broaderTermInstantial",
+            "name": "Oberbegriff instantiell"
+        },
+        {
+            "id": "characteristicPlace",
+            "name": "Charakteristischer Ort"
+        },
+        {
+            "id": "complexSeeReferenceSubject",
+            "name": "Relationierter Deskriptor"
+        },
+        {
+            "id": "correspondent",
+            "name": "Korrespondenzpartner"
+        },
+        {
+            "id": "correspondsTo",
+            "name": "korrespondiert mit"
+        },
+        {
+            "id": "correspondsToInverse",
+            "name": "korrespondiert invers mit"
+        },
+        {
+            "id": "dateOfBirth",
+            "name": "Geburtsdatum"
+        },
+        {
+            "id": "dateOfBirthAndDeath",
+            "name": "Geburts- und Sterbedatum"
+        },
+        {
+            "id": "dateOfDeath",
+            "name": "Sterbedatum"
+        },
+        {
+            "id": "definition",
+            "name": "Definition"
+        },
+        {
+            "id": "depiction",
+            "name": "Darstellung"
+        },
+        {
+            "id": "familialRelationship",
+            "name": "Famili\u00e4re Beziehung"
+        },
+        {
+            "id": "fieldOfActivity",
+            "name": "T\u00e4tigkeitsbereich"
+        },
+        {
+            "id": "fieldOfStudy",
+            "name": "Studienfach"
+        },
+        {
+            "id": "functionOrRole",
+            "name": "Funktion oder Rolle"
+        },
+        {
+            "id": "functionOrRoleAsLiteral",
+            "name": "Funktion oder Rolle (Literal)"
+        },
+        {
+            "id": "gender",
+            "name": "Geschlecht"
+        },
+        {
+            "id": "geographicAreaCode",
+            "name": "L\u00e4ndercode"
+        },
+        {
+            "id": "gndIdentifier",
+            "name": "GND-Nummer"
+        },
+        {
+            "id": "gndSubjectCategory",
+            "name": "GND-Sachgruppe"
+        },
+        {
+            "id": "hasAcquaintance",
+            "name": "Bekannte(n)"
+        },
+        {
+            "id": "hasAdoptiveChild",
+            "name": "Adoptivkind"
+        },
+        {
+            "id": "hasAdoptiveParent",
+            "name": "Adoptivelternteil"
+        },
+        {
+            "id": "hasAdoptiveSibling",
+            "name": "Adoptivgeschwister"
+        },
+        {
+            "id": "hasAncestor",
+            "name": "Vorfahr"
+        },
+        {
+            "id": "hasAssociate",
+            "name": "Gruppenzugeh\u00f6rigkeit"
+        },
+        {
+            "id": "hasAuntUncle",
+            "name": "Tante oder Onkel"
+        },
+        {
+            "id": "hasBeginDate",
+            "name": "Anfangsdatum"
+        },
+        {
+            "id": "hasBiologicalChild",
+            "name": "biologisches Kind"
+        },
+        {
+            "id": "hasBiologicalParent",
+            "name": "biologischen Elternteil"
+        },
+        {
+            "id": "hasBiologicalSibling",
+            "name": "biologisches Geschwister"
+        },
+        {
+            "id": "hasChannel",
+            "name": "Medium"
+        },
+        {
+            "id": "hasChief",
+            "name": "Chef"
+        },
+        {
+            "id": "hasChild",
+            "name": "Kind"
+        },
+        {
+            "id": "hasChildInlaw",
+            "name": "Schwiegerkind"
+        },
+        {
+            "id": "hasCohabitee",
+            "name": "Lebensgef\u00e4hrte"
+        },
+        {
+            "id": "hasColleague",
+            "name": "Kollege"
+        },
+        {
+            "id": "hasCooperator",
+            "name": "Kollaborator"
+        },
+        {
+            "id": "hasCorrespondent",
+            "name": "Korrespondent"
+        },
+        {
+            "id": "hasCousin",
+            "name": "Cousin"
+        },
+        {
+            "id": "hasEmployee",
+            "name": "Arbeitnehmer"
+        },
+        {
+            "id": "hasEmployer",
+            "name": "Arbeitgeber"
+        },
+        {
+            "id": "hasEndDate",
+            "name": "Enddatum"
+        },
+        {
+            "id": "hasFianceeFiance",
+            "name": "Verlobte(n)"
+        },
+        {
+            "id": "hasFosterChild",
+            "name": "Pflegekind"
+        },
+        {
+            "id": "hasFosterParent",
+            "name": "Pflegeelternteil"
+        },
+        {
+            "id": "hasFosterSibling",
+            "name": "has Pflegegeschwister"
+        },
+        {
+            "id": "hasFounder",
+            "name": "Gr\u00fcnder"
+        },
+        {
+            "id": "hasFriend",
+            "name": "Freund"
+        },
+        {
+            "id": "hasGndCode",
+            "name": "GND Code"
+        },
+        {
+            "id": "hasGodChild",
+            "name": "Patenkind"
+        },
+        {
+            "id": "hasGodParent",
+            "name": "Pate"
+        },
+        {
+            "id": "hasGrandChild",
+            "name": "Enkel"
+        },
+        {
+            "id": "hasGrandParent",
+            "name": "Gro\u00dfelternteil"
+        },
+        {
+            "id": "hasHalfSibling",
+            "name": "Halbgeschwister"
+        },
+        {
+            "id": "hasIllegitimateChild",
+            "name": "illegitimes Kind"
+        },
+        {
+            "id": "hasIllegitimateParent",
+            "name": "illegitimen Elternteil"
+        },
+        {
+            "id": "hasInfluenceDonee",
+            "name": "Einfluss auf"
+        },
+        {
+            "id": "hasInfluenceDonor",
+            "name": "ist beeinflusst durch"
+        },
+        {
+            "id": "hasInlaw",
+            "name": "angeheiratete(n) Verwandte(n)"
+        },
+        {
+            "id": "hasLover",
+            "name": "Geliebte(n)"
+        },
+        {
+            "id": "hasMember",
+            "name": "Mitglied"
+        },
+        {
+            "id": "hasMultipleBirthSibling",
+            "name": "Mehrlingsgeschwister"
+        },
+        {
+            "id": "hasMurderee",
+            "name": "Mordopfer"
+        },
+        {
+            "id": "hasMurderer",
+            "name": "M\u00f6rder"
+        },
+        {
+            "id": "hasMuse",
+            "name": "Muse"
+        },
+        {
+            "id": "hasNieceNephew",
+            "name": "Nichte oder Neffe"
+        },
+        {
+            "id": "hasOffspring",
+            "name": "Nachkomme"
+        },
+        {
+            "id": "hasParent",
+            "name": "Elternteil"
+        },
+        {
+            "id": "hasParentInlaw",
+            "name": "Schwiegerelternteil"
+        },
+        {
+            "id": "hasPatron",
+            "name": "M\u00e4zen"
+        },
+        {
+            "id": "hasPhysician",
+            "name": "Arzt"
+        },
+        {
+            "id": "hasProfessionalContact",
+            "name": "Berufskontakt"
+        },
+        {
+            "id": "hasRelative",
+            "name": "Verwandte(n)"
+        },
+        {
+            "id": "hasSibling",
+            "name": "Geschwister"
+        },
+        {
+            "id": "hasSiblingInlaw",
+            "name": "Schwager oder Schw\u00e4gerin"
+        },
+        {
+            "id": "hasSpiritualContact",
+            "name": "spirituellen Kontakt"
+        },
+        {
+            "id": "hasSpouse",
+            "name": "Ehepartner"
+        },
+        {
+            "id": "hasStepChild",
+            "name": "Stiefkind"
+        },
+        {
+            "id": "hasStepParent",
+            "name": "Stiefelternteil"
+        },
+        {
+            "id": "hasStepSibling",
+            "name": "Stiefgeschwister"
+        },
+        {
+            "id": "hasStudent",
+            "name": "Sch\u00fcler"
+        },
+        {
+            "id": "hasSubject",
+            "name": "Subjekt"
+        },
+        {
+            "id": "hasSubjectObject",
+            "name": "Subjekt oder Objekt"
+        },
+        {
+            "id": "hasTeacher",
+            "name": "Lehrer"
+        },
+        {
+            "id": "hasVitalLethalContact",
+            "name": "vitalen oder letalen Kontakt"
+        },
+        {
+            "id": "homepage",
+            "name": "Homepage"
+        },
+        {
+            "id": "isChannelOf",
+            "name": "ist Medium von"
+        },
+        {
+            "id": "isChiefOf",
+            "name": "ist Chef von"
+        },
+        {
+            "id": "isFounderOf",
+            "name": "ist Gr\u00fcnder von"
+        },
+        {
+            "id": "isMemberOf",
+            "name": "ist Mitglied von"
+        },
+        {
+            "id": "isMuseOf",
+            "name": "ist Muse von"
+        },
+        {
+            "id": "isObject",
+            "name": "ist Objekt"
+        },
+        {
+            "id": "isPatronOf",
+            "name": "ist M\u00e4zen von"
+        },
+        {
+            "id": "isPhysicianOf",
+            "name": "ist Arzt von"
+        },
+        {
+            "id": "isSubject",
+            "name": "ist Subjekt"
+        },
+        {
+            "id": "isSubjectObject",
+            "name": "ist Subjekt oder Objekt"
+        },
+        {
+            "id": "languageCode",
+            "name": "Sprachencode"
+        },
+        {
+            "id": "memberOfTheFamily",
+            "name": "Familienmitglied"
+        },
+        {
+            "id": "metadataConfidence",
+            "name": "Konfidenzwert"
+        },
+        {
+            "id": "metadataPeriod",
+            "name": "G\u00fcltigkeitszeitraum"
+        },
+        {
+            "id": "metadataProvenance",
+            "name": "Herkunft"
+        },
+        {
+            "id": "oldAuthorityNumber",
+            "name": "Alte Normnummer"
+        },
+        {
+            "id": "periodOfActivity",
+            "name": "Wirkungsdaten"
+        },
+        {
+            "id": "placeOfActivity",
+            "name": "Wirkungsort"
+        },
+        {
+            "id": "placeOfBirth",
+            "name": "Geburtsort"
+        },
+        {
+            "id": "placeOfBirthAsLiteral",
+            "name": "Geburtsort (Literal)"
+        },
+        {
+            "id": "placeOfDeath",
+            "name": "Sterbeort"
+        },
+        {
+            "id": "placeOfDeathAsLiteral",
+            "name": "Sterbeort (Literal)"
+        },
+        {
+            "id": "placeOfExile",
+            "name": "Exilort"
+        },
+        {
+            "id": "playedInstrument",
+            "name": "Gespieltes Instrument"
+        },
+        {
+            "id": "preferredName",
+            "name": "Bevorzugter Name"
+        },
+        {
+            "id": "professionOrOccupation",
+            "name": "Beruf oder Besch\u00e4ftigung"
+        },
+        {
+            "id": "professionOrOccupationAsLiteral",
+            "name": "Beruf oder Besch\u00e4ftigung (Literal)"
+        },
+        {
+            "id": "professionalRelationship",
+            "name": "Berufliche Beziehung"
+        },
+        {
+            "id": "pseudonym",
+            "name": "Pseudonym"
+        },
+        {
+            "id": "publication",
+            "name": "Titelangabe"
+        },
+        {
+            "id": "realIdentity",
+            "name": "Echte Identit\u00e4t"
+        },
+        {
+            "id": "relatedAgent",
+            "name": "verkn\u00fcpfter Agens"
+        },
+        {
+            "id": "relatedConferenceOrEvent",
+            "name": "In Beziehung stehende Konferenz oder Veranstaltung"
+        },
+        {
+            "id": "relatedCorporateBody",
+            "name": "In Beziehung stehende K\u00f6rperschaft"
+        },
+        {
+            "id": "relatedFamily",
+            "name": "In Beziehung stehende Familie"
+        },
+        {
+            "id": "relatedPerson",
+            "name": "In Beziehung stehende Person"
+        },
+        {
+            "id": "relatedPlaceOrGeographicName",
+            "name": "In Beziehung stehendes Geografikum"
+        },
+        {
+            "id": "relatedSubjectHeading",
+            "name": "In Beziehung stehendes Schlagwort"
+        },
+        {
+            "id": "relatedTerm",
+            "name": "Verwandter Begriff"
+        },
+        {
+            "id": "relatedWork",
+            "name": "In Beziehung stehendes Werk"
+        },
+        {
+            "id": "sameAs",
+            "name": "Siehe auch"
+        },
+        {
+            "id": "titleOfNobility",
+            "name": "Adelstitel"
+        },
+        {
+            "id": "titleOfNobilityAsLiteral",
+            "name": "Adelstitel (Literal)"
+        },
+        {
+            "id": "topic",
+            "name": "Thema"
+        },
+        {
+            "id": "type",
+            "name": "Entit\u00e4tstyp"
+        },
+        {
+            "id": "udkCode",
+            "name": "UDK-Code"
+        },
+        {
+            "id": "usingInstructions",
+            "name": "Benutzungshinweise"
+        },
+        {
+            "id": "variantName",
+            "name": "Varianter Name"
+        }
+    ]
+}

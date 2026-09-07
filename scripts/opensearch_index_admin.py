@@ -48,18 +48,25 @@ def get_alias_target_indices(
     return list(response.keys())
 
 
-def switch_gnd_alias(
+def switch_alias(
     client: OpenSearch,
     new_index: str,
-    alias_name: str = "gnd",
-) -> None:
+    alias_name: str,
+) -> list[str]:
     """
-    Atomically switches the public GND alias to a newly built index.
+    Atomically switches a public alias to a newly built index.
 
-    Existing API and update code can keep using index name 'gnd'.
-    OpenSearch resolves it to the actual index behind the alias.
+    Returns detached old indices so callers can delete old build indices after
+    a successful switch.
+
+    Handles one-time migrations where `alias_name` currently exists as a plain
+    concrete index (not an alias): OpenSearch does not allow a concrete index
+    and alias with the same name, so the concrete index must be deleted first.
     """
     old_indices = get_alias_target_indices(client=client, alias_name=alias_name)
+
+    if not old_indices and client.indices.exists(index=alias_name):
+        client.indices.delete(index=alias_name)
 
     actions: list[dict[str, Any]] = []
 
@@ -86,6 +93,19 @@ def switch_gnd_alias(
     )
 
     client.indices.update_aliases(body={"actions": actions})
+
+    return [index_name for index_name in old_indices if index_name != new_index]
+
+
+def switch_gnd_alias(
+    client: OpenSearch,
+    new_index: str,
+    alias_name: str = "gnd",
+) -> list[str]:
+    """
+    Backward-compatible wrapper around `switch_alias`.
+    """
+    return switch_alias(client=client, new_index=new_index, alias_name=alias_name)
 
 
 def delete_index_if_exists(
@@ -186,12 +206,14 @@ def validate_built_index(
 def cleanup_incomplete_build_index(
     client: OpenSearch,
     state: dict[str, Any],
+    build_index_prefix: str = "gnd_build_",
 ) -> None:
     """
-    Deletes an incomplete build index recorded in index_state.json.
+    Deletes an incomplete build index recorded in an index_state.json.
 
-    This is only for build indices such as gnd_build_*. It deliberately never
-    deletes the public index or alias 'gnd'.
+    This is only for build indices such as gnd_build_*/getty_build_*. It
+    deliberately never deletes the public index or alias itself ("gnd"/
+    "getty"), only matches on `build_index_prefix`.
     """
     build_index = state.get("build_index")
     status = state.get("status")
@@ -202,7 +224,7 @@ def cleanup_incomplete_build_index(
     if status == "complete":
         return
 
-    if not str(build_index).startswith("gnd_build_"):
+    if not str(build_index).startswith(build_index_prefix):
         return
 
     delete_index_if_exists(client=client, index_name=str(build_index))

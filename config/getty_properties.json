@@ -1,0 +1,79 @@
+{
+  "Concept": [
+    {
+      "id": "parentString",
+      "name": "Parent String"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent String (abbreviated)"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Scope Note"
+    },
+    {
+      "id": "notation",
+      "name": "Notation"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    },
+    {
+      "id": "related",
+      "name": "Related Concept"
+    },
+    {
+      "id": "exactMatch",
+      "name": "Exact Match"
+    }
+  ],
+  "GuideTerm": [
+    {
+      "id": "parentString",
+      "name": "Parent String"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent String (abbreviated)"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Scope Note"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    }
+  ],
+  "Hierarchy": [
+    {
+      "id": "parentString",
+      "name": "Parent String"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent String (abbreviated)"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Scope Note"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    }
+  ],
+  "Facet": [
+    {
+      "id": "parentString",
+      "name": "Parent String"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Scope Note"
+    }
+  ],
+  "ObsoleteSubject": []
+}

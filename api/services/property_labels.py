@@ -1,5 +1,7 @@
 import re
 
+from api.vocabularies.base import VocabConfig
+
 PROPERTY_LABEL_OVERRIDES = {
     "id": "GND ID",
     "uri": "URI",
@@ -42,20 +44,24 @@ PROPERTY_LABEL_OVERRIDES = {
 }
 
 
-def property_label(property_id: str) -> str:
+def property_label(property_id: str, vocab: "VocabConfig | None" = None) -> str:
     """
     Returns a human-readable label for a property id.
 
     Uses:
-    1. curated overrides for important GND properties
+    1. curated overrides for the given vocab (vocab.property_label_overrides),
+       falling back to the GND overrides above when no vocab is given (kept
+       for backward compatibility with pre-existing call sites)
     2. automatic camelCase splitting as fallback
     """
 
     if not property_id:
         return ""
 
-    if property_id in PROPERTY_LABEL_OVERRIDES:
-        return PROPERTY_LABEL_OVERRIDES[property_id]
+    overrides = vocab.property_label_overrides if vocab is not None else PROPERTY_LABEL_OVERRIDES
+
+    if property_id in overrides:
+        return overrides[property_id]
 
     return split_property_id(property_id)
 

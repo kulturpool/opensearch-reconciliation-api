@@ -14,40 +14,48 @@ from urllib.parse import parse_qs
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from api.constants import BASE_URL, GND_TYPES, GND_URI_PREFIX
+from api.constants import BASE_URL, GND_URI_PREFIX
 from api.services.properties import handle_extend_request
 from api.services.search import get_gnd_record_by_id, search_gnd_batch
+from api.vocabularies.base import VocabConfig
+from api.vocabularies.gnd import GND_VOCAB
 
 logger = logging.getLogger(__name__)
 
 
-def service_manifest_response() -> dict:
+def service_manifest_response(vocab: VocabConfig = GND_VOCAB) -> dict:
     """
-    Builds the OpenRefine service manifest response.
+    Builds the OpenRefine service manifest response for a vocabulary
+    (GND by default).
 
     This describes the reconciliation service's capabilities to OpenRefine.
     """
+    service_base_url = f"{BASE_URL}{vocab.route_prefix}"
+
     return {
         "versions": ["0.2"],
-        "name": "Local GND Reconciliation Service",
-        "identifierSpace": "https://d-nb.info/gnd/",
-        "schemaSpace": "https://d-nb.info/gnd/",
-        "defaultTypes": GND_TYPES,
+        "name": vocab.service_name,
+        "identifierSpace": vocab.identifier_space,
+        "schemaSpace": vocab.schema_space,
+        "defaultTypes": list(vocab.types),
         "batchSize": 50,
-        "view": {"url": "https://d-nb.info/gnd/{{id}}"},
+        "view": {"url": vocab.view_url_template},
         "preview": {
-            "url": f"{BASE_URL}/preview/{{{{id}}}}",
+            "url": f"{service_base_url}/preview/{{{{id}}}}",
             "width": 430,
             "height": 300,
         },
         "suggest": {
-            "entity": {"service_url": BASE_URL, "service_path": "/suggest/entity"},
-            "type": {"service_url": BASE_URL, "service_path": "/suggest/type"},
-            "property": {"service_url": BASE_URL, "service_path": "/suggest/property"},
+            "entity": {"service_url": service_base_url, "service_path": "/suggest/entity"},
+            "type": {"service_url": service_base_url, "service_path": "/suggest/type"},
+            "property": {
+                "service_url": service_base_url,
+                "service_path": "/suggest/property",
+            },
         },
         "extend": {
             "propose_properties": {
-                "service_url": BASE_URL,
+                "service_url": service_base_url,
                 "service_path": "/properties",
             },
             "property_settings": [
@@ -77,6 +85,7 @@ def service_manifest_response() -> dict:
 def handle_reconciliation_queries(
     queries: dict,
     limit: int = 5,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> dict:
     """
     Processes OpenRefine-style batched reconciliation queries.
@@ -132,7 +141,7 @@ def handle_reconciliation_queries(
             if pid:
                 properties_used.add(str(pid))
 
-    results_per_query, timing = search_gnd_batch(query_specs)
+    results_per_query, timing = search_gnd_batch(query_specs, vocab=vocab)
 
     response: dict[str, Any] = {
         query_id: {"result": []} for query_id in invalid_query_ids
@@ -301,7 +310,10 @@ def should_resolve_gnd_uri(prop_id: str) -> bool:
     }
 
 
-async def parse_and_handle_root_post(request: Request):
+async def parse_and_handle_root_post(
+    request: Request,
+    vocab: VocabConfig = GND_VOCAB,
+):
     """
     Parses and handles POST requests to the root endpoint.
 
@@ -329,15 +341,17 @@ async def parse_and_handle_root_post(request: Request):
             return handle_reconciliation_queries(
                 queries=body_json["queries"],
                 limit=5,
+                vocab=vocab,
             )
 
         if "extend" in body_json:
-            return handle_extend_request(body_json["extend"])
+            return handle_extend_request(body_json["extend"], vocab=vocab)
 
         # Fallback: treat JSON object as a reconciliation batch
         return handle_reconciliation_queries(
             queries=body_json,
             limit=5,
+            vocab=vocab,
         )
 
     parsed_form = parse_qs(body_text)
@@ -359,6 +373,7 @@ async def parse_and_handle_root_post(request: Request):
         return handle_reconciliation_queries(
             queries=parsed_queries,
             limit=5,
+            vocab=vocab,
         )
 
     if "extend" in parsed_form:
@@ -375,7 +390,7 @@ async def parse_and_handle_root_post(request: Request):
                 },
             )
 
-        return handle_extend_request(extend_request)
+        return handle_extend_request(extend_request, vocab=vocab)
 
     return JSONResponse(
         status_code=400,

@@ -16,127 +16,26 @@ from urllib.parse import unquote
 
 from api.services.properties import get_property_values_from_record
 from api.services.property_labels import property_label
-from api.services.search import GND_TYPE_ALIASES, get_gnd_record_by_id
+from api.services.search import get_gnd_record_by_id
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
-from config import DATA_DIR
-
-GND_URI_PREFIX = "https://d-nb.info/gnd/"
-
-
-BASE_PREVIEW_FIELDS = [
-    "preferredName",
-    "variantName",
-    "type",
-    "gndIdentifier",
-    "uri",
-    "sameAs",
-]
+from api.vocabularies.base import VocabConfig
+from api.vocabularies.gnd import GND_VOCAB
+from config import DATA_DIR, GND_URI_PREFIX
 
 
-TYPE_PREVIEW_FIELDS = {
-    "Person": [
-        "dateOfBirth",
-        "dateOfDeath",
-        "dateOfBirthAndDeath",
-        "placeOfBirth",
-        "placeOfBirthAsLiteral",
-        "placeOfDeath",
-        "placeOfDeathAsLiteral",
-        "professionOrOccupation",
-        "academicDegree",
-        "nobilityTitle",
-        "affiliation",
-        "gender",
-        "geographicAreaCode",
-        "biographicalOrHistoricalInformation",
-        "periodOfActivity",
-        "fieldOfActivity",
-        "publication",
-    ],
-    "CorporateBody": [
-        "dateOfEstablishment",
-        "dateOfTermination",
-        "placeOfBusiness",
-        "placeOfBusinessAsLiteral",
-        "placeOfActivity",
-        "geographicAreaCode",
-        "fieldOfActivity",
-        "precedingCorporateBody",
-        "succeedingCorporateBody",
-        "hierarchicalSuperiorOfTheCorporateBody",
-        "homepage",
-        "page",
-    ],
-    "ConferenceOrEvent": [
-        "dateOfConferenceOrEvent",
-        "placeOfConferenceOrEvent",
-        "placeOfConferenceOrEventAsLiteral",
-        "geographicAreaCode",
-        "relatedCorporateBody",
-        "relatedPerson",
-        "precedingConferenceOrEvent",
-        "succeedingConferenceOrEvent",
-    ],
-    "PlaceOrGeographicName": [
-        "geographicAreaCode",
-        "broaderTermGeneral",
-        "broaderTermPartitive",
-        "relatedPlaceOrGeographicName",
-        "coordinates",
-        "preferredNameForThePlaceOrGeographicName",
-        "variantNameForThePlaceOrGeographicName",
-    ],
-    "SubjectHeading": [
-        "broaderTermGeneral",
-        "broaderTermInstantial",
-        "broaderTermPartitive",
-        "relatedTerm",
-        "relatedDdcWithDegreeOfDeterminacy1",
-        "relatedDdcWithDegreeOfDeterminacy2",
-        "relatedDdcWithDegreeOfDeterminacy3",
-        "gndSubjectCategory",
-        "usingInstructions",
-    ],
-    "Work": [
-        "firstAuthor",
-        "author",
-        "composer",
-        "creator",
-        "dateOfPublication",
-        "dateOfProduction",
-        "formOfWorkAndExpression",
-        "mediumOfPerformance",
-        "opusNumericDesignationOfMusicalWork",
-        "thematicIndexNumericDesignationOfMusicalWork",
-        "relatedWork",
-        "relatedPerson",
-        "relatedCorporateBody",
-    ],
-}
+# These module-level names mirror the corresponding GND_VOCAB preview fields
+# and are kept for backward compatibility with existing imports/tests;
+# GND_VOCAB is now the single source of truth (see api/vocabularies/gnd.py).
+BASE_PREVIEW_FIELDS = list(GND_VOCAB.preview_base_fields)
 
 
-FALLBACK_PREVIEW_FIELDS = [
-    "biographicalOrHistoricalInformation",
-    "geographicAreaCode",
-    "professionOrOccupation",
-    "affiliation",
-    "placeOfActivity",
-    "publication",
-    "relatedTerm",
-    "relatedPerson",
-    "relatedWork",
-    "homepage",
-    "page",
-]
+TYPE_PREVIEW_FIELDS = dict(GND_VOCAB.preview_type_fields)
 
 
-PREVIEW_IMAGE_FIELDS = [
-    "image",
-    "thumbnail",
-    "depiction",
-    "foafDepiction",
-    "schemaImage",
-]
+FALLBACK_PREVIEW_FIELDS = list(GND_VOCAB.preview_fallback_fields)
+
+
+PREVIEW_IMAGE_FIELDS = list(GND_VOCAB.preview_image_fields)
 
 
 def get_last_update_date() -> str | None:
@@ -181,7 +80,10 @@ def get_last_update_date() -> str | None:
         return None
 
 
-def render_preview_for_id(gnd_id: str) -> tuple[str, int]:
+def render_preview_for_id(
+    gnd_id: str,
+    vocab: VocabConfig = GND_VOCAB,
+) -> tuple[str, int]:
     """
     Builds preview HTML and HTTP status for a GND identifier.
 
@@ -192,12 +94,12 @@ def render_preview_for_id(gnd_id: str) -> tuple[str, int]:
     """
 
     normalized_id = normalize_preview_id(gnd_id)
-    record = get_gnd_record_by_id(normalized_id)
+    record = get_gnd_record_by_id(normalized_id, vocab=vocab)
 
     if record is None:
         return render_not_found_preview(normalized_id), 404
 
-    return render_gnd_preview(record), 200
+    return render_gnd_preview(record, vocab=vocab), 200
 
 
 def normalize_preview_id(value: str) -> str:
@@ -232,7 +134,10 @@ def render_not_found_preview(gnd_id: str) -> str:
 """
 
 
-def render_gnd_preview(record: dict[str, Any]) -> str:
+def render_gnd_preview(
+    record: dict[str, Any],
+    vocab: VocabConfig = GND_VOCAB,
+) -> str:
     """
     Renders a type-aware but generic HTML preview for OpenRefine.
     """
@@ -241,12 +146,12 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
     name = str(record.get("preferredName", ""))
     uri = str(record.get("uri") or f"{GND_URI_PREFIX}{gnd_id}")
 
-    broad_type = get_record_broad_type(record)
-    image_url = get_preview_image_url(record)
+    broad_type = get_record_broad_type(record, vocab=vocab)
+    image_url = get_preview_image_url(record, vocab=vocab)
     image_html = build_image_html(image_url)
 
     field_rows = []
-    preview_fields = get_preview_fields_for_record(record)
+    preview_fields = get_preview_fields_for_record(record, vocab=vocab)
 
     for prop_id in preview_fields:
         value = get_property_values_from_record(record, prop_id)
@@ -259,7 +164,7 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
         if not formatted_value:
             continue
 
-        label = property_label(prop_id)
+        label = property_label(prop_id, vocab=vocab)
 
         field_rows.append(
             f"""
@@ -278,7 +183,7 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
         type_badge = f'<span class="type-badge">{escape(broad_type)}</span>'
 
     # Get last update date
-    last_update = get_last_update_date()
+    last_update = get_last_update_date() if vocab.show_update_footer else None
     update_footer = ""
     if last_update:
         update_footer = f'<div class="update-footer">Letzte Aktualisierung der Daten: {escape(last_update)}</div>'
@@ -388,7 +293,7 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
       <div class="content">
         <h3>{escape(name)} {type_badge}</h3>
         <div class="meta">
-          {make_html_link(uri, "GND " + gnd_id)}
+          {make_html_link(uri, f"{vocab.preview_id_label} {gnd_id}")}
         </div>
         {fields_html}
         {update_footer}
@@ -399,7 +304,10 @@ def render_gnd_preview(record: dict[str, Any]) -> str:
 """
 
 
-def get_record_broad_type(record: dict[str, Any]) -> str | None:
+def get_record_broad_type(
+    record: dict[str, Any],
+    vocab: VocabConfig = GND_VOCAB,
+) -> str | None:
     """
     Determines the broad preview type from record type.
     """
@@ -427,7 +335,7 @@ def get_record_broad_type(record: dict[str, Any]) -> str | None:
     ]
 
     for candidate_broad_type in broad_type_order:
-        allowed_types = GND_TYPE_ALIASES.get(
+        allowed_types = vocab.type_aliases.get(
             candidate_broad_type,
             [candidate_broad_type],
         )
@@ -439,19 +347,22 @@ def get_record_broad_type(record: dict[str, Any]) -> str | None:
     return None
 
 
-def get_preview_fields_for_record(record: dict[str, Any]) -> list[str]:
+def get_preview_fields_for_record(
+    record: dict[str, Any],
+    vocab: VocabConfig = GND_VOCAB,
+) -> list[str]:
     """
     Builds a preview field list based on broad entity type.
     """
 
-    fields = list(BASE_PREVIEW_FIELDS)
+    fields = list(vocab.preview_base_fields)
 
-    broad_type = get_record_broad_type(record)
+    broad_type = get_record_broad_type(record, vocab=vocab)
 
-    if broad_type and broad_type in TYPE_PREVIEW_FIELDS:
-        fields.extend(TYPE_PREVIEW_FIELDS[broad_type])
+    if broad_type and broad_type in vocab.preview_type_fields:
+        fields.extend(vocab.preview_type_fields[broad_type])
 
-    fields.extend(FALLBACK_PREVIEW_FIELDS)
+    fields.extend(vocab.preview_fallback_fields)
 
     return deduplicate_preview_fields(fields)
 
@@ -474,12 +385,15 @@ def deduplicate_preview_fields(fields: list[str]) -> list[str]:
     return result
 
 
-def get_preview_image_url(record: dict[str, Any]) -> str | None:
+def get_preview_image_url(
+    record: dict[str, Any],
+    vocab: VocabConfig = GND_VOCAB,
+) -> str | None:
     """
     Returns an image URL for the preview if available.
     """
 
-    for prop_id in PREVIEW_IMAGE_FIELDS:
+    for prop_id in vocab.preview_image_fields:
         value = get_property_values_from_record(record, prop_id)
         image_url = first_image_url(value)
 

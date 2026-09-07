@@ -1,0 +1,139 @@
+{
+    "versions": [
+        "0.2"
+    ],
+    "name": "Local GND Reconciliation Service",
+    "identifierSpace": "https://d-nb.info/gnd/",
+    "schemaSpace": "https://d-nb.info/gnd/",
+    "defaultTypes": [
+        {
+            "id": "AuthorityResource",
+            "name": "Normdatenressource"
+        },
+        {
+            "id": "CorporateBody",
+            "name": "K\u00f6rperschaft",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "ConferenceOrEvent",
+            "name": "Konferenz oder Veranstaltung",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "SubjectHeading",
+            "name": "Schlagwort",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "Work",
+            "name": "Werk",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "PlaceOrGeographicName",
+            "name": "Geografikum",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "DifferentiatedPerson",
+            "name": "Individualisierte Person",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "Family",
+            "name": "Familie",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        }
+    ],
+    "batchSize": 50,
+    "view": {
+        "url": "https://d-nb.info/gnd/{{id}}"
+    },
+    "preview": {
+        "url": "http://localhost:8083/preview/{{id}}",
+        "width": 430,
+        "height": 300
+    },
+    "suggest": {
+        "entity": {
+            "service_url": "http://localhost:8083",
+            "service_path": "/suggest/entity"
+        },
+        "type": {
+            "service_url": "http://localhost:8083",
+            "service_path": "/suggest/type"
+        },
+        "property": {
+            "service_url": "http://localhost:8083",
+            "service_path": "/suggest/property"
+        }
+    },
+    "extend": {
+        "propose_properties": {
+            "service_url": "http://localhost:8083",
+            "service_path": "/properties"
+        },
+        "property_settings": [
+            {
+                "name": "limit",
+                "label": "Limit",
+                "type": "number",
+                "default": 0,
+                "help_text": "Maximum number of values to return per row. Use 0 for no limit."
+            },
+            {
+                "name": "content",
+                "label": "Content",
+                "type": "select",
+                "default": "literal",
+                "help_text": "Return either identifiers/URIs or readable literal labels.",
+                "choices": [
+                    {
+                        "value": "id",
+                        "name": "ID"
+                    },
+                    {
+                        "value": "literal",
+                        "name": "Literal"
+                    }
+                ]
+            }
+        ]
+    }
+}

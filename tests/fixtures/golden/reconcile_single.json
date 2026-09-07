@@ -1,0 +1,104 @@
+{
+    "q0": {
+        "result": [
+            {
+                "id": "118540238",
+                "name": "Goethe, Johann Wolfgang von",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "DifferentiatedPerson",
+                        "name": "Individualisierte Person",
+                        "broader": [
+                            {
+                                "id": "Person",
+                                "name": "Person"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "122805875X",
+                "name": "Johann Wolfgang von Goethe",
+                "score": 96,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "Work",
+                        "name": "Werk",
+                        "broader": [
+                            {
+                                "id": "Work",
+                                "name": "Work"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1085154025",
+                "name": "Exlibris (Goethe, Johann Wolfgang von), 02",
+                "score": 70,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "ProvenanceCharacteristic",
+                        "name": "ProvenanceCharacteristic"
+                    }
+                ]
+            },
+            {
+                "id": "1085150313",
+                "name": "Exlibris (Goethe, Johann Wolfgang von), 01",
+                "score": 70,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "ProvenanceCharacteristic",
+                        "name": "ProvenanceCharacteristic"
+                    }
+                ]
+            },
+            {
+                "id": "7512215-7",
+                "name": "Weimar / Goethe-Nationalmuseum / Goethe, Johann Wolfgang von / Sammlung",
+                "score": 60,
+                "match": false,
+                "type": [
+                    {
+                        "id": "AuthorityResource",
+                        "name": "Authority Resource"
+                    },
+                    {
+                        "id": "CorporateBody",
+                        "name": "K\u00f6rperschaft",
+                        "broader": [
+                            {
+                                "id": "CorporateBody",
+                                "name": "Corporate Body"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

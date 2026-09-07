@@ -9,6 +9,13 @@ import os
 from pathlib import Path
 
 # =============================================================================
+# Shared / Cross-Vocabulary Configuration
+# =============================================================================
+
+GND_URI_PREFIX = "https://d-nb.info/gnd/"
+
+
+# =============================================================================
 # OpenSearch Configuration
 # =============================================================================
 
@@ -32,6 +39,36 @@ GND_ENTITYFACTS_ONLY_TYPE = os.getenv("GND_ENTITYFACTS_ONLY_TYPE") or None
 
 GND_INDEX_LOCK_STALE_SECONDS = int(
     os.getenv("GND_INDEX_LOCK_STALE_SECONDS", str(12 * 60 * 60))
+)
+
+
+# =============================================================================
+# Getty Vocabularies Configuration (AAT first; ULAN/TGN design-prepared)
+# =============================================================================
+
+GETTY_INDEX_NAME = os.getenv("GETTY_INDEX_NAME", "getty")
+GETTY_VOCABULARIES = [
+    v.strip() for v in os.getenv("GETTY_VOCABULARIES", "aat").split(",") if v.strip()
+]
+GETTY_FORCE_REINDEX = os.getenv("GETTY_FORCE_REINDEX", "false").lower() == "true"
+GETTY_AUTO_UPDATE = os.getenv("GETTY_AUTO_UPDATE", "true").lower() == "true"
+GETTY_UPDATE_INTERVAL_HOURS = float(os.getenv("GETTY_UPDATE_INTERVAL_HOURS", "336"))
+GETTY_INDEX_LOCK_STALE_SECONDS = int(
+    os.getenv("GETTY_INDEX_LOCK_STALE_SECONDS", str(12 * 60 * 60))
+)
+GETTY_DOWNLOAD_URL_TEMPLATE = os.getenv(
+    "GETTY_DOWNLOAD_URL_TEMPLATE",
+    "http://{vocab}downloads.getty.edu/VocabData/explicit.zip",
+)
+GETTY_RAW_DIR = Path(os.getenv("GETTY_RAW_DIR", "data/raw/getty"))
+
+# Scheduler for Getty's periodic full-rebuild updates (no OAI-PMH-style
+# incremental update exists for Getty; see scripts/update_getty_scheduler.py).
+GETTY_UPDATE_INITIAL_DELAY_SECONDS = int(
+    os.getenv("GETTY_UPDATE_INITIAL_DELAY_SECONDS", "600")
+)
+GETTY_UPDATE_LOCK_STALE_SECONDS = int(
+    os.getenv("GETTY_UPDATE_LOCK_STALE_SECONDS", str(6 * 60 * 60))
 )
 
 

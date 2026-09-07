@@ -1,0 +1,44 @@
+{
+    "result": [
+        {
+            "id": "dateOfConferenceOrEvent",
+            "name": "Veranstaltungsdaten"
+        },
+        {
+            "id": "dateOfEstablishment",
+            "name": "Gr\u00fcndungsdatum"
+        },
+        {
+            "id": "dateOfEstablishmentAndTermination",
+            "name": "Gr\u00fcndungs- und Aufl\u00f6sungsdatum"
+        },
+        {
+            "id": "dateOfTermination",
+            "name": "Aufl\u00f6sungsdatum"
+        },
+        {
+            "id": "dateOfBirth",
+            "name": "Geburtsdatum"
+        },
+        {
+            "id": "dateOfBirthAndDeath",
+            "name": "Geburts- und Sterbedatum"
+        },
+        {
+            "id": "dateOfDeath",
+            "name": "Sterbedatum"
+        },
+        {
+            "id": "hasBeginDate",
+            "name": "Anfangsdatum"
+        },
+        {
+            "id": "hasEndDate",
+            "name": "Enddatum"
+        },
+        {
+            "id": "periodOfActivity",
+            "name": "Wirkungsdaten"
+        }
+    ]
+}

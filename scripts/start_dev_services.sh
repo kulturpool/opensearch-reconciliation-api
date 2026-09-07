@@ -14,8 +14,21 @@ if [ -f "data/state/update.lock" ]; then
   rm -f data/state/update.lock
 fi
 
+if [ -f "data/state/getty_index_build.lock" ]; then
+  echo "[START] Removing stale Getty index build lock..."
+  rm -f data/state/getty_index_build.lock
+fi
+
+if [ -f "data/state/getty_update.lock" ]; then
+  echo "[START] Removing stale Getty update lock..."
+  rm -f data/state/getty_update.lock
+fi
+
 echo "[START] Running GND bootstrap..."
 python scripts/bootstrap_gnd.py --auto
+
+echo "[START] Running Getty bootstrap..."
+python scripts/bootstrap_getty.py --auto
 
 echo "[START] Checking FastAPI service..."
 

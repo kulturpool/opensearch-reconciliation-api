@@ -1,6 +1,6 @@
 # GND Reconciliation API mit OpenSearch
 
-Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Der Service lädt die GND-Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt eine OpenRefine-kompatible Reconciliation API bereit.
+Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und den **Getty Art & Architecture Thesaurus (AAT)**. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt für jedes Vokabular eine eigene OpenRefine-kompatible Reconciliation API bereit: GND am Root-Endpunkt (`/`), Getty AAT unter `/getty`.
 
 **API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) CHANGE!
 
@@ -22,6 +22,7 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 ## Features
 
 - Lokale GND-Reconciliation für OpenRefine
+- Lokale Reconciliation gegen den Getty Art & Architecture Thesaurus (AAT) unter `/getty`
 - Automatischer Download und Indexaufbau beim ersten Start
 - Persistenter lokaler Suchindex in OpenSearch
 - OpenRefine-kompatible Reconciliation API
@@ -1063,6 +1064,7 @@ JSON
 
 Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können später ergänzt werden:
 
+- Weitere Getty-Vokabulare (ULAN, TGN) über die bereits vorbereiteten Spezifikationen hinaus
 - Integration weiterer Normdatenquellen als eigene Reconciliation-Quellen
 - Hochverfügbarkeits- oder Clusterbetrieb
 - Schreibzugriffe auf die GND
@@ -1083,8 +1085,67 @@ Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können späte
 
 ---
 
+## Getty AAT (Art & Architecture Thesaurus)
+
+Zusätzlich zur GND stellt der Service unter `/getty` einen zweiten, unabhängigen Reconciliation-Endpunkt für den **Getty Art & Architecture Thesaurus (AAT)** bereit. Beide Vokabulare laufen im selben Container, teilen sich aber getrennte OpenSearch-Indizes (`gnd` bzw. `getty`) und getrennte Bootstrap-/Update-Skripte.
+
+### Unterschiede zur GND-Anbindung
+
+- **Kein inkrementelles Update**: Getty stellt (anders als die GND-OAI-PMH-Schnittstelle) keine Änderungsliste bereit. Ein „Update" ist daher immer ein vollständiger Re-Download und Re-Index des expliziten N-Triples-Exports (`explicit.zip`).
+- **Zero-Downtime-Rebuilds über Alias-Switch**: Ein Rebuild baut einen neuen Index (`getty_build_<timestamp>`) auf, validiert ihn und schwenkt danach die öffentliche Alias `getty` atomar um. Der alte Build-Index wird anschließend gelöscht. Während des Rebuilds bleibt der bisherige Index unter `/getty` durchgehend erreichbar.
+- **Nur AAT aktiv**: `GETTY_VOCABULARIES` steuert, welche Getty-Vokabulare indexiert werden. Aktuell ist nur `aat` produktiv; `ulan`/`tgn` sind im Code als Spezifikationen vorbereitet, aber nicht angebunden.
+
+### Konfiguration
+
+Siehe `.env.example`, Abschnitt „Getty Vocabulary Program (AAT) Configuration", für alle Variablen (`GETTY_INDEX_NAME`, `GETTY_VOCABULARIES`, `GETTY_FORCE_REINDEX`, `GETTY_AUTO_UPDATE`, `GETTY_UPDATE_INTERVAL_HOURS`, `GETTY_UPDATE_INITIAL_DELAY_SECONDS`, `GETTY_INDEX_LOCK_STALE_SECONDS`, `GETTY_UPDATE_LOCK_STALE_SECONDS`, `GETTY_RAW_DIR`, `GETTY_DOWNLOAD_URL_TEMPLATE`).
+
+### Bootstrap manuell ausführen
+
+Zustand prüfen, ohne etwas zu verändern:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --check-only
+```
+
+Build nur ausführen, falls noch kein vollständiger Getty-Index vorhanden ist:
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --auto
+```
+
+Vollständigen, erzwungenen Rebuild auslösen (z.B. nach Änderungen an `GETTY_VOCABULARIES`):
+
+```bash
+docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --init
+```
+
+### API testen
+
+```bash
+curl "http://localhost:8083/getty/"
+```
+
+```bash
+curl -X POST "http://localhost:8083/getty/" -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode 'queries={"q1":{"query":"painting"}}'
+```
+
+### Persistenz
+
+```text
+data/raw/getty/
+  heruntergeladene AAT-N-Triples-Exports
+
+data/state/getty_state.json, data/state/getty_index_state.json
+  Bootstrap- und Build-Status (analog zu gnd_state.json / index_state.json)
+
+data/logs/bootstrap_getty.log, data/logs/update_getty_scheduler.log
+  Logs
+```
+
+---
+
 ## Datenquellen und Lizenzhinweis
 
-Die GND-Daten und EntityFacts stammen aus den offenen Datenangeboten der Deutschen Nationalbibliothek.
+Die GND-Daten und EntityFacts stammen aus den offenen Datenangeboten der Deutschen Nationalbibliothek. Die Getty-AAT-Daten stammen vom [Getty Research Institute](https://www.getty.edu/research/tools/vocabularies/aat/) (Getty Vocabulary Program).
 
 Bitte die jeweils geltenden Nutzungsbedingungen der Datenquellen beachten.

@@ -13,33 +13,12 @@ from opensearchpy import OpenSearch
 from opensearchpy.exceptions import NotFoundError, OpenSearchException
 from rapidfuzz import fuzz
 
-from api.gnd_types import AUTHORITY_RESOURCE_TYPE, GND_TYPE_ALIASES, GND_TYPE_LABELS
 from api.services.property_matching import calculate_property_bonus
-from config import INDEX_NAME, OPENSEARCH_HOST, OPENSEARCH_PORT
+from api.vocabularies.base import VocabConfig
+from api.vocabularies.gnd import GND_VOCAB
+from config import OPENSEARCH_HOST, OPENSEARCH_PORT
 
 logger = logging.getLogger(__name__)
-
-# Lets callers pass either a bare GND ID ("118540238") or a full GND URI
-# ("https://d-nb.info/gnd/118540238") wherever a direct identifier lookup is
-# expected - mirrors the same normalization already done for the /preview
-# endpoint in api/services/preview.py.
-GND_URI_PREFIX = "https://d-nb.info/gnd/"
-
-
-def normalize_gnd_identifier(value: str) -> str:
-    """
-    Strips the GND URI prefix from a value, if present.
-
-    "https://d-nb.info/gnd/118540238" -> "118540238"
-    "118540238" -> "118540238"
-    """
-
-    value = str(value or "").strip()
-
-    if value.startswith(GND_URI_PREFIX):
-        return value.replace(GND_URI_PREFIX, "").strip("/")
-
-    return value
 
 # Fields returned from OpenSearch during reconciliation. Keeping this list
 # narrow (instead of the full GND document) noticeably reduces the amount of
@@ -47,25 +26,18 @@ def normalize_gnd_identifier(value: str) -> str:
 # candidate, which matters a lot when a batch touches thousands of rows.
 # `propertiesFlat` is kept only as a generic fallback for properties that
 # don't have a dedicated top-level field.
-RECONCILIATION_SOURCE_FIELDS = [
-    "id",
-    "uri",
-    "preferredName",
-    "variantName",
-    "type",
-    "dateOfBirth",
-    "dateOfDeath",
-    "dateOfBirthAndDeath",
-    "professionOrOccupation",
-    "placeOfBirth",
-    "placeOfDeath",
-    "propertiesFlat",
-]
+#
+# These module-level names mirror the corresponding GND_VOCAB fields and are
+# kept for backward compatibility with other modules importing them directly
+# from here; GND_VOCAB is now the single source of truth (see
+# api/vocabularies/gnd.py). Non-GND vocabularies (e.g. Getty) pass their own
+# VocabConfig via the `vocab=` parameter instead of relying on these.
+RECONCILIATION_SOURCE_FIELDS = list(GND_VOCAB.source_fields)
 
 # Date-like properties are handled with dedicated, cheap query clauses and a
 # dedicated post-processing bonus/penalty instead of the generic nested
 # propertiesFlat matching used for other properties.
-DATE_PROPERTY_IDS = {"dateOfBirth", "dateOfDeath", "dateOfBirthAndDeath"}
+DATE_PROPERTY_IDS = set(GND_VOCAB.date_property_ids)
 
 # Properties that both importers (importer/normalize_gnd_lds.py and
 # importer/normalize_entityfacts.py) always write to a dedicated top-level
@@ -73,11 +45,7 @@ DATE_PROPERTY_IDS = {"dateOfBirth", "dateOfDeath", "dateOfBirthAndDeath"}
 # match_phrase clauses alone are exhaustive, so the (much more expensive)
 # nested propertiesFlat join can be skipped entirely instead of only being
 # gated behind a pre-filter.
-RELIABLE_TOP_LEVEL_PROPERTY_IDS = DATE_PROPERTY_IDS | {
-    "professionOrOccupation",
-    "placeOfBirth",
-    "placeOfDeath",
-}
+RELIABLE_TOP_LEVEL_PROPERTY_IDS = set(GND_VOCAB.reliable_top_level_property_ids)
 
 # "id"/"uri" (and the "gndIdentifier" alias some OpenRefine templates use)
 # are mapped as plain `keyword` fields (see indexer/index_gnd_lds.py), not as
@@ -85,18 +53,17 @@ RELIABLE_TOP_LEVEL_PROPERTY_IDS = DATE_PROPERTY_IDS | {
 # as the generic property clause builder does for every other property -
 # silently matches nothing, wasting a should-clause for no benefit. These
 # get a single direct `term` clause on the raw field instead.
-KEYWORD_FIELD_PROPERTY_IDS = {
-    "id": "id",
-    "gndIdentifier": "id",
-    "uri": "uri",
-}
+KEYWORD_FIELD_PROPERTY_IDS = dict(GND_VOCAB.keyword_field_property_ids)
 
 YEAR_RE = re.compile(r"(?<!\d)\d{3,4}(?!\d)")
 
 # Bounds the number of values considered per requested property (see
 # build_property_should_clauses) to keep should-clause count - and thus
-# query cost - predictable even for oddly-shaped/multi-valued input.
+# query cost - predictable even for oddly-shaped/multi-valued input. Applies
+# uniformly across vocabularies (not part of VocabConfig).
 MAX_PROPERTY_VALUES = 5
+
+
 
 
 def get_opensearch_client() -> OpenSearch:
@@ -124,9 +91,10 @@ def search_gnd(
     limit: int = 5,
     entity_type: str | None = None,
     properties: list[dict[str, Any]] | None = None,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list[dict[str, Any]]:
     """
-    Searches the local GND OpenSearch index.
+    Searches a vocabulary's OpenSearch index (GND by default).
 
     Returns results in a format that can later be used by
     the OpenRefine Reconciliation API.
@@ -134,8 +102,9 @@ def search_gnd(
     Args:
         query: The search query, e.g. "Goethe".
         limit: Maximum number of results.
-        entity_type: Optional GND entity type filter, e.g. "Person".
+        entity_type: Optional entity type filter, e.g. "Person".
         properties: Optional list of property filters
+        vocab: VocabConfig to search against (defaults to GND).
 
     Returns:
         A list of candidate matches.
@@ -144,17 +113,18 @@ def search_gnd(
     if not query or not query.strip():
         return []
 
-    normalized_query = normalize_gnd_identifier(query)
+    normalized_query = vocab.normalize_identifier(query)
 
     search_body = build_search_body(
         query=normalized_query,
         limit=limit,
         entity_type=entity_type,
         properties=properties or [],
+        vocab=vocab,
     )
 
     response = client.search(
-        index=INDEX_NAME,
+        index=vocab.index_name,
         body=search_body,
     )
 
@@ -163,11 +133,13 @@ def search_gnd(
         query=normalized_query,
         requested_type=entity_type,
         requested_properties=properties or [],
+        vocab=vocab,
     )
 
 
 def search_gnd_batch(
     query_specs: list[dict[str, Any]],
+    vocab: VocabConfig = GND_VOCAB,
 ) -> tuple[list[list[dict[str, Any]]], dict[str, float]]:
     """
     Executes many reconciliation queries in a single OpenSearch `_msearch`
@@ -207,17 +179,18 @@ def search_gnd_batch(
             has_query.append(False)
             continue
 
-        normalized_query = normalize_gnd_identifier(query_text)
+        normalized_query = vocab.normalize_identifier(query_text)
         normalized_queries.append(normalized_query)
         has_query.append(True)
 
-        msearch_body.append({"index": INDEX_NAME})
+        msearch_body.append({"index": vocab.index_name})
         msearch_body.append(
             build_search_body(
                 query=normalized_query,
                 limit=spec.get("limit", 5),
                 entity_type=spec.get("entity_type"),
                 properties=spec.get("properties") or [],
+                vocab=vocab,
             )
         )
 
@@ -256,6 +229,7 @@ def search_gnd_batch(
                 query=normalized_query,
                 requested_type=spec.get("entity_type"),
                 requested_properties=spec.get("properties") or [],
+                vocab=vocab,
             )
         )
 
@@ -264,15 +238,20 @@ def search_gnd_batch(
     return results, timing
 
 
-def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
+def get_gnd_record_by_id(
+    gnd_id: str,
+    vocab: VocabConfig = GND_VOCAB,
+) -> dict[str, Any] | None:
     """
-    Retrieves a single GND record from OpenSearch by its GND ID.
+    Retrieves a single record from a vocabulary's OpenSearch index by ID
+    (GND by default).
 
     Args:
-        gnd_id: The GND identifier, e.g. "118540238".
+        gnd_id: The identifier, e.g. "118540238".
+        vocab: VocabConfig to look the record up in (defaults to GND).
 
     Returns:
-        The indexed GND record or None if not found.
+        The indexed record or None if not found.
     """
 
     if not gnd_id or not gnd_id.strip():
@@ -280,8 +259,8 @@ def get_gnd_record_by_id(gnd_id: str) -> dict[str, Any] | None:
 
     try:
         response = client.get(
-            index=INDEX_NAME,
-            id=normalize_gnd_identifier(gnd_id),
+            index=vocab.index_name,
+            id=vocab.normalize_identifier(gnd_id),
         )
     except (NotFoundError, OpenSearchException):
         return None
@@ -297,6 +276,7 @@ def build_search_body(
     limit: int,
     entity_type: str | None = None,
     properties: list[dict[str, Any]] | None = None,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> dict[str, Any]:
     """
     Builds the OpenSearch query.
@@ -304,23 +284,52 @@ def build_search_body(
     Search strategy:
     - preferredName is weighted highest
     - variantName is also important
-    - id is searchable for direct GND-ID lookups
+    - id is searchable for direct ID lookups
     - fuzziness allows approximate matches
     """
     properties = properties or []
 
     should_clauses: list[dict[str, Any]] = [
-        {"term": {"id": {"value": query, "boost": 20}}},
-        {"term": {"preferredName.keyword": {"value": query, "boost": 15}}},
-        {"term": {"preferredName.lowercase": {"value": query.lower(), "boost": 12}}},
-        {"term": {"variantName.keyword": {"value": query, "boost": 10}}},
-        {"term": {"variantName.lowercase": {"value": query.lower(), "boost": 8}}},
+        {"term": {"id": {"value": query, "boost": vocab.id_boost}}},
+        {
+            "term": {
+                "preferredName.keyword": {
+                    "value": query,
+                    "boost": vocab.preferred_keyword_boost,
+                }
+            }
+        },
+        # NOTE: preferredName/variantName have no ".lowercase" sub-field in
+        # the index mapping (only ".keyword", which is case-sensitive) - see
+        # indexer/index_gnd_lds.py INDEX_SETTINGS. A term query against
+        # ".lowercase" would silently match nothing. match_phrase against the
+        # analyzed field (gnd_text_analyzer = standard tokenizer + lowercase
+        # + asciifolding) gives the intended case-insensitive exact-phrase
+        # boost without requiring a mapping change/reindex.
+        {
+            "match_phrase": {
+                "preferredName": {"query": query, "boost": vocab.preferred_phrase_boost}
+            }
+        },
+        {
+            "term": {
+                "variantName.keyword": {
+                    "value": query,
+                    "boost": vocab.variant_keyword_boost,
+                }
+            }
+        },
+        {
+            "match_phrase": {
+                "variantName": {"query": query, "boost": vocab.variant_phrase_boost}
+            }
+        },
         {
             "multi_match": {
                 "query": query,
-                "fields": ["preferredName^5", "variantName^3", "id^10"],
+                "fields": list(vocab.multi_match_fields),
                 "operator": "and",
-                "boost": 5,
+                "boost": vocab.multi_match_boost,
             }
         },
     ]
@@ -330,25 +339,14 @@ def build_search_body(
     # with many words (e.g. long titles/descriptions used as the name value).
     # Cap expansions and skip fuzziness entirely once a query has too many
     # terms to stay safely under that limit.
-    fuzzy_fields = [
-        "preferredName^4",
-        "variantName^3",
-        "professionOrOccupation^2",
-        "placeOfBirth",
-        "placeOfDeath",
-        "id^5",
-    ]
-    max_expansions = 20
-    max_fuzzy_terms = 6  # 6 terms * 6 fields * 20 expansions = 720 < 1024
-
-    if len(query.split()) <= max_fuzzy_terms:
+    if len(query.split()) <= vocab.fuzzy_max_terms:
         should_clauses.append(
             {
                 "multi_match": {
                     "query": query,
-                    "fields": fuzzy_fields,
+                    "fields": list(vocab.fuzzy_fields),
                     "fuzziness": "AUTO",
-                    "max_expansions": max_expansions,
+                    "max_expansions": vocab.fuzzy_max_expansions,
                     "prefix_length": 1,
                     "operator": "or",
                     "boost": 1,
@@ -356,19 +354,19 @@ def build_search_body(
             }
         )
 
-    property_should_clauses = build_property_should_clauses(properties)
+    property_should_clauses = build_property_should_clauses(properties, vocab=vocab)
     should_clauses.extend(property_should_clauses)
 
     filter_clauses: list[dict[str, Any]] = []
 
-    if entity_type and entity_type != "AuthorityResource":
-        allowed_types = GND_TYPE_ALIASES.get(entity_type, [entity_type])
+    if entity_type and not is_root_type(entity_type, vocab=vocab):
+        allowed_types = vocab.type_aliases.get(entity_type, [entity_type])
 
         filter_clauses.append({"terms": {"type": allowed_types}})
 
     return {
         "size": limit,
-        "_source": {"includes": RECONCILIATION_SOURCE_FIELDS},
+        "_source": {"includes": list(vocab.source_fields)},
         "query": {
             "bool": {
                 "should": should_clauses,
@@ -381,6 +379,7 @@ def build_search_body(
 
 def build_property_should_clauses(
     properties: list[dict[str, Any]],
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list[dict[str, Any]]:
     """
     Builds OpenSearch should clauses from OpenRefine reconciliation properties.
@@ -423,10 +422,10 @@ def build_property_should_clauses(
 
         # Determine boost multiplier based on property importance
         # Dates and IDs are very discriminating, so boost them more
-        boost_multiplier = get_property_boost_multiplier(prop_id)
-        is_date_property = prop_id in DATE_PROPERTY_IDS
-        keyword_field = KEYWORD_FIELD_PROPERTY_IDS.get(prop_id)
-        skip_nested_fallback = prop_id in RELIABLE_TOP_LEVEL_PROPERTY_IDS
+        boost_multiplier = get_property_boost_multiplier(prop_id, vocab=vocab)
+        is_date_property = prop_id in vocab.date_property_ids
+        keyword_field = vocab.keyword_field_property_ids.get(prop_id)
+        skip_nested_fallback = prop_id in vocab.reliable_top_level_property_ids
 
         for item in values:
             item_value = extract_property_value_for_query(item)
@@ -591,40 +590,16 @@ def extract_year_token(value: str) -> str | None:
     return match.group(0) if match else None
 
 
-def get_property_boost_multiplier(prop_id: str) -> float:
+def get_property_boost_multiplier(prop_id: str, vocab: VocabConfig = GND_VOCAB) -> float:
     """
     Returns a boost multiplier based on how discriminating a property is.
 
     High-value properties like dates and IDs get higher multipliers
     to make them more influential in OpenSearch scoring.
     """
-    # High-discriminating fields: dates and identifiers
-    high_priority_fields = {
-        "dateOfBirth",
-        "dateOfDeath",
-        "dateOfBirthAndDeath",
-        "dateOfEstablishment",
-        "dateOfTermination",
-        "dateOfPublication",
-        "dateOfProduction",
-        "dateOfConferenceOrEvent",
-        "id",
-        "gndIdentifier",
-        "uri",
-    }
-
-    # Medium-discriminating fields: places and specific attributes
-    medium_priority_fields = {
-        "placeOfBirth",
-        "placeOfDeath",
-        "placeOfBusiness",
-        "placeOfActivity",
-        "gender",
-    }
-
-    if prop_id in high_priority_fields:
+    if prop_id in vocab.high_priority_property_ids:
         return 1.5  # 50% boost increase for dates/IDs
-    elif prop_id in medium_priority_fields:
+    elif prop_id in vocab.medium_priority_property_ids:
         return 1.25  # 25% boost increase for places
     else:
         return 1.0  # Normal boost
@@ -654,6 +629,7 @@ def format_search_results(
     query: str | None = None,
     requested_type: str | None = None,
     requested_properties: list[dict[str, Any]] | None = None,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list[dict[str, Any]]:
     """
     Converts OpenSearch hits into reconciliation-style result objects.
@@ -679,6 +655,7 @@ def format_search_results(
             source=source,
             requested_type=requested_type,
             requested_properties=requested_properties or [],
+            vocab=vocab,
         )
 
         result = {
@@ -686,7 +663,7 @@ def format_search_results(
             "name": source.get("preferredName"),
             "score": normalized_score,
             "match": False,
-            "type": format_entity_types(source.get("type")),
+            "type": format_entity_types(source.get("type"), vocab=vocab),
             # Internal only, stripped before the result is returned below.
             "_signals": signals,
         }
@@ -777,6 +754,7 @@ def normalize_score(
     source: dict[str, Any] | None = None,
     requested_properties: list[dict[str, Any]] | None = None,
     requested_type: str | None = None,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> tuple[int, dict[str, bool]]:
     """
     Converts an OpenSearch score into a 0-100 reconciliation score.
@@ -894,7 +872,7 @@ def normalize_score(
     non_date_properties = [
         prop
         for prop in requested_properties
-        if prop.get("pid") not in DATE_PROPERTY_IDS
+        if prop.get("pid") not in vocab.date_property_ids
     ]
 
     property_bonus, property_penalty, _property_features = calculate_property_bonus(
@@ -904,10 +882,19 @@ def normalize_score(
         max_penalty=12,
     )
 
-    date_signals = score_date_signals(
-        source=source,
-        requested_properties=requested_properties,
-    )
+    if vocab.uses_date_signals:
+        date_signals = score_date_signals(
+            source=source,
+            requested_properties=requested_properties,
+        )
+    else:
+        date_signals = {
+            "bonus": 0,
+            "penalty": 0,
+            "birth_match": False,
+            "death_match": False,
+        }
+
     property_bonus += date_signals["bonus"]
     property_penalty += date_signals["penalty"]
 
@@ -928,6 +915,7 @@ def normalize_score(
         and candidate_matches_requested_type(
             source=source,
             requested_type=requested_type,
+            vocab=vocab,
         )
     )
 
@@ -1161,12 +1149,17 @@ def name_signature(value: Any) -> str:
     return " ".join(tokens)
 
 
-def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
+def format_entity_types(
+    entity_types: Any,
+    vocab: VocabConfig = GND_VOCAB,
+) -> list[dict[str, Any]]:
     """
-    Converts stored GND type values into OpenRefine-style type objects.
+    Converts stored type values into OpenRefine-style type objects.
 
-    Every GND record is also returned as AuthorityResource, matching the
-    behavior of the public GND/lobid reconciliation API more closely.
+    Every record is also returned as vocab.root_type (e.g. AuthorityResource
+    for GND), matching the behavior of the public GND/lobid reconciliation
+    API more closely. Vocabularies without a catch-all root type (root_type
+    is None) skip this.
     """
 
     if not entity_types:
@@ -1178,9 +1171,12 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
     if not isinstance(entity_types, list):
         entity_types = []
 
-    formatted_types: list[dict[str, Any]] = [AUTHORITY_RESOURCE_TYPE]
+    formatted_types: list[dict[str, Any]] = []
+    seen_type_ids: set[str] = set()
 
-    seen_type_ids = {AUTHORITY_RESOURCE_TYPE["id"]}
+    if vocab.root_type:
+        formatted_types.append(vocab.root_type)
+        seen_type_ids.add(vocab.root_type["id"])
 
     for entity_type in entity_types:
         type_id = str(entity_type)
@@ -1193,7 +1189,7 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
 
         seen_type_ids.add(type_id)
 
-        mapping = GND_TYPE_LABELS.get(type_id)
+        mapping = vocab.type_labels.get(type_id)
 
         if mapping:
             type_object: dict[str, Any] = {
@@ -1219,9 +1215,25 @@ def format_entity_types(entity_types: Any) -> list[dict[str, Any]]:
     return formatted_types
 
 
+def is_root_type(
+    entity_type: str | None,
+    vocab: VocabConfig = GND_VOCAB,
+) -> bool:
+    """
+    Returns True when the requested type equals the vocab's catch-all root
+    type ID (e.g. "AuthorityResource" for GND, "aat" for Getty).
+    """
+
+    if not entity_type or not vocab.root_type:
+        return False
+
+    return entity_type == vocab.root_type.get("id")
+
+
 def candidate_matches_requested_type(
     source: dict[str, Any],
     requested_type: str | None,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> bool:
     """
     Checks whether a candidate's type matches the requested OpenRefine type.
@@ -1230,7 +1242,7 @@ def candidate_matches_requested_type(
     if not requested_type:
         return False
 
-    if requested_type == "AuthorityResource":
+    if is_root_type(requested_type, vocab=vocab):
         return True
 
     candidate_types = source.get("type", [])
@@ -1240,7 +1252,7 @@ def candidate_matches_requested_type(
 
     normalized_candidate_types = normalize_candidate_types(candidate_types)
 
-    allowed_types = GND_TYPE_ALIASES.get(
+    allowed_types = vocab.type_aliases.get(
         requested_type,
         [requested_type],
     )

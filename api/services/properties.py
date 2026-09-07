@@ -5,113 +5,36 @@ from opensearchpy import OpenSearchException
 
 from api.services.property_labels import property_label
 from api.services.search import (
-    GND_TYPE_ALIASES,
-    INDEX_NAME,
     client,
     format_entity_types,
     get_gnd_record_by_id,
 )
 from api.services.vocab_resolver import resolve_gnd_vocab_uri
+from api.vocabularies.base import VocabConfig
+from api.vocabularies.gnd import GND_VOCAB
+from config import GND_URI_PREFIX
 
 GND_URI_RE = re.compile(r"https?://d-nb\.info/gnd/([^/#?\s\"<>]+)")
 GND_ID_RE = re.compile(r"^[0-9Xx][0-9Xx-]*$")
-GND_URI_PREFIX = "https://d-nb.info/gnd/"
 
 # Properties that represent the entity's OWN identifier rather than a
 # reference to another entity. Their raw value happens to look like a GND
 # ID/URI (e.g. gndIdentifier="118540238"), so without this guard
 # format_extend_value() would "resolve" it against the index, find the same
 # record, and return its preferredName instead of the plain number/URI.
-SELF_IDENTIFIER_PROPERTY_IDS = {"id", "uri", "gndIdentifier"}
+#
+# Kept as a module-level name (mirroring GND_VOCAB.self_identifier_property_ids)
+# for backward compatibility with existing imports/tests.
+SELF_IDENTIFIER_PROPERTY_IDS = set(GND_VOCAB.self_identifier_property_ids)
 
 
-RELATION_PROPERTY_TYPES = {
-    "affiliation": {
-        "id": "CorporateBody",
-        "name": "Corporate Body",
-    },
-    "professionOrOccupation": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "placeOfBirth": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "placeOfDeath": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "placeOfActivity": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "familialRelationship": {
-        "id": "Person",
-        "name": "Person",
-    },
-    "relatedPerson": {
-        "id": "Person",
-        "name": "Person",
-    },
-    "relatedTerm": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermGeneral": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermInstantial": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermPartitive": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "isPartOf": {
-        "id": "AuthorityResource",
-        "name": "Normdatenressource",
-    },
-    "successor": {
-        "id": "AuthorityResource",
-        "name": "Normdatenressource",
-    },
-    "predecessor": {
-        "id": "AuthorityResource",
-        "name": "Normdatenressource",
-    },
-    "founder": {
-        "id": "Person",
-        "name": "Person",
-    },
-    "topic": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "isA": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "associatedPlace": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "placeOfEvent": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "organizerOrHost": {
-        "id": "CorporateBody",
-        "name": "Corporate Body",
-    },
-}
+RELATION_PROPERTY_TYPES = dict(GND_VOCAB.relation_property_types)
 
 
 def get_property_proposals_from_index(
     entity_type: str | None = None,
     limit: int = 200,
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list[dict[str, str]]:
     body: dict[str, Any] = {
         "size": 0,
@@ -126,11 +49,11 @@ def get_property_proposals_from_index(
     }
 
     if entity_type:
-        allowed_types = GND_TYPE_ALIASES.get(entity_type, [entity_type])
+        allowed_types = vocab.type_aliases.get(entity_type, [entity_type])
         body["query"] = {"bool": {"filter": [{"terms": {"type": allowed_types}}]}}
 
     response = client.search(
-        index=INDEX_NAME,
+        index=vocab.index_name,
         body=body,
     )
 
@@ -147,7 +70,7 @@ def get_property_proposals_from_index(
         properties.append(
             {
                 "id": prop_id,
-                "name": property_label(prop_id),
+                "name": property_label(prop_id, vocab=vocab),
             }
         )
 
@@ -217,14 +140,17 @@ def extract_gnd_id(value: str) -> str | None:
     return None
 
 
-def resolve_gnd_entity(gnd_id: str) -> dict[str, Any] | None:
+def resolve_gnd_entity(
+    gnd_id: str,
+    vocab: VocabConfig = GND_VOCAB,
+) -> dict[str, Any] | None:
     """
-    Resolves a GND ID against the local OpenSearch index and returns
-    an OpenRefine-compatible reconciled entity object.
+    Resolves an identifier against a vocabulary's OpenSearch index (GND by
+    default) and returns an OpenRefine-compatible reconciled entity object.
     """
     try:
         response = client.get(
-            index=INDEX_NAME,
+            index=vocab.index_name,
             id=gnd_id,
             ignore=[404],
         )
@@ -243,13 +169,14 @@ def resolve_gnd_entity(gnd_id: str) -> dict[str, Any] | None:
     return {
         "id": gnd_id,
         "name": name,
-        "type": format_entity_types(entity_type),
+        "type": format_entity_types(entity_type, vocab=vocab),
     }
 
 
 def format_extend_value(
     raw_value: Any,
     content: str = "literal",
+    vocab: VocabConfig = GND_VOCAB,
 ) -> dict[str, Any] | str:
     """
     Formats one value returned by the Extend API.
@@ -273,7 +200,7 @@ def format_extend_value(
         if content == "id":
             return gnd_id
 
-        entity = resolve_gnd_entity(gnd_id)
+        entity = resolve_gnd_entity(gnd_id, vocab=vocab)
 
         if entity:
             return entity
@@ -297,7 +224,10 @@ def format_extend_value(
     return format_identifier_value(value) if content == "id" else value
 
 
-def handle_extend_request(extend_request: dict) -> dict:
+def handle_extend_request(
+    extend_request: dict,
+    vocab: VocabConfig = GND_VOCAB,
+) -> dict:
     """
     Processes an OpenRefine extend request.
 
@@ -332,11 +262,11 @@ def handle_extend_request(extend_request: dict) -> dict:
     if not isinstance(properties, list):
         properties = []
 
-    meta = build_extend_meta(properties)
+    meta = build_extend_meta(properties, vocab=vocab)
     rows = {}
 
     for gnd_id in ids:
-        record = get_gnd_record_by_id(str(gnd_id))
+        record = get_gnd_record_by_id(str(gnd_id), vocab=vocab)
 
         if record is None:
             rows[str(gnd_id)] = {}
@@ -345,6 +275,7 @@ def handle_extend_request(extend_request: dict) -> dict:
         rows[str(gnd_id)] = build_extend_row(
             record=record,
             properties=properties,
+            vocab=vocab,
         )
 
     return {
@@ -353,7 +284,10 @@ def handle_extend_request(extend_request: dict) -> dict:
     }
 
 
-def build_extend_meta(properties: list[dict]) -> list:
+def build_extend_meta(
+    properties: list[dict],
+    vocab: VocabConfig = GND_VOCAB,
+) -> list:
     """
     Builds metadata for requested properties.
 
@@ -370,10 +304,10 @@ def build_extend_meta(properties: list[dict]) -> list:
 
         meta_item = {
             "id": prop_id,
-            "name": property_label(prop_id),
+            "name": property_label(prop_id, vocab=vocab),
         }
 
-        relation_type = RELATION_PROPERTY_TYPES.get(prop_id)
+        relation_type = vocab.relation_property_types.get(prop_id)
 
         if relation_type:
             meta_item["type"] = relation_type
@@ -386,6 +320,7 @@ def build_extend_meta(properties: list[dict]) -> list:
 def build_extend_row(
     record: dict,
     properties: list[dict],
+    vocab: VocabConfig = GND_VOCAB,
 ) -> dict:
     """
     Builds one row of property values for one GND record.
@@ -405,6 +340,7 @@ def build_extend_row(
             prop_id=prop_id,
             value=value,
             content=settings["content"],
+            vocab=vocab,
         )
 
         values = apply_extend_limit(
@@ -435,6 +371,7 @@ def format_extend_values(
     prop_id: str,
     value,
     content: str = "literal",
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list:
     """
     Converts a value into OpenRefine extend cell format.
@@ -458,6 +395,7 @@ def format_extend_values(
                     prop_id=prop_id,
                     value=item,
                     content=content,
+                    vocab=vocab,
                 )
             )
 
@@ -471,7 +409,7 @@ def format_extend_values(
 
     value_string = str(value)
 
-    if prop_id in SELF_IDENTIFIER_PROPERTY_IDS:
+    if prop_id in vocab.self_identifier_property_ids:
         # Always return the entity's own identifier as a plain literal,
         # regardless of the requested content mode - it must never be
         # turned into a reconciled entity object (see comment above
@@ -484,6 +422,7 @@ def format_extend_values(
     formatted_value = format_extend_value(
         raw_value=value_string,
         content=content,
+        vocab=vocab,
     )
 
     if isinstance(formatted_value, dict):

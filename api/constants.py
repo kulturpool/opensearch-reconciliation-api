@@ -5,9 +5,9 @@ This module contains type definitions, property lists, and other
 static configuration used by the reconciliation service.
 """
 
-GND_URI_PREFIX = "https://d-nb.info/gnd/"
+from config import GND_URI_PREFIX, PUBLIC_BASE_URL
 
-BASE_URL = "http://127.0.0.1:8083"
+BASE_URL = PUBLIC_BASE_URL
 
 GND_TYPES = [
     {
@@ -86,63 +86,3 @@ GND_TYPES = [
     },
 ]
 
-GND_PROPERTIES = [
-    {"id": "id", "name": "GND ID"},
-    {"id": "uri", "name": "URI"},
-    {"id": "preferredName", "name": "Preferred Name"},
-    {"id": "variantName", "name": "Variant Names"},
-    {"id": "type", "name": "Entity Type"},
-    {"id": "dateOfBirth", "name": "Date of Birth"},
-    {"id": "dateOfDeath", "name": "Date of Death"},
-    {"id": "professionOrOccupation", "name": "Profession or Occupation"},
-    {"id": "placeOfBirth", "name": "Place of Birth"},
-    {"id": "placeOfDeath", "name": "Place of Death"},
-    {"id": "source", "name": "Source"},
-]
-
-RELATION_PROPERTY_TYPES = {
-    "affiliation": {
-        "id": "CorporateBody",
-        "name": "Corporate Body",
-    },
-    "professionOrOccupation": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "placeOfBirth": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "placeOfDeath": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "placeOfActivity": {
-        "id": "PlaceOrGeographicName",
-        "name": "Place or Geographic Name",
-    },
-    "familialRelationship": {
-        "id": "Person",
-        "name": "Person",
-    },
-    "relatedPerson": {
-        "id": "Person",
-        "name": "Person",
-    },
-    "relatedTerm": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermGeneral": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermInstantial": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-    "broaderTermPartitive": {
-        "id": "SubjectHeading",
-        "name": "Subject Heading",
-    },
-}

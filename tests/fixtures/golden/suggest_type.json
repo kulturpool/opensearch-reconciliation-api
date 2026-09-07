@@ -1,0 +1,24 @@
+{
+    "result": [
+        {
+            "id": "CorporateBody",
+            "name": "K\u00f6rperschaft",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        },
+        {
+            "id": "DifferentiatedPerson",
+            "name": "Individualisierte Person",
+            "broader": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Normdatenressource"
+                }
+            ]
+        }
+    ]
+}

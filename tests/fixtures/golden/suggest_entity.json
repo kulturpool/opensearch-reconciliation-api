@@ -1,0 +1,214 @@
+{
+    "result": [
+        {
+            "id": "130585473X",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1154419746",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1253343926",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1112137505",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "7642596-4",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1206009403",
+            "name": "Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1216844887",
+            "name": "Goethe!",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 96
+        },
+        {
+            "id": "1159096295",
+            "name": "Goethe, Erich",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "DifferentiatedPerson",
+                    "name": "Individualisierte Person",
+                    "broader": [
+                        {
+                            "id": "Person",
+                            "name": "Person"
+                        }
+                    ]
+                }
+            ],
+            "score": 92
+        },
+        {
+            "id": "1227933789",
+            "name": "Johann Wolfgang von Goethe",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "Work",
+                    "name": "Werk",
+                    "broader": [
+                        {
+                            "id": "Work",
+                            "name": "Work"
+                        }
+                    ]
+                }
+            ],
+            "score": 92
+        },
+        {
+            "id": "118540238",
+            "name": "Goethe, Johann Wolfgang von",
+            "type": [
+                {
+                    "id": "AuthorityResource",
+                    "name": "Authority Resource"
+                },
+                {
+                    "id": "DifferentiatedPerson",
+                    "name": "Individualisierte Person",
+                    "broader": [
+                        {
+                            "id": "Person",
+                            "name": "Person"
+                        }
+                    ]
+                }
+            ],
+            "score": 92
+        }
+    ]
+}

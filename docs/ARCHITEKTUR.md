@@ -1,6 +1,6 @@
 # Architektur
 
-Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des GND Reconciliation API Projekts.
+Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des Reconciliation-API-Projekts. Der Service stellt zwei unabhängige Vokabulare bereit: die **Gemeinsame Normdatei (GND)** am Root-Endpunkt (`/`) und den **Getty Art & Architecture Thesaurus (AAT)** unter `/getty`.
 
 ---
 
@@ -12,20 +12,21 @@ Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des GN
 4. [Datenfluss: Bootstrap / Erstindexierung](#datenfluss-bootstrap--erstindexierung)
 5. [Datenfluss: Reconciliation Query](#datenfluss-reconciliation-query)
 6. [Datenfluss: Wöchentliche OAI-Updates](#datenfluss-wöchentliche-oai-updates)
-7. [Persistenz](#persistenz)
-8. [Deployment-Modi](#deployment-modi)
-9. [Konfiguration](#konfiguration)
+7. [Getty AAT: Vokabular-Architektur und Rebuild-Datenfluss](#getty-aat-vokabular-architektur-und-rebuild-datenfluss)
+8. [Persistenz](#persistenz)
+9. [Deployment-Modi](#deployment-modi)
+10. [Konfiguration](#konfiguration)
 
 ---
 
 ## Überblick
 
-Der Service ist ein lokaler, Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)**. Er kombiniert:
+Der Service ist ein lokaler, Docker-basierter Reconciliation-Service. Er kombiniert:
 
-- einen einmaligen/inkrementellen **Import- und Indexierungsprozess** (GND-LDS-Dumps + EntityFacts-Enrichment),
-- einen **OpenSearch-Index** als persistenten Suchindex,
-- eine **FastAPI-Anwendung**, die eine OpenRefine-kompatible [Reconciliation API](https://reconciliation-api.github.io/specs/latest/) bereitstellt,
-- einen **Scheduler**, der den Index über OAI-PMH inkrementell aktuell hält.
+- einen einmaligen/inkrementellen **Import- und Indexierungsprozess** je Vokabular (GND-LDS-Dumps + EntityFacts-Enrichment; Getty N-Triples-Export),
+- je einen **OpenSearch-Index** als persistenten Suchindex (`gnd`, `getty`),
+- eine **FastAPI-Anwendung**, die pro Vokabular eine OpenRefine-kompatible [Reconciliation API](https://reconciliation-api.github.io/specs/latest/) über eine gemeinsame Router-Factory bereitstellt,
+- einen **Scheduler pro Vokabular**, der den jeweiligen Index aktuell hält (GND: inkrementell über OAI-PMH; Getty: periodischer Vollrebuild).
 
 ---
 
@@ -34,16 +35,20 @@ Der Service ist ein lokaler, Docker-basierter Reconciliation-Service für die **
 ```mermaid
 flowchart LR
     User(["Nutzer:in"]) -->|CSV/TSV/Excel-Spalten reconciliaten| OpenRefine["OpenRefine"]
-    OpenRefine -->|HTTP: queries / extend / preview / suggest| API["GND Reconciliation API\n(FastAPI, Port 8083)"]
-    API -->|_msearch / _search / _count| OpenSearch[("OpenSearch\nIndex: gnd")]
-    Scheduler["OAI Update Scheduler\n(Background Thread)"] -->|Bulk Upsert| OpenSearch
-    Scheduler -->|ListRecords| DNB_OAI["DNB OAI-PMH Repository"]
-    Bootstrap["Bootstrap / Importer / Indexer\n(einmalig bzw. --force-reindex)"] -->|Bulk Index| OpenSearch
-    Bootstrap -->|Download GND-LDS Dumps| DNB_LDS["DNB GND-LDS Dumps"]
-    Bootstrap -->|Enrichment| EntityFacts["DNB EntityFacts API"]
+    OpenRefine -->|HTTP: queries / extend / preview / suggest an /| API["Reconciliation API\n(FastAPI, Port 8083)"]
+    OpenRefine -->|HTTP: queries / extend / preview / suggest an /getty| API
+    API -->|_msearch / _search / _count| OpenSearch[("OpenSearch\nIndizes: gnd, getty")]
+    GNDScheduler["GND OAI Update Scheduler\n(Background Thread)"] -->|Bulk Upsert| OpenSearch
+    GNDScheduler -->|ListRecords| DNB_OAI["DNB OAI-PMH Repository"]
+    GettyScheduler["Getty Update Scheduler\n(Background Thread)"] -->|Alias-Switch nach Vollrebuild| OpenSearch
+    GNDBootstrap["Bootstrap/Importer/Indexer GND\n(einmalig bzw. --force-reindex)"] -->|Bulk Index| OpenSearch
+    GNDBootstrap -->|Download GND-LDS Dumps| DNB_LDS["DNB GND-LDS Dumps"]
+    GNDBootstrap -->|Enrichment| EntityFacts["DNB EntityFacts API"]
+    GettyBootstrap["Bootstrap/Importer/Indexer Getty\n(--auto/--init)"] -->|Bulk Index + Alias-Switch| OpenSearch
+    GettyBootstrap -->|Download explicit.zip| GettyExport["Getty Vocabulary Program\nN-Triples Export"]
 ```
 
-Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten bestehen nur zur DNB (GND-LDS-Dumps, EntityFacts, OAI-PMH), nicht zu Drittanbietern.
+Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten bestehen zur DNB (GND-LDS-Dumps, EntityFacts, OAI-PMH) sowie zum Getty Vocabulary Program (AAT-N-Triples-Export).
 
 ---
 
@@ -51,20 +56,25 @@ Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten 
 
 | Komponente | Pfad | Verantwortung |
 |---|---|---|
-| FastAPI-App | [api/main.py](../api/main.py) | Route-Definitionen, Service-Manifest, Request-Dispatch |
+| FastAPI-App | [api/main.py](../api/main.py) | App-Setup, Mounten der Router (`/` für GND, `/getty` für Getty AAT) |
+| Router-Factory | [api/routers/reconciliation.py](../api/routers/reconciliation.py) | Erzeugt aus einem `VocabConfig` einen kompletten Satz OpenRefine-Endpunkte (Manifest, Query, Suggest, Extend, Preview) – gemeinsamer Code für GND und Getty |
+| Vokabular-Konfiguration GND | [api/vocabularies/gnd.py](../api/vocabularies/gnd.py) | `GND_VOCAB`: Typen, Properties, Feldnamen, Aliase für die GND |
+| Vokabular-Konfiguration Getty | [api/vocabularies/getty.py](../api/vocabularies/getty.py) | `GETTY_VOCAB`: Typen, Properties, Feldnamen für AAT |
+| Vokabular-Basistyp | [api/vocabularies/base.py](../api/vocabularies/base.py) | `VocabConfig`-Datenklasse, die beide Vokabulare implementieren |
 | Konstanten/Typen | [api/constants.py](../api/constants.py), [api/gnd_types.py](../api/gnd_types.py) | GND-Entitätstypen, unterstützte Properties |
 | Reconciliation-Orchestrierung | [api/reconciliation_utils.py](../api/reconciliation_utils.py) | Batch-Aufbereitung der Queries, Timing-Logs |
-| OpenSearch-Integration | [api/services/search.py](../api/services/search.py) | Query-Body-Aufbau, `_msearch`-Batching, Scoring |
+| OpenSearch-Integration | [api/services/search.py](../api/services/search.py) | Query-Body-Aufbau, `_msearch`-Batching, Scoring (vokabular-agnostisch über `VocabConfig`) |
 | Property-Matching | [api/services/property_matching.py](../api/services/property_matching.py) | Generischer Property-Bonus/Penalty |
 | Property Registry | [api/services/property_registry.py](../api/services/property_registry.py), [config/gnd_properties.json](../config/gnd_properties.json) | Bekannte GND-Properties inkl. Labels |
 | Property Labels | [api/services/property_labels.py](../api/services/property_labels.py) | Auflösung von Property-IDs zu menschenlesbaren Labels |
 | Extend API | [api/services/properties.py](../api/services/properties.py) | „Add columns from reconciled values" |
 | Preview | [api/services/preview.py](../api/services/preview.py) | HTML-Vorschau für OpenRefine |
-| Vocab Resolver | [api/services/vocab_resolver.py](../api/services/vocab_resolver.py), [config/gnd_vocab_labels.json](../config/gnd_vocab_labels.json) | Auflösung von RDF-Vokabular-URIs zu Labels |
-| Zentrale Konfiguration | [config/\_\_init\_\_.py](../config/__init__.py) | Liest Environment-Variablen (`.env`), stellt Konstanten für den Rest der App bereit |
-| Importer | [importer/](../importer/) | Download der GND-LDS-Dumps, Normalisierung (GND-LDS + EntityFacts) |
-| Indexer | [indexer/](../indexer/) | Bulk-Indexierung/Upsert in OpenSearch |
-| Scripts | [scripts/](../scripts/) | Bootstrap-Orchestrierung, OAI-Harvesting, Update-Scheduler, Container-Startup |
+| Vocab Resolver | [api/services/vocab_resolver.py](../api/services/vocab_resolver.py), [config/gnd_vocab_labels.json](../config/gnd_vocab_labels.json) | Auflösung von RDF-Vokabular-URIs zu Labels (GND) |
+| Zentrale Konfiguration | [config/\_\_init\_\_.py](../config/__init__.py) | Liest Environment-Variablen (`.env`), stellt Konstanten für den Rest der App bereit (GND- und Getty-Abschnitt) |
+| Importer GND | [importer/download_gnd_lds.py](../importer/download_gnd_lds.py), [importer/normalize_gnd_lds.py](../importer/normalize_gnd_lds.py) | Download der GND-LDS-Dumps, Normalisierung |
+| Importer Getty | [importer/download_getty.py](../importer/download_getty.py), [importer/normalize_getty.py](../importer/normalize_getty.py), [importer/getty_vocab_specs.py](../importer/getty_vocab_specs.py), [importer/ntriples.py](../importer/ntriples.py) | Download/Extraktion des N-Triples-Exports, N-Triples-Parsing, Normalisierung je Getty-Vokabular-Spezifikation (aktuell nur AAT) |
+| Indexer | [indexer/](../indexer/) | Bulk-Indexierung/Upsert in OpenSearch (`index_gnd_lds.py`, `index_entityfacts.py`, `upsert_oai_records.py` für GND; `index_getty.py` für Getty) |
+| Scripts | [scripts/](../scripts/) | Bootstrap-Orchestrierung (`bootstrap_gnd.py`, `bootstrap_getty.py`), Update-Scheduler (`update_scheduler.py`, `update_getty_scheduler.py`, `update_getty.py`), gemeinsame Build-State-/Lock-Verwaltung (`index_build_state.py`), OpenSearch-Admin-Hilfsfunktionen (`opensearch_index_admin.py`), Container-Startup |
 
 ---
 
@@ -147,15 +157,52 @@ Der Scheduler läuft als Hintergrund-Thread im selben Container wie die API (kei
 
 ---
 
+## Getty AAT: Vokabular-Architektur und Rebuild-Datenfluss
+
+Getty AAT ist als zweites Vokabular über dieselbe Router-Factory eingebunden ([api/routers/reconciliation.py](../api/routers/reconciliation.py)): `build_reconciliation_router(GETTY_VOCAB)` erzeugt dieselben OpenRefine-Endpunkte wie für GND, nur konfiguriert über [api/vocabularies/getty.py](../api/vocabularies/getty.py) statt [api/vocabularies/gnd.py](../api/vocabularies/gnd.py), und wird in [api/main.py](../api/main.py) unter dem Prefix `/getty` gemountet. Scoring, Batching und `_msearch`-Logik in [api/services/search.py](../api/services/search.py) sind vokabular-agnostisch und werden für beide Indizes wiederverwendet.
+
+Da Getty keine Änderungsliste analog zu GNDs OAI-PMH bereitstellt, gibt es keinen inkrementellen Update-Pfad. Stattdessen baut jeder Rebuild einen komplett neuen Index auf und schwenkt danach die öffentliche Alias `getty` atomar um:
+
+```mermaid
+sequenceDiagram
+    participant SC as update_getty_scheduler.py
+    participant UG as update_getty.py
+    participant BS as bootstrap_getty.py
+    participant DL as importer/download_getty.py
+    participant IX as indexer/index_getty.py
+    participant OS as OpenSearch
+
+    loop alle GETTY_UPDATE_INTERVAL_HOURS
+        SC->>SC: getty_update.lock anlegen (mit Staleness-Check)
+        SC->>UG: Rebuild anstoßen
+        UG->>BS: python scripts/bootstrap_getty.py --init
+        BS->>DL: explicit.zip herunterladen/extrahieren (je Vokabular in GETTY_VOCABULARIES)
+        BS->>IX: Bulk-Index in getty_build_<timestamp>
+        IX->>OS: neuen Build-Index befüllen
+        BS->>BS: Build validieren (Mindestdokumentanzahl)
+        BS->>OS: switch_alias(): "getty" auf neuen Build-Index umschwenken
+        BS->>OS: vorherigen getty_build_* Index löschen
+        BS->>BS: data/state/getty_state.json + getty_index_state.json aktualisieren
+        SC->>SC: getty_update.lock entfernen (finally)
+    end
+```
+
+`scripts/bootstrap_getty.py` unterstützt außerdem `--check-only` (rein lesend, kein Schreibzugriff auf State oder Index) und `--auto` (führt nur dann einen Vollbuild aus, wenn noch kein vollständiger, konsistenter Getty-Index vorhanden ist – inklusive einmaliger Adoption eines bereits bestehenden, gesunden `getty`-Index ohne Neuaufbau). Die Alias-Switch-Logik in `scripts/opensearch_index_admin.py` (`switch_alias()`) behandelt dabei auch den Sonderfall, dass `getty` initial noch ein einfacher konkreter Index ist statt einer Alias, und migriert ihn transparent auf das Alias-Pattern.
+
+`scripts/index_build_state.py` verwaltet Build-State und Locks für beide Vokabulare gemeinsam über einen `vocab`-Parameter: GND behält dabei die ursprünglichen, unpräfigierten Dateinamen (`index_state.json`, `index_build.lock`), Getty erhält präfigierte Namen (`getty_index_state.json`, `getty_index_build.lock`), um Kollisionen zu vermeiden.
+
+---
+
 ## Persistenz
 
 | Pfad | Inhalt | Git-Status |
 |---|---|---|
 | `data/raw/` | Heruntergeladene GND-LDS- und EntityFacts-Dumps | ignoriert |
+| `data/raw/getty/` | Heruntergeladener/extrahierter Getty-N-Triples-Export (`explicit.zip` + `.nt`-Dateien) | ignoriert |
 | `data/processed/` | Normalisierte Zwischendaten | ignoriert |
-| `data/state/` | Bootstrap-/Update-/Lock-Status (`index_state.json`, `update_state.json`, `*.lock`, `*.marker`) | ignoriert |
-| `data/logs/` | Anwendungs- und Scheduler-Logs | ignoriert |
-| `data/opensearch/` bzw. OpenSearch Docker Volume | Eigentlicher Suchindex | Volume, nicht in Git |
+| `data/state/` | Bootstrap-/Update-/Lock-Status für GND (`index_state.json`, `update_state.json`, `*.lock`, `*.marker`) und Getty (`getty_state.json`, `getty_index_state.json`, `getty_*.lock`) | ignoriert |
+| `data/logs/` | Anwendungs- und Scheduler-Logs (u.a. `bootstrap_gnd.log`, `bootstrap_getty.log`, `update_scheduler.log`, `update_getty_scheduler.log`) | ignoriert |
+| `data/opensearch/` bzw. OpenSearch Docker Volume | Eigentliche Suchindizes `gnd` und `getty` (Getty über eine Alias auf `getty_build_<timestamp>`) | Volume, nicht in Git |
 | `config/gnd_properties.json`, `config/gnd_vocab_labels.json` | Gecachte Registries/Labels | versioniert |
 
 Runtime- und DevContainer-Modus teilen sich dasselbe OpenSearch-Volume (`local_reconciliation_api_opensearch-data`) – beide dürfen nicht gleichzeitig laufen.

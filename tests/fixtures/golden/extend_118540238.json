@@ -1,0 +1,217 @@
+{
+    "meta": [
+        {
+            "id": "dateOfBirth",
+            "name": "Geburtsdatum"
+        },
+        {
+            "id": "professionOrOccupation",
+            "name": "Beruf oder T\u00e4tigkeit",
+            "type": {
+                "id": "SubjectHeading",
+                "name": "Subject Heading"
+            }
+        },
+        {
+            "id": "placeOfBirth",
+            "name": "Geburtsort",
+            "type": {
+                "id": "PlaceOrGeographicName",
+                "name": "Place or Geographic Name"
+            }
+        }
+    ],
+    "rows": {
+        "118540238": {
+            "dateOfBirth": [
+                {
+                    "str": "28. August 1749"
+                }
+            ],
+            "professionOrOccupation": [
+                {
+                    "id": "4053309-8",
+                    "name": "Schriftsteller",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4176310-5",
+                    "name": "Publizist",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4046517-2",
+                    "name": "Politiker",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4029050-5",
+                    "name": "Jurist",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4041423-1",
+                    "name": "Naturwissenschaftler",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4185044-0",
+                    "name": "Theaterintendant",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4037215-7",
+                    "name": "Maler",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "4200345-3",
+                    "name": "Zeichner",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "SubjectHeadingSensoStricto",
+                            "name": "Sachbegriff",
+                            "broader": [
+                                {
+                                    "id": "SubjectHeading",
+                                    "name": "Subject Heading"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "placeOfBirth": [
+                {
+                    "id": "4018118-2",
+                    "name": "Frankfurt am Main",
+                    "type": [
+                        {
+                            "id": "AuthorityResource",
+                            "name": "Authority Resource"
+                        },
+                        {
+                            "id": "TerritorialCorporateBodyOrAdministrativeUnit",
+                            "name": "Gebietsk\u00f6rperschaft / Verwaltungseinheit",
+                            "broader": [
+                                {
+                                    "id": "PlaceOrGeographicName",
+                                    "name": "Place or Geographic Name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
