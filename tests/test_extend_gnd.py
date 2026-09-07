@@ -10,6 +10,7 @@ from api.services.properties import (
     SELF_IDENTIFIER_PROPERTY_IDS,
     format_extend_values,
 )
+from api.vocabularies.getty import GETTY_VOCAB
 
 
 class TestSelfIdentifierShortCircuit:
@@ -72,3 +73,43 @@ class TestFormatExtendValuesPlainLiterals:
             "someProperty", {"name": "A Label"}, content="literal"
         )
         assert result == [{"str": "A Label"}]
+
+
+class TestGettyExtendContentModes:
+    def test_getty_content_id_returns_raw_aat_identifier(self):
+        result = format_extend_values(
+            "broader",
+            "aat/300193015",
+            content="id",
+            vocab=GETTY_VOCAB,
+        )
+        assert result == [{"str": "aat/300193015"}]
+
+    def test_getty_content_literal_resolves_to_entity_object(self, monkeypatch):
+        from api import services
+
+        def _fake_resolve(entity_id, vocab):
+            assert entity_id == "aat/300193015"
+            assert vocab.key == "aat"
+            return {
+                "id": "aat/300193015",
+                "name": "containers (receptacles)",
+                "type": [{"id": "Concept", "name": "Concept", "broader": []}],
+            }
+
+        monkeypatch.setattr(services.properties, "resolve_gnd_entity", _fake_resolve)
+
+        result = format_extend_values(
+            "broader",
+            "aat/300193015",
+            content="literal",
+            vocab=GETTY_VOCAB,
+        )
+
+        assert result == [
+            {
+                "id": "aat/300193015",
+                "name": "containers (receptacles)",
+                "type": [{"id": "Concept", "name": "Concept", "broader": []}],
+            }
+        ]

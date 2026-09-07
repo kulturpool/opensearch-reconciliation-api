@@ -16,6 +16,9 @@ from config import GND_URI_PREFIX
 
 GND_URI_RE = re.compile(r"https?://d-nb\.info/gnd/([^/#?\s\"<>]+)")
 GND_ID_RE = re.compile(r"^[0-9Xx][0-9Xx-]*$")
+GETTY_URI_RE = re.compile(r"https?://vocab\.getty\.edu/aat/(\d+)")
+GETTY_COMPOSITE_ID_RE = re.compile(r"^aat/(\d+)$")
+GETTY_SUBJECT_ID_RE = re.compile(r"^\d+$")
 
 # Properties that represent the entity's OWN identifier rather than a
 # reference to another entity. Their raw value happens to look like a GND
@@ -140,6 +143,36 @@ def extract_gnd_id(value: str) -> str | None:
     return None
 
 
+def extract_vocab_entity_id(value: str, vocab: VocabConfig = GND_VOCAB) -> str | None:
+    """
+    Extracts a vocabulary entity identifier from a raw value.
+
+    - GND: existing permissive GND URI/ID behavior is kept as-is.
+    - Getty AAT: accepts only well-formed AAT IDs/URIs to avoid converting
+      arbitrary literals into synthetic `aat/<value>` IDs.
+    """
+    value = str(value).strip()
+
+    if vocab.key == "gnd":
+        return extract_gnd_id(value)
+
+    if vocab.key == "aat":
+        uri_match = GETTY_URI_RE.match(value)
+        if uri_match:
+            return f"aat/{uri_match.group(1)}"
+
+        composite_match = GETTY_COMPOSITE_ID_RE.match(value)
+        if composite_match:
+            return value
+
+        if GETTY_SUBJECT_ID_RE.match(value):
+            return f"aat/{value}"
+
+        return None
+
+    return None
+
+
 def resolve_gnd_entity(
     gnd_id: str,
     vocab: VocabConfig = GND_VOCAB,
@@ -194,34 +227,35 @@ def format_extend_value(
     if not value:
         return ""
 
-    gnd_id = extract_gnd_id(value)
+    entity_id = extract_vocab_entity_id(value, vocab=vocab)
 
-    if gnd_id:
+    if entity_id:
         if content == "id":
-            return gnd_id
+            return entity_id
 
-        entity = resolve_gnd_entity(gnd_id, vocab=vocab)
+        entity = resolve_gnd_entity(entity_id, vocab=vocab)
 
         if entity:
             return entity
 
-        return {
-            "id": gnd_id,
-            "name": gnd_id,
-            "type": [
+        if vocab.key == "gnd":
+            fallback_type = [
                 {
                     "id": "AuthorityResource",
                     "name": "Normdatenressource",
                 }
-            ],
-        }
+            ]
+        else:
+            fallback_type = [vocab.root_type] if vocab.root_type else []
+
+        return {"id": entity_id, "name": entity_id, "type": fallback_type}
 
     vocab_label = resolve_gnd_vocab_uri(value)
 
     if vocab_label and content == "literal":
         return vocab_label
 
-    return format_identifier_value(value) if content == "id" else value
+    return format_identifier_value(value, vocab=vocab) if content == "id" else value
 
 
 def handle_extend_request(
@@ -405,6 +439,7 @@ def format_extend_values(
         return format_extend_dict_value(
             value=value,
             content=content,
+            vocab=vocab,
         )
 
     value_string = str(value)
@@ -417,7 +452,7 @@ def format_extend_values(
         return [{"str": value_string}] if value_string else []
 
     if content == "id":
-        return [{"str": format_identifier_value(value_string)}]
+        return [{"str": format_identifier_value(value_string, vocab=vocab)}]
 
     formatted_value = format_extend_value(
         raw_value=value_string,
@@ -484,6 +519,7 @@ def parse_extend_limit(value) -> int:
 def format_extend_dict_value(
     value: dict,
     content: str = "literal",
+    vocab: VocabConfig = GND_VOCAB,
 ) -> list:
     """
     Formats dict values for OpenRefine extend output.
@@ -498,12 +534,13 @@ def format_extend_dict_value(
         if identifier_or_value is None:
             return []
 
-        return [{"str": format_identifier_value(str(identifier_or_value))}]
+        return [{"str": format_identifier_value(str(identifier_or_value), vocab=vocab)}]
 
     if identifier is not None:
         formatted_identifier = format_extend_value(
             raw_value=identifier,
             content=content,
+            vocab=vocab,
         )
 
         if isinstance(formatted_identifier, dict):
@@ -523,6 +560,7 @@ def format_extend_dict_value(
     formatted_label = format_extend_value(
         raw_value=label,
         content=content,
+        vocab=vocab,
     )
 
     if isinstance(formatted_label, dict):
@@ -570,15 +608,17 @@ def deduplicate_extend_cells(values: list) -> list:
     return result
 
 
-def format_identifier_value(value: str) -> str:
+def format_identifier_value(
+    value: str,
+    vocab: VocabConfig = GND_VOCAB,
+) -> str:
     """
     Formats identifier values for content='id'.
     Currently returns raw URI/identifier. This mirrors the ID/link mode.
     """
-    gnd_id = extract_gnd_id(value)
-
-    if gnd_id:
-        return gnd_id
+    entity_id = extract_vocab_entity_id(value, vocab=vocab)
+    if entity_id:
+        return entity_id
 
     return value
 
