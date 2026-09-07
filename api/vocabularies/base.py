@@ -93,6 +93,10 @@ class VocabConfig:
     uses_date_signals: bool = True
     """Whether score_date_signals()/dateOf* handling applies to this vocab."""
 
+    fixed_vocabulary: str | None = None
+    """If set, all search queries are constrained to documents whose
+    top-level `vocabulary` field matches this value (e.g. "aat" for /aat)."""
+
     # -------------------------------------------------------------------
     # Extend (api/services/properties.py)
     # -------------------------------------------------------------------

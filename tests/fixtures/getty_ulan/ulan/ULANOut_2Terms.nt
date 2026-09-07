@@ -1,0 +1,4 @@
+<http://vocab.getty.edu/ulan/500000001> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/ulan/500000001-term1> .
+<http://vocab.getty.edu/ulan/500000001-term1> <http://www.w3.org/2008/05/skos-xl#literalForm> "Rembrandt van Rijn"@en .
+<http://vocab.getty.edu/ulan/500000002> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/ulan/500000002-term1> .
+<http://vocab.getty.edu/ulan/500000002-term1> <http://www.w3.org/2008/05/skos-xl#literalForm> "Jane Doe"@en .

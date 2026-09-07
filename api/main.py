@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import logging
 import sys
@@ -12,7 +13,9 @@ from fastapi.responses import JSONResponse
 
 from api.models.openapi_models import UpdateStatusResponse
 from api.routers.reconciliation import build_reconciliation_router
-from api.vocabularies.getty import GETTY_VOCAB
+from api.vocabularies.getty import (
+    GETTY_VOCAB,
+)
 from api.vocabularies.gnd import GND_VOCAB
 from config import DATA_DIR
 
@@ -88,6 +91,18 @@ app.add_middleware(
 )
 
 app.include_router(build_reconciliation_router(GND_VOCAB))
+# Distinct /gnd URL mirroring /getty for usability. Uses a copy of GND_VOCAB
+# with route_prefix="/gnd" so the service manifest advertises correct
+# sub-endpoint URLs (e.g. /gnd/suggest/entity) for this mount; root "/"
+# stays mounted as-is for backward compatibility with existing OpenRefine
+# service configurations.
+GND_VOCAB_PREFIXED = dataclasses.replace(GND_VOCAB, route_prefix="/gnd")
+app.include_router(
+    build_reconciliation_router(GND_VOCAB_PREFIXED, operation_id_prefix="gnd_prefixed"),
+    prefix="/gnd",
+)
+# Getty runs as one combined service endpoint; the type dropdown lets
+# clients pick AAT/ULAN/TGN/all instead of separate URLs per vocabulary.
 app.include_router(build_reconciliation_router(GETTY_VOCAB), prefix="/getty")
 
 

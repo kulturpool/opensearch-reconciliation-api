@@ -75,5 +75,127 @@
       "name": "Scope Note"
     }
   ],
-  "ObsoleteSubject": []
+  "ObsoleteSubject": [],
+  "aat": [
+    {
+      "id": "preferredName",
+      "name": "Preferred Term"
+    },
+    {
+      "id": "variantName",
+      "name": "Variant Terms"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Descriptive Notes"
+    },
+    {
+      "id": "parentString",
+      "name": "Parent Hierarchy"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent Hierarchy (abbreviated)"
+    },
+    {
+      "id": "notation",
+      "name": "Notation"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    },
+    {
+      "id": "related",
+      "name": "Related Concept"
+    },
+    {
+      "id": "exactMatch",
+      "name": "Exact Match"
+    }
+  ],
+  "ulan": [
+    {
+      "id": "preferredName",
+      "name": "Preferred Name"
+    },
+    {
+      "id": "variantName",
+      "name": "Variant Names"
+    },
+    {
+      "id": "biography",
+      "name": "Biographies"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Descriptive Notes"
+    },
+    {
+      "id": "nationality",
+      "name": "Nationalities"
+    },
+    {
+      "id": "role",
+      "name": "Roles"
+    },
+    {
+      "id": "parentString",
+      "name": "Parent Hierarchy"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent Hierarchy (abbreviated)"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    },
+    {
+      "id": "related",
+      "name": "Related Concept"
+    },
+    {
+      "id": "exactMatch",
+      "name": "Exact Match"
+    }
+  ],
+  "tgn": [
+    {
+      "id": "preferredName",
+      "name": "Preferred Term"
+    },
+    {
+      "id": "variantName",
+      "name": "Variant Terms"
+    },
+    {
+      "id": "coordinates",
+      "name": "Coordinates"
+    },
+    {
+      "id": "scopeNote",
+      "name": "Descriptive Notes"
+    },
+    {
+      "id": "parentString",
+      "name": "Parent Hierarchy"
+    },
+    {
+      "id": "parentStringAbbrev",
+      "name": "Parent Hierarchy (abbreviated)"
+    },
+    {
+      "id": "placeType",
+      "name": "Place Types"
+    },
+    {
+      "id": "broader",
+      "name": "Broader Concept"
+    },
+    {
+      "id": "related",
+      "name": "Related Concept"
+    }
+  ]
 }

@@ -16,9 +16,13 @@ from config import GND_URI_PREFIX
 
 GND_URI_RE = re.compile(r"https?://d-nb\.info/gnd/([^/#?\s\"<>]+)")
 GND_ID_RE = re.compile(r"^[0-9Xx][0-9Xx-]*$")
-GETTY_URI_RE = re.compile(r"https?://vocab\.getty\.edu/aat/(\d+)")
-GETTY_COMPOSITE_ID_RE = re.compile(r"^aat/(\d+)$")
+GETTY_URI_RE = re.compile(r"https?://vocab\.getty\.edu/([a-z]+)/([^/#?\s\"<>]+)")
+GETTY_COMPOSITE_ID_RE = re.compile(r"^([a-z]+)/([^/#?\s\"<>]+)$")
 GETTY_SUBJECT_ID_RE = re.compile(r"^\d+$")
+
+
+def is_getty_vocab(vocab: VocabConfig) -> bool:
+    return "vocab.getty.edu" in str(vocab.identifier_space)
 
 # Properties that represent the entity's OWN identifier rather than a
 # reference to another entity. Their raw value happens to look like a GND
@@ -156,17 +160,22 @@ def extract_vocab_entity_id(value: str, vocab: VocabConfig = GND_VOCAB) -> str |
     if vocab.key == "gnd":
         return extract_gnd_id(value)
 
-    if vocab.key == "aat":
+    if is_getty_vocab(vocab):
         uri_match = GETTY_URI_RE.match(value)
         if uri_match:
-            return f"aat/{uri_match.group(1)}"
+            return f"{uri_match.group(1)}/{uri_match.group(2)}"
 
         composite_match = GETTY_COMPOSITE_ID_RE.match(value)
         if composite_match:
             return value
 
         if GETTY_SUBJECT_ID_RE.match(value):
-            return f"aat/{value}"
+            normalized = vocab.normalize_identifier(value)
+
+            if "/" in normalized:
+                return normalized
+
+            return None
 
         return None
 

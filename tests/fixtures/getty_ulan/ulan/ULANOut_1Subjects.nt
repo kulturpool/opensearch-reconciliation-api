@@ -1,0 +1,5 @@
+<http://vocab.getty.edu/ulan/500000001> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://vocab.getty.edu/ontology#PersonConcept> .
+<http://vocab.getty.edu/ulan/500000001> <http://purl.org/dc/elements/1.1/identifier> "500000001" .
+<http://vocab.getty.edu/ulan/500000001> <http://vocab.getty.edu/ontology#parentStringAbbrev> "Persons, Artists" .
+<http://vocab.getty.edu/ulan/500000002> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://vocab.getty.edu/ontology#PersonConcept> .
+<http://vocab.getty.edu/ulan/500000002> <http://purl.org/dc/elements/1.1/identifier> "500000002" .

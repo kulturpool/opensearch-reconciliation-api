@@ -1,50 +1,194 @@
 """
-GETTY_VOCAB: the VocabConfig instance for the Getty Art & Architecture
-Thesaurus (AAT), mounted at /getty (see api/main.py).
+Getty vocabulary configurations.
 
-Field naming mirrors importer/normalize_getty.py's normalized document
-contract exactly: id, uri, preferredName, variantName, type, source,
-parentString, parentStringAbbrev, scopeNote, broader, related, notation,
-exactMatch, availableProperties, propertiesFlat.
+This module exposes dedicated VocabConfig instances for:
+- /aat  (AAT only, used internally/for tests)
+- /ulan (ULAN only, used internally/for tests)
+- /tgn  (TGN only, used internally/for tests)
+- /getty (all enabled Getty vocabularies - the only mounted endpoint)
 
-Only AAT is wired up so far (importer/getty_vocab_specs.py's ULAN/TGN specs
-are still stubs) - adding a second Getty vocabulary later means adding a
-second VocabConfig instance here, not changing this one.
+Only `GETTY_VOCAB` (= `ALL_GETTY_VOCAB`) is mounted as a route in api/main.py.
+Its `defaultTypes` list is what OpenRefine's type dropdown shows: a root
+"Search all Vocabs" entry plus one entry per vocabulary ("AAT search",
+"ULAN search", "TGN search"), so users pick a vocabulary via the type
+filter on a single service URL instead of choosing between separate URLs.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from config import GETTY_INDEX_NAME
-from importer.getty_vocab_specs import AAT_SPEC
+from config import GETTY_INDEX_NAME, GETTY_VOCABULARIES
+from importer.getty_vocab_specs import GettyVocabSpec, get_vocab_spec
 
-GETTY_URI_PREFIX = AAT_SPEC.uri_prefix  # "http://vocab.getty.edu/aat/"
+GETTY_NAMESPACE_PREFIX = "http://vocab.getty.edu/"
+GETTY_VIEW_URL_TEMPLATE = "http://vocab.getty.edu/page/{{id}}"
 
-GETTY_ROOT_TYPE: dict[str, Any] = {"id": AAT_SPEC.key, "name": AAT_SPEC.display_name}
-"""Root type prepended to every Getty candidate's type list by
-format_entity_types(), analogous to AUTHORITY_RESOURCE_TYPE for GND."""
+ALL_GETTY_KEYS: tuple[str, ...] = ("aat", "ulan", "tgn")
 
-# AAT_SPEC.type_labels is the flat {local_type_name: english_label} shape
-# shared with the importer. Restructure into GND_TYPE_LABELS's
-# {name, broader: {id, name}} shape for the reconciliation API.
-GETTY_TYPE_LABELS: dict[str, dict[str, Any]] = {
-    type_key: {"name": label, "broader": GETTY_ROOT_TYPE}
-    for type_key, label in AAT_SPEC.type_labels.items()
+
+def _specs_from_keys(keys: list[str] | tuple[str, ...]) -> tuple[GettyVocabSpec, ...]:
+    seen: set[str] = set()
+    specs: list[GettyVocabSpec] = []
+
+    for key in keys:
+        normalized = key.strip().lower()
+
+        if not normalized or normalized in seen:
+            continue
+
+        specs.append(get_vocab_spec(normalized))
+        seen.add(normalized)
+
+    return tuple(specs)
+
+
+def _enabled_all_specs() -> tuple[GettyVocabSpec, ...]:
+    env_specs = _specs_from_keys(tuple(GETTY_VOCABULARIES))
+
+    if env_specs:
+        return env_specs
+
+    return _specs_from_keys(ALL_GETTY_KEYS)
+
+
+def _build_normalizer(specs: tuple[GettyVocabSpec, ...]) -> Callable[[str], str]:
+    primary = specs[0]
+
+    def _normalize(value: str) -> str:
+        normalized = str(value or "").strip()
+
+        for spec in specs:
+            if normalized.startswith(spec.uri_prefix):
+                subject_id = normalized[len(spec.uri_prefix) :].strip("/")
+                return f"{spec.key}/{subject_id}" if subject_id else normalized
+
+        normalized = normalized.strip("/")
+
+        for spec in specs:
+            if normalized.startswith(f"{spec.key}/"):
+                return normalized
+
+        if normalized.isdigit():
+            return f"{primary.key}/{normalized}"
+
+        return normalized
+
+    return _normalize
+
+
+def _type_compatibility_aliases() -> dict[str, tuple[str, ...]]:
+    return {
+        "ulan:Person": ("ulan:PersonConcept", "ulan:UnknownPersonConcept"),
+        "ulan:Group": ("ulan:GroupConcept",),
+        "tgn:Place": (
+            "tgn:AdminPlaceConcept",
+            "tgn:PhysPlaceConcept",
+            "tgn:PhysAdminPlaceConcept",
+        ),
+        "tgn:AdminPlace": ("tgn:AdminPlaceConcept",),
+        "tgn:PhysPlace": ("tgn:PhysPlaceConcept", "tgn:PhysAdminPlaceConcept"),
+    }
+
+
+COMBINED_ROOT_TYPE_NAME = "Search all Vocabs"
+
+COMBINED_VOCAB_TYPE_NAMES: dict[str, str] = {
+    "aat": "AAT search",
+    "ulan": "ULAN search",
+    "tgn": "TGN search",
 }
 
-# OpenRefine manifest `defaultTypes`: root type plus one entry per AAT type.
-GETTY_TYPES: tuple[dict[str, Any], ...] = (
-    GETTY_ROOT_TYPE,
-    *(
-        {"id": type_key, "name": entry["name"], "broader": [GETTY_ROOT_TYPE]}
-        for type_key, entry in GETTY_TYPE_LABELS.items()
-    ),
-)
 
-# Getty's stored `type` values already are the canonical keys used above, so
-# no coarse-type -> concrete-subtype aliasing is needed (unlike GND's
-# Person/CorporateBody/... aliases).
-GETTY_TYPE_ALIASES: dict[str, tuple[str, ...]] = {}
+def _build_type_structures(
+    specs: tuple[GettyVocabSpec, ...],
+) -> tuple[dict[str, Any], tuple[dict[str, Any], ...], dict[str, tuple[str, ...]], dict[str, dict[str, Any]]]:
+    is_combined_vocab = len(specs) > 1
+
+    if len(specs) == 1:
+        root_type = {"id": specs[0].key, "name": specs[0].display_name}
+    else:
+        root_type = {"id": "getty", "name": COMBINED_ROOT_TYPE_NAME}
+
+    if is_combined_vocab:
+        vocab_roots: dict[str, dict[str, Any]] = {
+            spec.key: {
+                "id": spec.key,
+                "name": COMBINED_VOCAB_TYPE_NAMES.get(spec.key, spec.display_name),
+            }
+            for spec in specs
+        }
+    else:
+        vocab_roots = {
+            spec.key: {"id": spec.key, "name": spec.display_name} for spec in specs
+        }
+
+    type_labels: dict[str, dict[str, Any]] = {}
+    type_aliases: dict[str, tuple[str, ...]] = {}
+    local_type_to_namespaced: dict[str, list[str]] = {}
+    default_types: list[dict[str, Any]] = [root_type]
+
+    if is_combined_vocab:
+        for spec in specs:
+            vocab_root = vocab_roots[spec.key]
+            default_types.append(
+                {
+                    "id": vocab_root["id"],
+                    "name": vocab_root["name"],
+                    "broader": [root_type],
+                }
+            )
+
+    for spec in specs:
+        vocab_root = vocab_roots[spec.key]
+        namespaced_types: list[str] = []
+
+        for local_type, label in spec.type_labels.items():
+            namespaced = f"{spec.key}:{local_type}"
+            namespaced_types.append(namespaced)
+
+            if is_combined_vocab:
+                # Collapse every concrete stored type (e.g. "aat:Concept",
+                # "ulan:PersonConcept", "tgn:AdminPlaceConcept") onto its
+                # vocab-level type in the combined /getty vocab, so results
+                # and the type facet only ever show "AAT search"/"ULAN
+                # search"/"TGN search" - never the underlying concrete
+                # subtypes.
+                type_labels[namespaced] = {
+                    "id": vocab_root["id"],
+                    "name": vocab_root["name"],
+                    "broader": root_type,
+                }
+            else:
+                type_labels[namespaced] = {"name": label, "broader": vocab_root}
+
+            type_aliases[namespaced] = (namespaced,)
+            local_type_to_namespaced.setdefault(local_type, []).append(namespaced)
+
+            if not is_combined_vocab:
+                default_types.append(
+                    {
+                        "id": namespaced,
+                        "name": label,
+                        "broader": [vocab_root],
+                    }
+                )
+
+        if namespaced_types:
+            type_aliases[spec.key] = tuple(namespaced_types)
+
+    for local_type, namespaced_values in local_type_to_namespaced.items():
+        type_aliases[local_type] = tuple(namespaced_values)
+
+    existing_type_ids = set(type_labels.keys())
+
+    for alias_id, concrete_ids in _type_compatibility_aliases().items():
+        filtered = tuple(type_id for type_id in concrete_ids if type_id in existing_type_ids)
+
+        if filtered:
+            type_aliases[alias_id] = filtered
+
+    return root_type, tuple(default_types), type_aliases, type_labels
+
 
 GETTY_SOURCE_FIELDS: tuple[str, ...] = (
     "id",
@@ -61,16 +205,17 @@ GETTY_SOURCE_FIELDS: tuple[str, ...] = (
     "related",
     "notation",
     "exactMatch",
+    "nationality",
+    "role",
+    "biography",
+    "placeType",
+    "coordinates",
     "availableProperties",
     "propertiesFlat",
 )
 
-# Getty has no date fields at all.
 GETTY_DATE_PROPERTY_IDS: frozenset[str] = frozenset()
 
-# normalize_getty.py always writes these as top-level fields (never only
-# inside propertiesFlat), so the nested-join fallback can be skipped for
-# them, mirroring GND_RELIABLE_TOP_LEVEL_PROPERTY_IDS.
 GETTY_RELIABLE_TOP_LEVEL_PROPERTY_IDS: frozenset[str] = frozenset(
     {
         "parentString",
@@ -80,6 +225,11 @@ GETTY_RELIABLE_TOP_LEVEL_PROPERTY_IDS: frozenset[str] = frozenset(
         "related",
         "notation",
         "exactMatch",
+        "nationality",
+        "role",
+        "biography",
+        "placeType",
+        "coordinates",
     }
 )
 
@@ -95,15 +245,6 @@ GETTY_MEDIUM_PRIORITY_PROPERTY_IDS: frozenset[str] = frozenset({"broader", "rela
 GETTY_MULTI_MATCH_FIELDS: tuple[str, ...] = ("preferredName^5", "variantName^3", "id^10")
 GETTY_FUZZY_FIELDS: tuple[str, ...] = ("preferredName^4", "variantName^3", "id^5")
 
-# broader/related point at other Getty AAT concepts in the same index.
-GETTY_RELATION_PROPERTY_TYPES: dict[str, dict[str, str]] = {
-    "broader": {"id": "Concept", "name": "Concept"},
-    "related": {"id": "Concept", "name": "Concept"},
-}
-
-# "id"/"uri" store the record's own identifier; unlike GND there's no
-# separate "notation"-as-self-identifier case (notation is a genuine data
-# property - a classification code - not a self-reference).
 GETTY_SELF_IDENTIFIER_PROPERTY_IDS: frozenset[str] = frozenset({"id", "uri"})
 
 GETTY_BASE_PREVIEW_FIELDS: tuple[str, ...] = (
@@ -117,65 +258,77 @@ GETTY_BASE_PREVIEW_FIELDS: tuple[str, ...] = (
 GETTY_FALLBACK_PREVIEW_FIELDS: tuple[str, ...] = ("broader", "related", "exactMatch", "uri")
 
 GETTY_PROPERTY_LABEL_OVERRIDES: dict[str, str] = {
-    "id": "AAT ID",
+    "id": "Getty ID",
     "uri": "URI",
     "vocabulary": "Vocabulary",
     "preferredName": "Preferred Term",
-    "variantName": "Variant Term",
+    "variantName": "Variant Terms",
     "type": "Type",
-    "parentString": "Hierarchy Path",
-    "parentStringAbbrev": "Hierarchy Path (abbreviated)",
-    "scopeNote": "Scope Note",
+    "parentString": "Parent Hierarchy",
+    "parentStringAbbrev": "Parent Hierarchy (abbreviated)",
+    "scopeNote": "Descriptive Notes",
     "broader": "Broader Concept",
     "related": "Related Concept",
     "notation": "Notation",
     "exactMatch": "Exact Match",
     "source": "Source",
+    "nationality": "Nationalities",
+    "role": "Roles",
+    "biography": "Biographies",
+    "placeType": "Place Types",
+    "coordinates": "Coordinates",
 }
 
 
-def normalize_getty_identifier(value: str) -> str:
-    """
-    Normalizes a query/lookup value to the composite "aat/<subjectId>" form
-    used as the OpenSearch document _id (see importer/normalize_getty.py).
-
-    Accepts:
-    - the composite id itself, e.g. "aat/300198841"
-    - a bare AAT subject id, e.g. "300198841"
-    - a full Getty AAT concept URI, e.g. "http://vocab.getty.edu/aat/300198841"
-    """
-
-    value = str(value or "").strip()
-
-    if value.startswith(GETTY_URI_PREFIX):
-        value = value[len(GETTY_URI_PREFIX) :].strip("/")
-        return f"{AAT_SPEC.key}/{value}"
-
-    value = value.strip("/")
-
-    if value.startswith(f"{AAT_SPEC.key}/"):
-        return value
-
-    return f"{AAT_SPEC.key}/{value}" if value else value
-
-
-def _build_getty_vocab():
+def _build_getty_vocab(
+    *,
+    config_key: str,
+    service_name: str,
+    route_prefix: str,
+    specs: tuple[GettyVocabSpec, ...],
+    fixed_vocabulary: str | None,
+):
     from api.vocabularies.base import VocabConfig
 
+    root_type, default_types, type_aliases, type_labels = _build_type_structures(specs)
+    primary = specs[0]
+    relation_type_id = f"{primary.key}:{primary.default_type_key}"
+    relation_type_name = primary.type_labels.get(primary.default_type_key, primary.default_type_key)
+
+    # nationality/role/placeType always reference AAT concepts regardless of
+    # which vocab is being reconciled (ULAN nationality/role and TGN place
+    # type triples always point at aat/* URIs) - so their announced extend
+    # type should describe AAT specifically, not whichever spec happens to
+    # be "primary" for this particular VocabConfig.
+    aat_spec = get_vocab_spec("aat")
+    aat_relation_type_id = f"{aat_spec.key}:{aat_spec.default_type_key}"
+    aat_relation_type_name = aat_spec.type_labels.get(
+        aat_spec.default_type_key, aat_spec.default_type_key
+    )
+
+    if len(specs) == 1:
+        identifier_space = primary.uri_prefix
+        schema_space = primary.uri_prefix
+        preview_id_label = primary.key.upper()
+    else:
+        identifier_space = GETTY_NAMESPACE_PREFIX
+        schema_space = GETTY_NAMESPACE_PREFIX
+        preview_id_label = "Getty"
+
     return VocabConfig(
-        key=AAT_SPEC.key,
-        service_name="Local Getty AAT Reconciliation Service",
+        key=config_key,
+        service_name=service_name,
         index_name=GETTY_INDEX_NAME,
-        identifier_space=GETTY_URI_PREFIX,
-        schema_space=GETTY_URI_PREFIX,
-        view_url_template=f"{GETTY_URI_PREFIX}{{{{id}}}}",
-        uri_prefix=GETTY_URI_PREFIX,
-        normalize_identifier=normalize_getty_identifier,
-        route_prefix="/getty",
-        types=GETTY_TYPES,
-        type_labels=GETTY_TYPE_LABELS,
-        type_aliases=GETTY_TYPE_ALIASES,
-        root_type=GETTY_ROOT_TYPE,
+        identifier_space=identifier_space,
+        schema_space=schema_space,
+        view_url_template=GETTY_VIEW_URL_TEMPLATE,
+        uri_prefix=GETTY_NAMESPACE_PREFIX,
+        normalize_identifier=_build_normalizer(specs),
+        route_prefix=route_prefix,
+        types=default_types,
+        type_labels=type_labels,
+        type_aliases=type_aliases,
+        root_type=root_type,
         source_fields=GETTY_SOURCE_FIELDS,
         date_property_ids=GETTY_DATE_PROPERTY_IDS,
         reliable_top_level_property_ids=GETTY_RELIABLE_TOP_LEVEL_PROPERTY_IDS,
@@ -185,13 +338,20 @@ def _build_getty_vocab():
         multi_match_fields=GETTY_MULTI_MATCH_FIELDS,
         fuzzy_fields=GETTY_FUZZY_FIELDS,
         uses_date_signals=False,
-        relation_property_types=GETTY_RELATION_PROPERTY_TYPES,
+        fixed_vocabulary=fixed_vocabulary,
+        relation_property_types={
+            "broader": {"id": relation_type_id, "name": relation_type_name},
+            "related": {"id": relation_type_id, "name": relation_type_name},
+            "nationality": {"id": aat_relation_type_id, "name": aat_relation_type_name},
+            "role": {"id": aat_relation_type_id, "name": aat_relation_type_name},
+            "placeType": {"id": aat_relation_type_id, "name": aat_relation_type_name},
+        },
         self_identifier_property_ids=GETTY_SELF_IDENTIFIER_PROPERTY_IDS,
         preview_base_fields=GETTY_BASE_PREVIEW_FIELDS,
         preview_type_fields={},
         preview_fallback_fields=GETTY_FALLBACK_PREVIEW_FIELDS,
         preview_image_fields=(),
-        preview_id_label="AAT",
+        preview_id_label=preview_id_label,
         show_update_footer=False,
         property_registry_path=Path("config/getty_properties.json"),
         property_label_overrides=GETTY_PROPERTY_LABEL_OVERRIDES,
@@ -199,4 +359,37 @@ def _build_getty_vocab():
     )
 
 
-GETTY_VOCAB = _build_getty_vocab()
+AAT_VOCAB = _build_getty_vocab(
+    config_key="aat",
+    service_name="AAT search",
+    route_prefix="/aat",
+    specs=_specs_from_keys(("aat",)),
+    fixed_vocabulary="aat",
+)
+
+ULAN_VOCAB = _build_getty_vocab(
+    config_key="ulan",
+    service_name="ULAN search",
+    route_prefix="/ulan",
+    specs=_specs_from_keys(("ulan",)),
+    fixed_vocabulary="ulan",
+)
+
+TGN_VOCAB = _build_getty_vocab(
+    config_key="tgn",
+    service_name="TGN search",
+    route_prefix="/tgn",
+    specs=_specs_from_keys(("tgn",)),
+    fixed_vocabulary="tgn",
+)
+
+ALL_GETTY_VOCAB = _build_getty_vocab(
+    config_key="getty",
+    service_name="Getty search",
+    route_prefix="/getty",
+    specs=_enabled_all_specs(),
+    fixed_vocabulary=None,
+)
+
+# Canonical combined Getty vocabulary config - the only one mounted as a route.
+GETTY_VOCAB = ALL_GETTY_VOCAB

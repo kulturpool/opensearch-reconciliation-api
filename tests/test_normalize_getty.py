@@ -40,7 +40,7 @@ def test_current_subject_full_shape():
     assert painting["vocabulary"] == "aat"
     assert painting["uri"] == "http://vocab.getty.edu/aat/300007466"
     assert painting["source"] == "getty-aat-explicit"
-    assert painting["type"] == ["Concept"]
+    assert painting["type"] == ["aat:Concept"]
 
     # Preferred name comes from the English gvp:prefLabelGVP term.
     assert painting["preferredName"] == "Painting"
@@ -106,7 +106,7 @@ def test_obsolete_subject_has_simplified_shape():
     assert obsolete["id"] == "aat/300007467"
     assert obsolete["vocabulary"] == "aat"
     assert obsolete["preferredName"] == "old term (obsolete)"
-    assert obsolete["type"] == ["ObsoleteSubject"]
+    assert obsolete["type"] == ["aat:ObsoleteSubject"]
     assert obsolete["variantName"] == []
     assert obsolete["broader"] == []
     assert obsolete["related"] == []

@@ -121,9 +121,26 @@ GETTY_INDEX_SETTINGS: dict[str, Any] = {
             "exactMatch": {
                 "type": "keyword",
             },
-            # Reserved for a future TGN vocabulary (not populated by AAT).
+            # Reference lists into AAT concepts (ULAN nationality/role,
+            # TGN place type) - stored as composite "<vocab>/<id>" ids,
+            # resolved into reconciled entities at extend time the same way
+            # broader/related are, since all Getty vocabs share one index.
+            "nationality": {
+                "type": "keyword",
+            },
+            "role": {
+                "type": "keyword",
+            },
+            "placeType": {
+                "type": "keyword",
+            },
+            "biography": {
+                "type": "text",
+                "analyzer": "getty_text_analyzer",
+            },
+            # "lat, long" string (ULAN/AAT have none; only TGN populates this).
             "coordinates": {
-                "type": "geo_point",
+                "type": "keyword",
             },
             "propertiesFlat": {
                 "type": "nested",

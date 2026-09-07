@@ -1,0 +1,2 @@
+<http://vocab.getty.edu/tgn/7000001-place> <http://www.w3.org/2003/01/geo/wgs84_pos#lat> "52.37"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://vocab.getty.edu/tgn/7000001-place> <http://www.w3.org/2003/01/geo/wgs84_pos#long> "4.895"^^<http://www.w3.org/2001/XMLSchema#decimal> .

@@ -1,6 +1,6 @@
 # GND Reconciliation API mit OpenSearch
 
-Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und den **Getty Art & Architecture Thesaurus (AAT)**. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt für jedes Vokabular eine eigene OpenRefine-kompatible Reconciliation API bereit: GND am Root-Endpunkt (`/`), Getty AAT unter `/getty`.
+Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und Getty-Vokabulare. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), ähnlich wie bei GND ein Typ wie "Person" gewählt wird.
 
 **API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) CHANGE!
 
@@ -21,8 +21,8 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 
 ## Features
 
-- Lokale GND-Reconciliation für OpenRefine
-- Lokale Reconciliation gegen den Getty Art & Architecture Thesaurus (AAT) unter `/getty`
+- Lokale GND-Reconciliation für OpenRefine, erreichbar unter `/gnd` (und weiterhin am Root-Endpunkt `/` für Abwärtskompatibilität)
+- Getty-Reconciliation über eine einzige Service-URL (`/getty`) mit Vokabular-Auswahl per Type-Filter (AAT/ULAN/TGN/alle)
 - Automatischer Download und Indexaufbau beim ersten Start
 - Persistenter lokaler Suchindex in OpenSearch
 - OpenRefine-kompatible Reconciliation API
@@ -333,10 +333,14 @@ Danach können über **Add columns from reconciled values** zusätzliche Informa
 
 ## API testen
 
+> **Hinweis:** Der GND-Service ist sowohl über den Root-Pfad (`http://localhost:8083/…`, aus Gründen der Abwärtskompatibilität) als auch über den eigenen Präfix `http://localhost:8083/gnd/…` erreichbar — analog zu `/getty` für den Getty-Service. Beide Varianten sind funktional identisch; für neue Integrationen wird `/gnd` empfohlen.
+
 ### Service Manifest
 
 ```bash
 curl http://localhost:8083/
+# äquivalent:
+curl http://localhost:8083/gnd/
 ```
 
 ### Reconciliation
@@ -1085,19 +1089,40 @@ Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können späte
 
 ---
 
-## Getty AAT (Art & Architecture Thesaurus)
+## Getty (AAT, ULAN, TGN)
 
-Zusätzlich zur GND stellt der Service unter `/getty` einen zweiten, unabhängigen Reconciliation-Endpunkt für den **Getty Art & Architecture Thesaurus (AAT)** bereit. Beide Vokabulare laufen im selben Container, teilen sich aber getrennte OpenSearch-Indizes (`gnd` bzw. `getty`) und getrennte Bootstrap-/Update-Skripte.
+Zusätzlich zur GND stellt der Service eine einzige Getty-Service-URL bereit:
+
+- `/getty` - Getty search (AAT, ULAN, TGN)
+
+Innerhalb dieser einen URL wird das Vokabular über den Type-Filter in OpenRefine gewählt (analog zur Typwahl bei GND, z.B. "Person"). Die auswählbaren Typen sind:
+
+- `getty` - **Search all Vocabs** (kein Filter, durchsucht alle aktivierten Vokabulare)
+- `aat` - **AAT search**
+- `ulan` - **ULAN search**
+- `tgn` - **TGN search**
+
+GND und Getty laufen im selben Container, teilen sich aber getrennte OpenSearch-Indizes (`gnd` bzw. `getty`) und getrennte Bootstrap-/Update-Skripte.
+
+### Verfügbare Properties für „Add columns from reconciled values"
+
+Der Property-Picker zeigt je nach gewähltem Type (`aat`/`ulan`/`tgn`) die dazu passenden Getty-Properties:
+
+- **AAT**: Preferred Term, Variant Terms, Descriptive Notes, Parent Hierarchy, Parent Hierarchy (abbreviated), Notation, Broader Concept, Related Concept, Exact Match
+- **ULAN**: Preferred Name, Variant Names, Biographies, Descriptive Notes, Nationalities, Roles, Parent Hierarchy, Parent Hierarchy (abbreviated), Broader Concept, Related Concept, Exact Match
+- **TGN**: Preferred Term, Variant Terms, Coordinates, Descriptive Notes, Parent Hierarchy, Parent Hierarchy (abbreviated), Place Types, Broader Concept, Related Concept
+
+`Nationalities`, `Roles` und `Place Types` lösen dabei auf verknüpfte AAT-Konzepte auf (z.B. Nationalität oder Rolle einer ULAN-Person, Ortstyp eines TGN-Orts) und werden wie `Broader Concept`/`Related Concept` als volle reconciled Entities zurückgegeben, da alle drei Vokabulare denselben OpenSearch-Index teilen. `Coordinates` wird als formatierter `"lat, lon"`-String geliefert.
 
 ### Unterschiede zur GND-Anbindung
 
 - **Kein inkrementelles Update**: Getty stellt (anders als die GND-OAI-PMH-Schnittstelle) keine Änderungsliste bereit. Ein „Update" ist daher immer ein vollständiger Re-Download und Re-Index des expliziten N-Triples-Exports (`explicit.zip`).
-- **Zero-Downtime-Rebuilds über Alias-Switch**: Ein Rebuild baut einen neuen Index (`getty_build_<timestamp>`) auf, validiert ihn und schwenkt danach die öffentliche Alias `getty` atomar um. Der alte Build-Index wird anschließend gelöscht. Während des Rebuilds bleibt der bisherige Index unter `/getty` durchgehend erreichbar.
-- **Nur AAT aktiv**: `GETTY_VOCABULARIES` steuert, welche Getty-Vokabulare indexiert werden. Aktuell ist nur `aat` produktiv; `ulan`/`tgn` sind im Code als Spezifikationen vorbereitet, aber nicht angebunden.
+- **Zero-Downtime-Rebuilds über Alias-Switch**: Ein Rebuild baut einen neuen Index (`getty_build_<timestamp>`) auf, validiert ihn und schwenkt danach die öffentliche Alias `getty` atomar um. Der alte Build-Index wird anschließend gelöscht. Während des Rebuilds bleiben Getty-Endpunkte erreichbar.
+- **Mehrere Getty-Vokabulare aktiv**: `GETTY_VOCABULARIES` steuert, welche Getty-Vokabulare indexiert werden. Aktuell sind `aat,ulan,tgn` angebunden.
 
 ### Konfiguration
 
-Siehe `.env.example`, Abschnitt „Getty Vocabulary Program (AAT) Configuration", für alle Variablen (`GETTY_INDEX_NAME`, `GETTY_VOCABULARIES`, `GETTY_FORCE_REINDEX`, `GETTY_AUTO_UPDATE`, `GETTY_UPDATE_INTERVAL_HOURS`, `GETTY_UPDATE_INITIAL_DELAY_SECONDS`, `GETTY_INDEX_LOCK_STALE_SECONDS`, `GETTY_UPDATE_LOCK_STALE_SECONDS`, `GETTY_RAW_DIR`, `GETTY_DOWNLOAD_URL_TEMPLATE`).
+Siehe `.env.example`, Abschnitt „Getty Vocabulary Program Configuration", für alle Variablen (`GETTY_INDEX_NAME`, `GETTY_VOCABULARIES`, `GETTY_FORCE_REINDEX`, `GETTY_AUTO_UPDATE`, `GETTY_UPDATE_INTERVAL_HOURS`, `GETTY_UPDATE_INITIAL_DELAY_SECONDS`, `GETTY_INDEX_LOCK_STALE_SECONDS`, `GETTY_UPDATE_LOCK_STALE_SECONDS`, `GETTY_RAW_DIR`, `GETTY_DOWNLOAD_URL_TEMPLATE`).
 
 ### Bootstrap manuell ausführen
 
@@ -1126,14 +1151,14 @@ curl "http://localhost:8083/getty/"
 ```
 
 ```bash
-curl -X POST "http://localhost:8083/getty/" -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode 'queries={"q1":{"query":"painting"}}'
+curl -X POST "http://localhost:8083/getty/" -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode 'queries={"q1":{"query":"painting","type":"aat"}}'
 ```
 
 ### Persistenz
 
 ```text
 data/raw/getty/
-  heruntergeladene AAT-N-Triples-Exports
+  heruntergeladene Getty-N-Triples-Exports (aat/ulan/tgn)
 
 data/state/getty_state.json, data/state/getty_index_state.json
   Bootstrap- und Build-Status (analog zu gnd_state.json / index_state.json)

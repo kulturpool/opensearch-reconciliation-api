@@ -10,7 +10,7 @@ from api.services.properties import (
     SELF_IDENTIFIER_PROPERTY_IDS,
     format_extend_values,
 )
-from api.vocabularies.getty import GETTY_VOCAB
+from api.vocabularies.getty import AAT_VOCAB
 
 
 class TestSelfIdentifierShortCircuit:
@@ -81,7 +81,7 @@ class TestGettyExtendContentModes:
             "broader",
             "aat/300193015",
             content="id",
-            vocab=GETTY_VOCAB,
+            vocab=AAT_VOCAB,
         )
         assert result == [{"str": "aat/300193015"}]
 
@@ -103,7 +103,7 @@ class TestGettyExtendContentModes:
             "broader",
             "aat/300193015",
             content="literal",
-            vocab=GETTY_VOCAB,
+            vocab=AAT_VOCAB,
         )
 
         assert result == [

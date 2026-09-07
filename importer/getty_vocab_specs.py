@@ -39,6 +39,25 @@ RDF_SUBJECT = "http://www.w3.org/1999/02/22-rdf-syntax-ns#subject"
 RDF_OBJECT = "http://www.w3.org/1999/02/22-rdf-syntax-ns#object"
 RDF_PREDICATE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate"
 
+# ULAN-specific predicates (nationality/role/biography). ULAN's explicit
+# export models these on a companion "-agent"-suffixed resource for
+# nationality/biography (verified: `ulan/<id>-agent`), but directly on the
+# plain subject for agent types/roles (verified: `ulan/<id>`).
+PRED_NATIONALITY_PREFERRED = f"{GVP_NS}nationalityPreferred"
+PRED_NATIONALITY_NON_PREFERRED = f"{GVP_NS}nationalityNonPreferred"
+PRED_AGENT_TYPE_PREFERRED = f"{GVP_NS}agentTypePreferred"
+PRED_AGENT_TYPE_NON_PREFERRED = f"{GVP_NS}agentTypeNonPreferred"
+PRED_BIOGRAPHY_PREFERRED = f"{GVP_NS}biographyPreferred"
+PRED_BIOGRAPHY_NON_PREFERRED = f"{GVP_NS}biographyNonPreferred"
+PRED_SCHEMA_DESCRIPTION = "http://schema.org/description"
+
+# TGN-specific predicates (coordinates/place types). Coordinates are modeled
+# on a companion "-place"-suffixed resource (verified: `tgn/<id>-place`);
+# place types are direct triples on the plain subject.
+PRED_GEO_LAT = "http://www.w3.org/2003/01/geo/wgs84_pos#lat"
+PRED_GEO_LONG = "http://www.w3.org/2003/01/geo/wgs84_pos#long"
+PRED_PLACE_TYPE_PREFERRED = f"{GVP_NS}placeTypePreferred"
+
 
 @dataclass(frozen=True)
 class GettyVocabSpec:
@@ -67,6 +86,31 @@ class GettyVocabSpec:
     default_type_key: str = "Concept"
     """Local type name used when a subject has no recognized rdf:type."""
 
+    notation_file_suffix: str | None = "_Notations.nt"
+    """Filename suffix for skos:notation triples, if available."""
+
+    exact_match_file_suffix: str | None = "_LCSHAlignment.nt"
+    """Filename suffix for exact-match alignment triples, if available."""
+
+    nationality_file_suffix: str | None = None
+    """Filename suffix for gvp:nationalityPreferred/NonPreferred triples
+    (ULAN only), if available."""
+
+    agent_type_file_suffix: str | None = None
+    """Filename suffix for gvp:agentTypePreferred/NonPreferred ("role")
+    triples (ULAN only), if available."""
+
+    biography_file_suffix: str | None = None
+    """Filename suffix for gvp:biographyPreferred/NonPreferred + biography
+    schema:description triples (ULAN only), if available."""
+
+    coordinates_file_suffix: str | None = None
+    """Filename suffix for wgs84 lat/long triples (TGN only), if available."""
+
+    place_type_file_suffix: str | None = None
+    """Filename suffix for gvp:placeTypePreferred triples (TGN only), if
+    available."""
+
 
 AAT_TYPE_LABELS: dict[str, str] = {
     "Concept": "Concept",
@@ -94,8 +138,20 @@ ULAN_SPEC = GettyVocabSpec(
     display_name="Getty Union List of Artist Names",
     uri_prefix="http://vocab.getty.edu/ulan/",
     file_prefix="ULANOut",
-    type_labels={},
-    default_type_key="Concept",
+    type_labels={
+        "PersonConcept": "Person",
+        "UnknownPersonConcept": "Unknown Person",
+        "GroupConcept": "Group",
+        "ObsoleteSubject": "Obsolete Subject",
+        "GuideTerm": "Guide Term",
+        "Facet": "Facet",
+    },
+    default_type_key="PersonConcept",
+    notation_file_suffix=None,
+    exact_match_file_suffix="_LOCAlignment.nt",
+    nationality_file_suffix="_Nationality.nt",
+    agent_type_file_suffix="_AgentTypes.nt",
+    biography_file_suffix="_Biographies.nt",
 )
 
 TGN_SPEC = GettyVocabSpec(
@@ -103,8 +159,19 @@ TGN_SPEC = GettyVocabSpec(
     display_name="Getty Thesaurus of Geographic Names",
     uri_prefix="http://vocab.getty.edu/tgn/",
     file_prefix="TGNOut",
-    type_labels={},
-    default_type_key="Concept",
+    type_labels={
+        "AdminPlaceConcept": "Administrative Place",
+        "PhysPlaceConcept": "Physical Place",
+        "PhysAdminPlaceConcept": "Administrative + Physical Place",
+        "ObsoleteSubject": "Obsolete Subject",
+        "GuideTerm": "Guide Term",
+        "Facet": "Facet",
+    },
+    default_type_key="AdminPlaceConcept",
+    notation_file_suffix=None,
+    exact_match_file_suffix=None,
+    coordinates_file_suffix="_Coordinates.nt",
+    place_type_file_suffix="_PlaceTypes.nt",
 )
 
 GETTY_VOCAB_SPECS: dict[str, GettyVocabSpec] = {

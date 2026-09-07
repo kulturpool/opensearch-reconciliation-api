@@ -58,12 +58,20 @@ OPENREFINE_POST_OPENAPI_EXTRA: dict[str, Any] = {
 }
 
 
-def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
+def build_reconciliation_router(
+    vocab: VocabConfig,
+    operation_id_prefix: str | None = None,
+) -> APIRouter:
     """
     Builds an APIRouter with all reconciliation, suggest, extend and preview
     routes wired to the given `vocab`.
+
+    `operation_id_prefix` lets the same `vocab` be mounted at more than one
+    URL prefix (e.g. GND at both `/` and `/gnd`) without producing duplicate
+    OpenAPI `operationId`s; it defaults to `vocab.key`.
     """
 
+    op_id = operation_id_prefix or vocab.key
     router = APIRouter()
 
     @router.get(
@@ -77,7 +85,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
             "With `query` it handles a simple entity query. "
             "With `extend` it handles a data extension request."
         ),
-        operation_id=f"openrefine_root_get_{vocab.key}",
+        operation_id=f"openrefine_root_get_{op_id}",
     )
     def root_get(
         queries: str | None = Query(
@@ -165,7 +173,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
             "Use the `queries` form field for reconciliation and the `extend` "
             "form field for data extension."
         ),
-        operation_id=f"openrefine_root_post_{vocab.key}",
+        operation_id=f"openrefine_root_post_{op_id}",
         openapi_extra=OPENREFINE_POST_OPENAPI_EXTRA,
     )
     async def root_post(request: Request):
@@ -197,7 +205,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Preview"],
         summary="preview an entity",
         description="Returns an HTML preview for a given entity.",
-        operation_id=f"preview_by_query_{vocab.key}",
+        operation_id=f"preview_by_query_{op_id}",
     )
     def preview_by_query(id: str = Query(...)):
         html, status_code = render_preview_for_id(id, vocab=vocab)
@@ -213,7 +221,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Preview"],
         summary="preview an entity by ID",
         description="Returns an HTML preview for a given entity by its ID.",
-        operation_id=f"preview_by_path_{vocab.key}",
+        operation_id=f"preview_by_path_{op_id}",
     )
     def preview_by_path(entity_id: str):
         html, status_code = render_preview_for_id(entity_id, vocab=vocab)
@@ -228,7 +236,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Suggest"],
         summary="Suggest entities",
         description="Returns entity suggestions for OpenRefine based on a prefix.",
-        operation_id=f"suggest_entity_{vocab.key}",
+        operation_id=f"suggest_entity_{op_id}",
     )
     def suggest_entity(
         prefix: str = Query(default=""),
@@ -275,7 +283,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Suggest"],
         summary="Suggest types",
         description="Returns available entity types.",
-        operation_id=f"suggest_type_{vocab.key}",
+        operation_id=f"suggest_type_{op_id}",
     )
     def suggest_type(
         prefix: str = Query(default=""),
@@ -311,7 +319,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Suggest"],
         summary="Suggest extend properties",
         description="Returns available properties for Add columns from reconciled values.",
-        operation_id=f"suggest_property_{vocab.key}",
+        operation_id=f"suggest_property_{op_id}",
     )
     def suggest_property(
         prefix: str = Query(default=""),
@@ -331,7 +339,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
 
     @router.get(
         "/properties",
-        operation_id=f"propose_properties_{vocab.key}",
+        operation_id=f"propose_properties_{op_id}",
     )
     def propose_properties(
         type: str = Query(default=""),
@@ -349,7 +357,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
 
     @router.get(
         "/extend",
-        operation_id=f"extend_get_{vocab.key}",
+        operation_id=f"extend_get_{op_id}",
     )
     def extend_get(
         extend: str | None = Query(default=None),
@@ -386,7 +394,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         summary="Extend reconciled entities",
         description="Returns additional property values for already reconciled entity IDs.",
         response_model=ExtendResponse,
-        operation_id=f"extend_post_{vocab.key}",
+        operation_id=f"extend_post_{op_id}",
     )
     async def extend_post(request: Request):
         content_type = request.headers.get("content-type", "")
@@ -450,7 +458,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["Extend"],
         summary="Extend reconciled entities with JSON body",
         response_model=ExtendResponse,
-        operation_id=f"extend_json_{vocab.key}",
+        operation_id=f"extend_json_{op_id}",
     )
     def extend_json(payload: ExtendRequest):
         return handle_extend_request(payload.model_dump(), vocab=vocab)
@@ -460,7 +468,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
         tags=["OpenRefine"],
         summary="GET reconciliation query alias",
         description="GET alias for reconciliation query batches using the `queries` query parameter.",
-        operation_id=f"openrefine_reconcile_get_{vocab.key}",
+        operation_id=f"openrefine_reconcile_get_{op_id}",
     )
     def reconcile_get(
         queries: str | None = Query(
@@ -513,7 +521,7 @@ def build_reconciliation_router(vocab: VocabConfig) -> APIRouter:
             "Alias for OpenRefine-compatible reconciliation requests. "
             "Accepts the same form-encoded `queries` payload as `POST /`."
         ),
-        operation_id=f"openrefine_reconcile_post_{vocab.key}",
+        operation_id=f"openrefine_reconcile_post_{op_id}",
         openapi_extra=OPENREFINE_POST_OPENAPI_EXTRA,
     )
     async def reconcile_post(request: Request):

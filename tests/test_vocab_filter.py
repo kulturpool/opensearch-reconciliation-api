@@ -18,7 +18,7 @@ from api.services.search import (
     candidate_matches_requested_type,
     is_root_type,
 )
-from api.vocabularies.getty import GETTY_VOCAB
+from api.vocabularies.getty import AAT_VOCAB
 from api.vocabularies.gnd import GND_VOCAB
 
 
@@ -30,14 +30,14 @@ class TestIsRootType:
         assert is_root_type("DifferentiatedPerson", vocab=GND_VOCAB) is False
 
     def test_getty_aat_is_root_type(self):
-        assert is_root_type("aat", vocab=GETTY_VOCAB) is True
+        assert is_root_type("aat", vocab=AAT_VOCAB) is True
 
     def test_getty_concrete_type_is_not_root_type(self):
-        assert is_root_type("Concept", vocab=GETTY_VOCAB) is False
+        assert is_root_type("aat:Concept", vocab=AAT_VOCAB) is False
 
     def test_none_entity_type_is_not_root_type(self):
         assert is_root_type(None, vocab=GND_VOCAB) is False
-        assert is_root_type(None, vocab=GETTY_VOCAB) is False
+        assert is_root_type(None, vocab=AAT_VOCAB) is False
 
 
 class TestBuildSearchBodyIndexScoping:
@@ -46,8 +46,8 @@ class TestBuildSearchBodyIndexScoping:
         assert body["_source"]["includes"] == list(GND_VOCAB.source_fields)
 
     def test_getty_query_targets_getty_source_fields(self):
-        body = build_search_body(query="painting", limit=5, vocab=GETTY_VOCAB)
-        assert body["_source"]["includes"] == list(GETTY_VOCAB.source_fields)
+        body = build_search_body(query="painting", limit=5, vocab=AAT_VOCAB)
+        assert body["_source"]["includes"] == list(AAT_VOCAB.source_fields)
         # GND-only fields must never leak into a Getty query.
         assert "dateOfBirth" not in body["_source"]["includes"]
 
@@ -61,15 +61,17 @@ class TestRootTypeIsNeverFiltered:
 
     def test_getty_root_type_produces_no_filter(self):
         body = build_search_body(
-            query="painting", limit=5, entity_type="aat", vocab=GETTY_VOCAB
+            query="painting", limit=5, entity_type="aat", vocab=AAT_VOCAB
         )
-        assert body["query"]["bool"]["filter"] == []
+        assert body["query"]["bool"]["filter"] == [{"term": {"vocabulary": "aat"}}]
 
     def test_getty_concrete_type_produces_a_filter(self):
         body = build_search_body(
-            query="painting", limit=5, entity_type="Concept", vocab=GETTY_VOCAB
+            query="painting", limit=5, entity_type="aat:Concept", vocab=AAT_VOCAB
         )
-        assert body["query"]["bool"]["filter"] == [{"terms": {"type": ["Concept"]}}]
+        assert body["query"]["bool"]["filter"]
+        terms_filter = body["query"]["bool"]["filter"][1]["terms"]["type"]
+        assert list(terms_filter) == ["aat:Concept"]
 
 
 class TestCandidateMatchesRequestedType:
@@ -80,12 +82,12 @@ class TestCandidateMatchesRequestedType:
         )
 
     def test_getty_root_type_matches_any_candidate(self):
-        source = {"type": ["Concept"]}
-        assert candidate_matches_requested_type(source, "aat", vocab=GETTY_VOCAB)
+        source = {"type": ["aat:Concept"]}
+        assert candidate_matches_requested_type(source, "aat", vocab=AAT_VOCAB)
 
     def test_getty_concrete_type_requires_matching_candidate_type(self):
-        source = {"type": ["Concept"]}
-        assert candidate_matches_requested_type(source, "Concept", vocab=GETTY_VOCAB)
+        source = {"type": ["aat:Concept"]}
+        assert candidate_matches_requested_type(source, "aat:Concept", vocab=AAT_VOCAB)
         assert not candidate_matches_requested_type(
-            source, "Facet", vocab=GETTY_VOCAB
+            source, "aat:Facet", vocab=AAT_VOCAB
         )

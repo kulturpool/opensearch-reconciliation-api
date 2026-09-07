@@ -359,6 +359,9 @@ def build_search_body(
 
     filter_clauses: list[dict[str, Any]] = []
 
+    if vocab.fixed_vocabulary:
+        filter_clauses.append({"term": {"vocabulary": vocab.fixed_vocabulary}})
+
     if entity_type and not is_root_type(entity_type, vocab=vocab):
         allowed_types = vocab.type_aliases.get(entity_type, [entity_type])
 
@@ -1179,22 +1182,28 @@ def format_entity_types(
         seen_type_ids.add(vocab.root_type["id"])
 
     for entity_type in entity_types:
-        type_id = str(entity_type)
+        raw_type_id = str(entity_type)
 
-        if not type_id:
+        if not raw_type_id:
             continue
 
-        if type_id in seen_type_ids:
+        mapping = vocab.type_labels.get(raw_type_id)
+
+        # A mapping may collapse several concrete stored type values onto a
+        # single coarser type id (e.g. Getty's combined /getty vocab maps
+        # "aat:Concept", "aat:Facet", ... all onto "aat"), so dedup on the
+        # *resolved* id rather than the raw stored value.
+        resolved_id = mapping.get("id", raw_type_id) if mapping else raw_type_id
+
+        if resolved_id in seen_type_ids:
             continue
 
-        seen_type_ids.add(type_id)
-
-        mapping = vocab.type_labels.get(type_id)
+        seen_type_ids.add(resolved_id)
 
         if mapping:
             type_object: dict[str, Any] = {
-                "id": type_id,
-                "name": mapping.get("name", type_id),
+                "id": resolved_id,
+                "name": mapping.get("name", raw_type_id),
             }
 
             broader = mapping.get("broader")
@@ -1207,8 +1216,8 @@ def format_entity_types(
         else:
             formatted_types.append(
                 {
-                    "id": type_id,
-                    "name": type_id,
+                    "id": resolved_id,
+                    "name": resolved_id,
                 }
             )
 

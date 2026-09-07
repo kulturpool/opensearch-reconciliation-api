@@ -1,6 +1,6 @@
 # Architektur
 
-Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des Reconciliation-API-Projekts. Der Service stellt zwei unabhängige Vokabulare bereit: die **Gemeinsame Normdatei (GND)** am Root-Endpunkt (`/`) und den **Getty Art & Architecture Thesaurus (AAT)** unter `/getty`.
+Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des Reconciliation-API-Projekts. Der Service stellt zwei unabhängige Vokabulare bereit: die **Gemeinsame Normdatei (GND)** unter `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und den **Getty Art & Architecture Thesaurus (AAT)** unter `/getty`.
 
 ---
 
@@ -35,7 +35,7 @@ Der Service ist ein lokaler, Docker-basierter Reconciliation-Service. Er kombini
 ```mermaid
 flowchart LR
     User(["Nutzer:in"]) -->|CSV/TSV/Excel-Spalten reconciliaten| OpenRefine["OpenRefine"]
-    OpenRefine -->|HTTP: queries / extend / preview / suggest an /| API["Reconciliation API\n(FastAPI, Port 8083)"]
+    OpenRefine -->|HTTP: queries / extend / preview / suggest an /gnd bzw. /| API["Reconciliation API\n(FastAPI, Port 8083)"]
     OpenRefine -->|HTTP: queries / extend / preview / suggest an /getty| API
     API -->|_msearch / _search / _count| OpenSearch[("OpenSearch\nIndizes: gnd, getty")]
     GNDScheduler["GND OAI Update Scheduler\n(Background Thread)"] -->|Bulk Upsert| OpenSearch
@@ -56,8 +56,8 @@ Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten 
 
 | Komponente | Pfad | Verantwortung |
 |---|---|---|
-| FastAPI-App | [api/main.py](../api/main.py) | App-Setup, Mounten der Router (`/` für GND, `/getty` für Getty AAT) |
-| Router-Factory | [api/routers/reconciliation.py](../api/routers/reconciliation.py) | Erzeugt aus einem `VocabConfig` einen kompletten Satz OpenRefine-Endpunkte (Manifest, Query, Suggest, Extend, Preview) – gemeinsamer Code für GND und Getty |
+| FastAPI-App | [api/main.py](../api/main.py) | App-Setup, Mounten der Router (`/gnd` und, für Abwärtskompatibilität, zusätzlich `/` für GND; `/getty` für Getty AAT) |
+| Router-Factory | [api/routers/reconciliation.py](../api/routers/reconciliation.py) | Erzeugt aus einem `VocabConfig` einen kompletten Satz OpenRefine-Endpunkte (Manifest, Query, Suggest, Extend, Preview) – gemeinsamer Code für GND und Getty. Ein optionaler `operation_id_prefix`-Parameter erlaubt es, denselben Vokabular-Router (GND) unter mehreren Prefixes zu mounten, ohne doppelte OpenAPI-`operationId`s zu erzeugen |
 | Vokabular-Konfiguration GND | [api/vocabularies/gnd.py](../api/vocabularies/gnd.py) | `GND_VOCAB`: Typen, Properties, Feldnamen, Aliase für die GND |
 | Vokabular-Konfiguration Getty | [api/vocabularies/getty.py](../api/vocabularies/getty.py) | `GETTY_VOCAB`: Typen, Properties, Feldnamen für AAT |
 | Vokabular-Basistyp | [api/vocabularies/base.py](../api/vocabularies/base.py) | `VocabConfig`-Datenklasse, die beide Vokabulare implementieren |
@@ -161,7 +161,10 @@ Der Scheduler läuft als Hintergrund-Thread im selben Container wie die API (kei
 
 Getty AAT ist als zweites Vokabular über dieselbe Router-Factory eingebunden ([api/routers/reconciliation.py](../api/routers/reconciliation.py)): `build_reconciliation_router(GETTY_VOCAB)` erzeugt dieselben OpenRefine-Endpunkte wie für GND, nur konfiguriert über [api/vocabularies/getty.py](../api/vocabularies/getty.py) statt [api/vocabularies/gnd.py](../api/vocabularies/gnd.py), und wird in [api/main.py](../api/main.py) unter dem Prefix `/getty` gemountet. Scoring, Batching und `_msearch`-Logik in [api/services/search.py](../api/services/search.py) sind vokabular-agnostisch und werden für beide Indizes wiederverwendet.
 
+Analog dazu wird GND selbst zweimal gemountet: einmal am Root-Endpunkt `/` (aus Gründen der Abwärtskompatibilität mit bestehenden OpenRefine-Service-Konfigurationen) und einmal unter dem eigenen Prefix `/gnd` (für Konsistenz mit `/getty`). Beide Mounts nutzen denselben `GND_VOCAB`, der `/gnd`-Mount erhält jedoch eine Kopie mit `route_prefix="/gnd"` (via `dataclasses.replace`), damit das Service-Manifest korrekt `/gnd`-präfixierte Sub-Endpunkt-URLs (Preview, Suggest, Extend) meldet, sowie einen eigenen `operation_id_prefix`, um doppelte OpenAPI-`operationId`s zwischen den beiden GND-Mounts zu vermeiden.
+
 Da Getty keine Änderungsliste analog zu GNDs OAI-PMH bereitstellt, gibt es keinen inkrementellen Update-Pfad. Stattdessen baut jeder Rebuild einen komplett neuen Index auf und schwenkt danach die öffentliche Alias `getty` atomar um:
+
 
 ```mermaid
 sequenceDiagram

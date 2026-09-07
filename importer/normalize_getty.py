@@ -27,7 +27,7 @@ import argparse
 import json
 import sys
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -38,15 +38,25 @@ from config import GETTY_RAW_DIR
 from importer.getty_vocab_specs import (
     GETTY_VOCAB_SPECS,
     GettyVocabSpec,
+    PRED_AGENT_TYPE_NON_PREFERRED,
+    PRED_AGENT_TYPE_PREFERRED,
+    PRED_BIOGRAPHY_NON_PREFERRED,
+    PRED_BIOGRAPHY_PREFERRED,
     PRED_BROADER_PREFERRED,
     PRED_EXACT_MATCH,
+    PRED_GEO_LAT,
+    PRED_GEO_LONG,
     PRED_IDENTIFIER,
+    PRED_NATIONALITY_NON_PREFERRED,
+    PRED_NATIONALITY_PREFERRED,
     PRED_NOTATION,
     PRED_PARENT_STRING,
     PRED_PARENT_STRING_ABBREV,
+    PRED_PLACE_TYPE_PREFERRED,
     PRED_PREF_LABEL_GVP,
     PRED_PREF_LABEL_LOC,
     PRED_PREF_LABEL_PLAIN,
+    PRED_SCHEMA_DESCRIPTION,
     PRED_SCOPE_NOTE,
     PRED_XL_ALT_LABEL,
     PRED_XL_LITERAL_FORM,
@@ -67,18 +77,125 @@ FILE_TERMS = "_2Terms.nt"
 FILE_SCOPE_NOTES = "_ScopeNotes.nt"
 FILE_HIERARCHICAL_RELS = "_HierarchicalRels.nt"
 FILE_ASSOCIATIVE_RELS = "_AssociativeRels.nt"
-FILE_NOTATIONS = "_Notations.nt"
-FILE_LCSH_ALIGNMENT = "_LCSHAlignment.nt"
 FILE_OBSOLETE_SUBJECTS = "_ObsoleteSubjects.nt"
 
 # Literal (top-level) properties: exposed both as direct fields (candidates
 # for reliable_top_level_property_ids in Phase 5's GETTY_VOCAB) and mirrored
 # into propertiesFlat for generic reconciliation-extend code reuse.
-LITERAL_PROPERTY_FIELDS = ("parentString", "parentStringAbbrev", "scopeNote", "notation")
+LITERAL_PROPERTY_FIELDS = (
+    "parentString",
+    "parentStringAbbrev",
+    "scopeNote",
+    "notation",
+    "coordinates",
+)
 
 
 def vocab_file(raw_dir: Path, vocab: GettyVocabSpec, suffix: str) -> Path:
     return raw_dir / vocab.key / f"{vocab.file_prefix}{suffix}"
+
+
+def read_notation_map_if_available(raw_dir: Path, vocab: GettyVocabSpec) -> dict[str, str]:
+    if not vocab.notation_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.notation_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing notation file for {vocab.key}: {path}")
+        return {}
+
+    return build_notation_map(path)
+
+
+def read_exact_match_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, list[str]]:
+    if not vocab.exact_match_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.exact_match_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing alignment file for {vocab.key}: {path}")
+        return {}
+
+    return build_exact_match_map(path)
+
+
+def read_nationality_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, list[str]]:
+    if not vocab.nationality_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.nationality_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing nationality file for {vocab.key}: {path}")
+        return {}
+
+    return build_reference_map(path, (PRED_NATIONALITY_PREFERRED, PRED_NATIONALITY_NON_PREFERRED))
+
+
+def read_role_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, list[str]]:
+    if not vocab.agent_type_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.agent_type_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing agent type (role) file for {vocab.key}: {path}")
+        return {}
+
+    return build_reference_map(path, (PRED_AGENT_TYPE_PREFERRED, PRED_AGENT_TYPE_NON_PREFERRED))
+
+
+def read_biography_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, list[str]]:
+    if not vocab.biography_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.biography_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing biography file for {vocab.key}: {path}")
+        return {}
+
+    return build_biography_map(path)
+
+
+def read_coordinates_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, tuple[str, str]]:
+    if not vocab.coordinates_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.coordinates_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing coordinates file for {vocab.key}: {path}")
+        return {}
+
+    return build_coordinates_map(path)
+
+
+def read_place_type_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, list[str]]:
+    if not vocab.place_type_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.place_type_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing place type file for {vocab.key}: {path}")
+        return {}
+
+    return build_reference_map(path, (PRED_PLACE_TYPE_PREFERRED,))
 
 
 @dataclass
@@ -91,6 +208,11 @@ class GettyLookups:
     related: dict[str, list[str]]
     notation: dict[str, str]
     exact_match: dict[str, list[str]]
+    nationality: dict[str, list[str]] = field(default_factory=dict)
+    role: dict[str, list[str]] = field(default_factory=dict)
+    biography: dict[str, list[str]] = field(default_factory=dict)
+    coordinates: dict[str, tuple[str, str]] = field(default_factory=dict)
+    place_type: dict[str, list[str]] = field(default_factory=dict)
 
 
 def build_terms_index(
@@ -228,6 +350,93 @@ def build_exact_match_map(path: Path) -> dict[str, list[str]]:
     return exact_match
 
 
+def build_reference_map(path: Path, predicates: tuple[str, ...]) -> dict[str, list[str]]:
+    """
+    Generic direct-triple reference map builder: subject URI -> [object URI,
+    ...] for any of the given predicates. Used for ULAN nationality/role and
+    TGN place type triples, which (unlike broader/related) are not
+    accompanied by conflicting bookkeeping predicates that need filtering.
+    """
+
+    references: dict[str, list[str]] = {}
+
+    for triple in iter_triples(path):
+        if triple.is_literal or triple.predicate not in predicates:
+            continue
+
+        references.setdefault(triple.subject, []).append(triple.obj)
+
+    return references
+
+
+def build_biography_map(path: Path) -> dict[str, list[str]]:
+    """
+    Single pass over `*_Biographies.nt` building the agent-node ->
+    [biography description text, ...] map. The file encodes two things:
+    - `<ulan/ID-agent> gvp:biographyPreferred/NonPreferred <ulan/bio/BIOID>`
+    - `<ulan/bio/BIOID> schema:description "free-text biography"`
+    (plus other biography-node fields - birthPlace/deathPlace/gender/dates -
+    that aren't kept, only the free-text description is exposed.)
+    """
+
+    agent_to_bio_ids: dict[str, list[str]] = {}
+    bio_description: dict[str, str] = {}
+
+    for triple in iter_triples(path):
+        if not triple.is_literal and triple.predicate in (
+            PRED_BIOGRAPHY_PREFERRED,
+            PRED_BIOGRAPHY_NON_PREFERRED,
+        ):
+            agent_to_bio_ids.setdefault(triple.subject, []).append(triple.obj)
+        elif triple.is_literal and triple.predicate == PRED_SCHEMA_DESCRIPTION:
+            bio_description[triple.subject] = triple.obj
+
+    biography: dict[str, list[str]] = {}
+
+    for agent_uri, bio_ids in agent_to_bio_ids.items():
+        texts = [bio_description[bio_id] for bio_id in bio_ids if bio_id in bio_description]
+
+        if texts:
+            biography[agent_uri] = texts
+
+    return biography
+
+
+def build_coordinates_map(path: Path) -> dict[str, tuple[str, str]]:
+    """
+    Single pass over `*_Coordinates.nt` building the place-node ->
+    (lat, long) map from `wgs84_pos#lat`/`wgs84_pos#long` literal triples.
+    """
+
+    lat_by_subject: dict[str, str] = {}
+    long_by_subject: dict[str, str] = {}
+
+    for triple in iter_triples(path):
+        if not triple.is_literal:
+            continue
+
+        if triple.predicate == PRED_GEO_LAT:
+            lat_by_subject[triple.subject] = triple.obj
+        elif triple.predicate == PRED_GEO_LONG:
+            long_by_subject[triple.subject] = triple.obj
+
+    coordinates: dict[str, tuple[str, str]] = {}
+
+    for place_uri, lat in lat_by_subject.items():
+        long_value = long_by_subject.get(place_uri)
+
+        if long_value is not None:
+            coordinates[place_uri] = (lat, long_value)
+
+    return coordinates
+
+    for triple in iter_triples(path):
+        if not triple.is_literal:
+            exact_match.setdefault(triple.subject, []).append(triple.obj)
+
+    return exact_match
+
+
 def build_lookups(raw_dir: Path, vocab: GettyVocabSpec) -> GettyLookups:
     term_literal, subject_term_refs = build_terms_index(
         vocab_file(raw_dir, vocab, FILE_TERMS)
@@ -237,8 +446,13 @@ def build_lookups(raw_dir: Path, vocab: GettyVocabSpec) -> GettyLookups:
     )
     broader = build_broader_map(vocab_file(raw_dir, vocab, FILE_HIERARCHICAL_RELS))
     related = build_related_map(vocab_file(raw_dir, vocab, FILE_ASSOCIATIVE_RELS))
-    notation = build_notation_map(vocab_file(raw_dir, vocab, FILE_NOTATIONS))
-    exact_match = build_exact_match_map(vocab_file(raw_dir, vocab, FILE_LCSH_ALIGNMENT))
+    notation = read_notation_map_if_available(raw_dir, vocab)
+    exact_match = read_exact_match_map_if_available(raw_dir, vocab)
+    nationality = read_nationality_map_if_available(raw_dir, vocab)
+    role = read_role_map_if_available(raw_dir, vocab)
+    biography = read_biography_map_if_available(raw_dir, vocab)
+    coordinates = read_coordinates_map_if_available(raw_dir, vocab)
+    place_type = read_place_type_map_if_available(raw_dir, vocab)
 
     return GettyLookups(
         term_literal=term_literal,
@@ -249,6 +463,11 @@ def build_lookups(raw_dir: Path, vocab: GettyVocabSpec) -> GettyLookups:
         related=related,
         notation=notation,
         exact_match=exact_match,
+        nationality=nationality,
+        role=role,
+        biography=biography,
+        coordinates=coordinates,
+        place_type=place_type,
     )
 
 
@@ -384,6 +603,22 @@ def uri_to_subject_id(uri: str) -> str:
     return uri.rstrip("/").rsplit("/", 1)[-1]
 
 
+def uri_to_vocab_ref(uri: str) -> str:
+    """
+    Converts a Getty concept URI to a composite `<vocab>/<id>` reference,
+    inferring the vocab key from the URI itself rather than assuming the
+    current record's own vocab. Needed for cross-vocabulary references (e.g.
+    ULAN nationality/role and TGN place type triples always point at AAT
+    concepts, regardless of which vocab is being normalized).
+    """
+
+    for spec in GETTY_VOCAB_SPECS.values():
+        if uri.startswith(spec.uri_prefix):
+            return f"{spec.key}/{uri_to_subject_id(uri)}"
+
+    return uri_to_subject_id(uri)
+
+
 def normalize_subject(
     subject_uri: str,
     triples: list[Triple],
@@ -428,11 +663,32 @@ def normalize_subject(
     notation = lookups.notation.get(subject_uri)
     exact_match = lookups.exact_match.get(subject_uri, [])
 
+    # ULAN's explicit export models nationality/biography on a companion
+    # "-agent"-suffixed resource, but roles (agentType) directly on the
+    # plain subject. TGN's explicit export models coordinates on a
+    # companion "-place"-suffixed resource, but place types directly on the
+    # plain subject. These lookups are empty {} for AAT, so this is a no-op
+    # there.
+    agent_uri = f"{subject_uri}-agent"
+    place_uri = f"{subject_uri}-place"
+
+    nationality_uris = lookups.nationality.get(agent_uri, [])
+    role_uris = lookups.role.get(subject_uri, [])
+    biography = lookups.biography.get(agent_uri, [])
+    place_type_uris = lookups.place_type.get(subject_uri, [])
+    lat_long = lookups.coordinates.get(place_uri)
+    coordinates = f"{lat_long[0]}, {lat_long[1]}" if lat_long else None
+
+    nationality = [uri_to_vocab_ref(uri) for uri in nationality_uris]
+    role = [uri_to_vocab_ref(uri) for uri in role_uris]
+    place_type = [uri_to_vocab_ref(uri) for uri in place_type_uris]
+
     literal_fields = {
         "parentString": parent_string,
         "parentStringAbbrev": parent_string_abbrev,
         "scopeNote": scope_note,
         "notation": notation,
+        "coordinates": coordinates,
     }
 
     available_properties = [name for name, value in literal_fields.items() if value]
@@ -446,6 +702,18 @@ def normalize_subject(
     if exact_match:
         available_properties.append("exactMatch")
 
+    if nationality:
+        available_properties.append("nationality")
+
+    if role:
+        available_properties.append("role")
+
+    if biography:
+        available_properties.append("biography")
+
+    if place_type:
+        available_properties.append("placeType")
+
     properties_flat = [
         {"id": name, "value": value} for name, value in literal_fields.items() if value
     ]
@@ -458,7 +726,7 @@ def normalize_subject(
         "source": f"getty-{vocab.key}-explicit",
         "preferredName": preferred_name,
         "variantName": variant_names,
-        "type": [type_key],
+        "type": [f"{vocab.key}:{type_key}"],
         "parentString": parent_string,
         "parentStringAbbrev": parent_string_abbrev,
         "scopeNote": scope_note,
@@ -466,6 +734,11 @@ def normalize_subject(
         "related": [f"{vocab.key}/{uri_to_subject_id(uri)}" for uri in related_uris],
         "notation": notation,
         "exactMatch": exact_match,
+        "nationality": nationality,
+        "role": role,
+        "biography": biography,
+        "placeType": place_type,
+        "coordinates": coordinates,
         "availableProperties": available_properties,
         "propertiesFlat": properties_flat,
     }
@@ -505,7 +778,7 @@ def normalize_obsolete_subject(
         "source": f"getty-{vocab.key}-explicit",
         "preferredName": preferred_name,
         "variantName": [],
-        "type": ["ObsoleteSubject"],
+        "type": [f"{vocab.key}:ObsoleteSubject"],
         "parentString": None,
         "parentStringAbbrev": None,
         "scopeNote": None,
@@ -513,6 +786,11 @@ def normalize_obsolete_subject(
         "related": [],
         "notation": None,
         "exactMatch": [],
+        "nationality": [],
+        "role": [],
+        "biography": [],
+        "placeType": [],
+        "coordinates": None,
         "availableProperties": [],
         "propertiesFlat": [],
     }

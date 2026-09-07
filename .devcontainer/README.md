@@ -88,11 +88,13 @@ docker compose -f docker-compose.runtime.yml up --build
 
 ### API testen
 
-Die API läuft automatisch auf `http://localhost:8083`:
+Die API läuft automatisch auf `http://localhost:8083`. GND ist sowohl am Root-Endpunkt (Abwärtskompatibilität) als auch unter `/gnd` erreichbar; Getty analog unter `/getty`:
 
 ```bash
 # Service Manifest
 curl http://localhost:8083/
+# äquivalent:
+curl http://localhost:8083/gnd/
 
 # Reconciliation Query
 curl -X POST "http://localhost:8083/" \

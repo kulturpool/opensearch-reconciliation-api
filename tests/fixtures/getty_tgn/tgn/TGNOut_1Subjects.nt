@@ -1,0 +1,4 @@
+<http://vocab.getty.edu/tgn/7000001> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://vocab.getty.edu/ontology#AdminPlaceConcept> .
+<http://vocab.getty.edu/tgn/7000001> <http://purl.org/dc/elements/1.1/identifier> "7000001" .
+<http://vocab.getty.edu/tgn/7000002> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://vocab.getty.edu/ontology#AdminPlaceConcept> .
+<http://vocab.getty.edu/tgn/7000002> <http://purl.org/dc/elements/1.1/identifier> "7000002" .

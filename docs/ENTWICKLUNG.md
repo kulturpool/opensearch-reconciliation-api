@@ -310,6 +310,8 @@ except Exception as e:
 
 ### Manuelle API-Tests
 
+> **Hinweis:** GND ist sowohl am Root-Endpunkt (`http://localhost:8083/…`, aus Gründen der Abwärtskompatibilität) als auch unter dem eigenen Prefix `http://localhost:8083/gnd/…` erreichbar (analog zu `/getty` für Getty). Die folgenden Beispiele nutzen den Root-Endpunkt; beide Varianten sind funktional identisch.
+
 **Service Manifest**:
 ```bash
 curl http://localhost:8083/

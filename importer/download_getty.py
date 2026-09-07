@@ -41,11 +41,31 @@ GETTY_SOURCES: Final[dict[str, dict[str, str]]] = {
     # `importer.getty_vocab_specs` entry is the only work needed to enable them.
     "ulan": {
         "file_prefix": "ULANOut",
-        "needed_files": (),
+        "needed_files": (
+            "ULANOut_1Subjects.nt",
+            "ULANOut_2Terms.nt",
+            "ULANOut_ScopeNotes.nt",
+            "ULANOut_HierarchicalRels.nt",
+            "ULANOut_AssociativeRels.nt",
+            "ULANOut_LOCAlignment.nt",
+            "ULANOut_ObsoleteSubjects.nt",
+            "ULANOut_Nationality.nt",
+            "ULANOut_AgentTypes.nt",
+            "ULANOut_Biographies.nt",
+        ),
     },
     "tgn": {
         "file_prefix": "TGNOut",
-        "needed_files": (),
+        "needed_files": (
+            "TGNOut_1Subjects.nt",
+            "TGNOut_2Terms.nt",
+            "TGNOut_ScopeNotes.nt",
+            "TGNOut_HierarchicalRels.nt",
+            "TGNOut_AssociativeRels.nt",
+            "TGNOut_ObsoleteSubjects.nt",
+            "TGNOut_Coordinates.nt",
+            "TGNOut_PlaceTypes.nt",
+        ),
     },
 }
 
