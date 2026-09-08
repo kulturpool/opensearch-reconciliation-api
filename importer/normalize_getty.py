@@ -43,6 +43,9 @@ from importer.getty_vocab_specs import (
     PRED_BIOGRAPHY_NON_PREFERRED,
     PRED_BIOGRAPHY_PREFERRED,
     PRED_BROADER_PREFERRED,
+    PRED_EST_END,
+    PRED_EST_START,
+    PRED_EVENT_PREFERRED,
     PRED_EXACT_MATCH,
     PRED_GEO_LAT,
     PRED_GEO_LONG,
@@ -56,7 +59,11 @@ from importer.getty_vocab_specs import (
     PRED_PREF_LABEL_GVP,
     PRED_PREF_LABEL_LOC,
     PRED_PREF_LABEL_PLAIN,
+    PRED_SCHEMA_BIRTH_PLACE,
+    PRED_SCHEMA_DEATH_PLACE,
     PRED_SCHEMA_DESCRIPTION,
+    PRED_SCHEMA_GENDER,
+    PRED_SCHEMA_LOCATION,
     PRED_SCOPE_NOTE,
     PRED_XL_ALT_LABEL,
     PRED_XL_LITERAL_FORM,
@@ -213,6 +220,8 @@ class GettyLookups:
     biography: dict[str, list[str]] = field(default_factory=dict)
     coordinates: dict[str, tuple[str, str]] = field(default_factory=dict)
     place_type: dict[str, list[str]] = field(default_factory=dict)
+    biography_details: dict[str, dict[str, str]] = field(default_factory=dict)
+    activity: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
 def build_terms_index(
@@ -402,6 +411,139 @@ def build_biography_map(path: Path) -> dict[str, list[str]]:
     return biography
 
 
+def build_biography_details_map(path: Path) -> dict[str, dict[str, str]]:
+    """
+    Single pass over `*_Biographies.nt` building the agent-node ->
+    {gender, birthPlace, deathPlace, birthDate, deathDate} map, sourced ONLY
+    from the PREFERRED biography node (`gvp:biographyPreferred`, never
+    `biographyNonPreferred`) - unlike `build_biography_map` above, which
+    merges free-text descriptions from every biography node. A person has
+    at most one preferred biography, so these are single values, not lists.
+    `gvp:estStart`/`estEnd` on the bio node are the (possibly estimated)
+    birth/death years (gYear literals, e.g. "1471" or "-0510" for BCE).
+    """
+
+    agent_to_preferred_bio: dict[str, str] = {}
+    bio_gender: dict[str, str] = {}
+    bio_birth_place: dict[str, str] = {}
+    bio_death_place: dict[str, str] = {}
+    bio_birth_date: dict[str, str] = {}
+    bio_death_date: dict[str, str] = {}
+
+    for triple in iter_triples(path):
+        if not triple.is_literal and triple.predicate == PRED_BIOGRAPHY_PREFERRED:
+            agent_to_preferred_bio[triple.subject] = triple.obj
+        elif not triple.is_literal and triple.predicate == PRED_SCHEMA_GENDER:
+            bio_gender[triple.subject] = triple.obj
+        elif not triple.is_literal and triple.predicate == PRED_SCHEMA_BIRTH_PLACE:
+            bio_birth_place[triple.subject] = triple.obj
+        elif not triple.is_literal and triple.predicate == PRED_SCHEMA_DEATH_PLACE:
+            bio_death_place[triple.subject] = triple.obj
+        elif triple.is_literal and triple.predicate == PRED_EST_START:
+            bio_birth_date[triple.subject] = triple.obj
+        elif triple.is_literal and triple.predicate == PRED_EST_END:
+            bio_death_date[triple.subject] = triple.obj
+
+    details: dict[str, dict[str, str]] = {}
+
+    for agent_uri, bio_uri in agent_to_preferred_bio.items():
+        entry: dict[str, str] = {}
+
+        if bio_uri in bio_gender:
+            entry["gender"] = bio_gender[bio_uri]
+
+        if bio_uri in bio_birth_place:
+            entry["birthPlace"] = bio_birth_place[bio_uri]
+
+        if bio_uri in bio_death_place:
+            entry["deathPlace"] = bio_death_place[bio_uri]
+
+        if bio_uri in bio_birth_date:
+            entry["birthDate"] = bio_birth_date[bio_uri]
+
+        if bio_uri in bio_death_date:
+            entry["deathDate"] = bio_death_date[bio_uri]
+
+        if entry:
+            details[agent_uri] = entry
+
+    return details
+
+
+def build_activity_map(path: Path) -> dict[str, dict[str, str]]:
+    """
+    Single pass over `*_Event.nt` building the agent-node ->
+    {location, startDate, endDate} map, sourced ONLY from the PREFERRED
+    activity event (`gvp:eventPreferred`, never `eventNonPreferred`). Event
+    nodes carry `schema:location` (a TGN place URI) and
+    `gvp:estStart`/`estEnd` (the activity's date span), all as DIRECT
+    triples on the same event resource - no further indirection needed.
+    """
+
+    agent_to_preferred_event: dict[str, str] = {}
+    event_location: dict[str, str] = {}
+    event_start: dict[str, str] = {}
+    event_end: dict[str, str] = {}
+
+    for triple in iter_triples(path):
+        if not triple.is_literal and triple.predicate == PRED_EVENT_PREFERRED:
+            agent_to_preferred_event[triple.subject] = triple.obj
+        elif not triple.is_literal and triple.predicate == PRED_SCHEMA_LOCATION:
+            event_location[triple.subject] = triple.obj
+        elif triple.is_literal and triple.predicate == PRED_EST_START:
+            event_start[triple.subject] = triple.obj
+        elif triple.is_literal and triple.predicate == PRED_EST_END:
+            event_end[triple.subject] = triple.obj
+
+    activity: dict[str, dict[str, str]] = {}
+
+    for agent_uri, event_uri in agent_to_preferred_event.items():
+        entry: dict[str, str] = {}
+
+        if event_uri in event_location:
+            entry["location"] = event_location[event_uri]
+
+        if event_uri in event_start:
+            entry["startDate"] = event_start[event_uri]
+
+        if event_uri in event_end:
+            entry["endDate"] = event_end[event_uri]
+
+        if entry:
+            activity[agent_uri] = entry
+
+    return activity
+
+
+def read_biography_details_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, dict[str, str]]:
+    if not vocab.biography_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.biography_file_suffix)
+
+    if not path.exists():
+        return {}
+
+    return build_biography_details_map(path)
+
+
+def read_activity_map_if_available(
+    raw_dir: Path, vocab: GettyVocabSpec
+) -> dict[str, dict[str, str]]:
+    if not vocab.event_file_suffix:
+        return {}
+
+    path = vocab_file(raw_dir, vocab, vocab.event_file_suffix)
+
+    if not path.exists():
+        print(f"[WARN] Missing event file for {vocab.key}: {path}")
+        return {}
+
+    return build_activity_map(path)
+
+
 def build_coordinates_map(path: Path) -> dict[str, tuple[str, str]]:
     """
     Single pass over `*_Coordinates.nt` building the place-node ->
@@ -453,6 +595,8 @@ def build_lookups(raw_dir: Path, vocab: GettyVocabSpec) -> GettyLookups:
     biography = read_biography_map_if_available(raw_dir, vocab)
     coordinates = read_coordinates_map_if_available(raw_dir, vocab)
     place_type = read_place_type_map_if_available(raw_dir, vocab)
+    biography_details = read_biography_details_map_if_available(raw_dir, vocab)
+    activity = read_activity_map_if_available(raw_dir, vocab)
 
     return GettyLookups(
         term_literal=term_literal,
@@ -468,6 +612,8 @@ def build_lookups(raw_dir: Path, vocab: GettyVocabSpec) -> GettyLookups:
         biography=biography,
         coordinates=coordinates,
         place_type=place_type,
+        biography_details=biography_details,
+        activity=activity,
     )
 
 
@@ -619,6 +765,25 @@ def uri_to_vocab_ref(uri: str) -> str:
     return uri_to_subject_id(uri)
 
 
+def place_uri_to_vocab_ref(uri: str) -> str:
+    """
+    Same as `uri_to_vocab_ref`, but for TGN place cross-references that use
+    Getty's own "-place" companion-resource URI convention (verified by
+    sampling `schema:birthPlace`/`deathPlace`/`location` triples, e.g.
+    `<tgn/7008546-place>`) - stripped so the resulting id matches the actual
+    indexed TGN concept id (`tgn/7008546`), the same as `broader`/`related`/
+    other cross-references elsewhere in this module.
+    """
+
+    ref = uri_to_vocab_ref(uri)
+
+    if ref.endswith("-place"):
+        return ref[: -len("-place")]
+
+    return ref
+
+
+
 def normalize_subject(
     subject_uri: str,
     triples: list[Triple],
@@ -683,12 +848,46 @@ def normalize_subject(
     role = [uri_to_vocab_ref(uri) for uri in role_uris]
     place_type = [uri_to_vocab_ref(uri) for uri in place_type_uris]
 
+    # ULAN-only biographical details (preferred biography node) and activity
+    # (preferred event node), both keyed by the same "-agent" resource used
+    # for nationality/biography above. Empty {} for AAT/TGN, so this is a
+    # no-op there.
+    bio_details = lookups.biography_details.get(agent_uri, {})
+    activity = lookups.activity.get(agent_uri, {})
+
+    gender = uri_to_vocab_ref(bio_details["gender"]) if "gender" in bio_details else None
+    birth_place = (
+        place_uri_to_vocab_ref(bio_details["birthPlace"])
+        if "birthPlace" in bio_details
+        else None
+    )
+    death_place = (
+        place_uri_to_vocab_ref(bio_details["deathPlace"])
+        if "deathPlace" in bio_details
+        else None
+    )
+    birth_date = bio_details.get("birthDate")
+    death_date = bio_details.get("deathDate")
+    location = (
+        place_uri_to_vocab_ref(activity["location"]) if "location" in activity else None
+    )
+    start_date = activity.get("startDate")
+    end_date = activity.get("endDate")
+
     literal_fields = {
         "parentString": parent_string,
         "parentStringAbbrev": parent_string_abbrev,
         "scopeNote": scope_note,
         "notation": notation,
         "coordinates": coordinates,
+        "gender": gender,
+        "birthPlace": birth_place,
+        "deathPlace": death_place,
+        "birthDate": birth_date,
+        "deathDate": death_date,
+        "location": location,
+        "startDate": start_date,
+        "endDate": end_date,
     }
 
     available_properties = [name for name, value in literal_fields.items() if value]
@@ -739,6 +938,14 @@ def normalize_subject(
         "biography": biography,
         "placeType": place_type,
         "coordinates": coordinates,
+        "gender": gender,
+        "birthPlace": birth_place,
+        "deathPlace": death_place,
+        "birthDate": birth_date,
+        "deathDate": death_date,
+        "location": location,
+        "startDate": start_date,
+        "endDate": end_date,
         "availableProperties": available_properties,
         "propertiesFlat": properties_flat,
     }
@@ -791,6 +998,14 @@ def normalize_obsolete_subject(
         "biography": [],
         "placeType": [],
         "coordinates": None,
+        "gender": None,
+        "birthPlace": None,
+        "deathPlace": None,
+        "birthDate": None,
+        "deathDate": None,
+        "location": None,
+        "startDate": None,
+        "endDate": None,
         "availableProperties": [],
         "propertiesFlat": [],
     }

@@ -142,6 +142,37 @@ GETTY_INDEX_SETTINGS: dict[str, Any] = {
             "coordinates": {
                 "type": "keyword",
             },
+            # ULAN-only biographical/activity details, sourced from the
+            # preferred biography node and preferred activity event.
+            # gender/birthPlace/deathPlace/location are composite
+            # "<vocab>/<id>" refs (same convention as nationality/role/
+            # placeType above); birth/deathDate and start/endDate are plain
+            # gYear-like strings (e.g. "1471", "-0510"), deliberately
+            # indexed as keyword only (no date-tolerant scoring for Getty).
+            "gender": {
+                "type": "keyword",
+            },
+            "birthPlace": {
+                "type": "keyword",
+            },
+            "deathPlace": {
+                "type": "keyword",
+            },
+            "birthDate": {
+                "type": "keyword",
+            },
+            "deathDate": {
+                "type": "keyword",
+            },
+            "location": {
+                "type": "keyword",
+            },
+            "startDate": {
+                "type": "keyword",
+            },
+            "endDate": {
+                "type": "keyword",
+            },
             "propertiesFlat": {
                 "type": "nested",
                 "properties": {

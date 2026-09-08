@@ -158,6 +158,38 @@
     {
       "id": "exactMatch",
       "name": "Exact Match"
+    },
+    {
+      "id": "gender",
+      "name": "Gender"
+    },
+    {
+      "id": "birthPlace",
+      "name": "Birth Place"
+    },
+    {
+      "id": "deathPlace",
+      "name": "Death Place"
+    },
+    {
+      "id": "birthDate",
+      "name": "Birth Date"
+    },
+    {
+      "id": "deathDate",
+      "name": "Death Date"
+    },
+    {
+      "id": "location",
+      "name": "Location"
+    },
+    {
+      "id": "startDate",
+      "name": "Start Date"
+    },
+    {
+      "id": "endDate",
+      "name": "End Date"
     }
   ],
   "tgn": [

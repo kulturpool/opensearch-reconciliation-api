@@ -4,7 +4,7 @@
     ],
     "name": "Local GND Reconciliation Service",
     "identifierSpace": "https://d-nb.info/gnd/",
-    "schemaSpace": "https://d-nb.info/gnd/",
+    "schemaSpace": "https://d-nb.info/standards/elementset/gnd#AuthorityResource",
     "defaultTypes": [
         {
             "id": "AuthorityResource",
@@ -81,6 +81,8 @@
             ]
         }
     ],
+    "documentation": "http://localhost:8083/docs",
+    "serviceVersion": "0.1.0",
     "batchSize": 50,
     "view": {
         "url": "https://d-nb.info/gnd/{{id}}"

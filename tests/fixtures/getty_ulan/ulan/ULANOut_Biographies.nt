@@ -1,3 +1,7 @@
 <http://vocab.getty.edu/ulan/500000001-agent> <http://vocab.getty.edu/ontology#biographyPreferred> <http://vocab.getty.edu/ulan/bio/4000000001> .
 <http://vocab.getty.edu/ulan/bio/4000000001> <http://schema.org/description> "Dutch painter; born Leiden, 1606; died Amsterdam, 1669" .
 <http://vocab.getty.edu/ulan/bio/4000000001> <http://schema.org/gender> <http://vocab.getty.edu/aat/300189559> .
+<http://vocab.getty.edu/ulan/bio/4000000001> <http://schema.org/birthPlace> <http://vocab.getty.edu/tgn/7006934-place> .
+<http://vocab.getty.edu/ulan/bio/4000000001> <http://schema.org/deathPlace> <http://vocab.getty.edu/tgn/7008038-place> .
+<http://vocab.getty.edu/ulan/bio/4000000001> <http://vocab.getty.edu/ontology#estStart> "1606"^^<http://www.w3.org/2001/XMLSchema#gYear> .
+<http://vocab.getty.edu/ulan/bio/4000000001> <http://vocab.getty.edu/ontology#estEnd> "1669"^^<http://www.w3.org/2001/XMLSchema#gYear> .

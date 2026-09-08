@@ -1,0 +1,4 @@
+<http://vocab.getty.edu/ulan/500000001-agent> <http://vocab.getty.edu/ontology#eventPreferred> <http://vocab.getty.edu/ulan/event/100001> .
+<http://vocab.getty.edu/ulan/event/100001> <http://schema.org/location> <http://vocab.getty.edu/tgn/7008038-place> .
+<http://vocab.getty.edu/ulan/event/100001> <http://vocab.getty.edu/ontology#estStart> "1631"^^<http://www.w3.org/2001/XMLSchema#gYear> .
+<http://vocab.getty.edu/ulan/event/100001> <http://vocab.getty.edu/ontology#estEnd> "1669"^^<http://www.w3.org/2001/XMLSchema#gYear> .

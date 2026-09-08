@@ -52,6 +52,8 @@ GETTY_SOURCES: Final[dict[str, dict[str, str]]] = {
             "ULANOut_Nationality.nt",
             "ULANOut_AgentTypes.nt",
             "ULANOut_Biographies.nt",
+            "ULANOut_AgentMap.nt",
+            "ULANOut_Event.nt",
         ),
     },
     "tgn": {

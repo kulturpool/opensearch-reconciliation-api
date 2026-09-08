@@ -50,6 +50,14 @@ PRED_AGENT_TYPE_NON_PREFERRED = f"{GVP_NS}agentTypeNonPreferred"
 PRED_BIOGRAPHY_PREFERRED = f"{GVP_NS}biographyPreferred"
 PRED_BIOGRAPHY_NON_PREFERRED = f"{GVP_NS}biographyNonPreferred"
 PRED_SCHEMA_DESCRIPTION = "http://schema.org/description"
+PRED_SCHEMA_GENDER = "http://schema.org/gender"
+PRED_SCHEMA_BIRTH_PLACE = "http://schema.org/birthPlace"
+PRED_SCHEMA_DEATH_PLACE = "http://schema.org/deathPlace"
+PRED_SCHEMA_LOCATION = "http://schema.org/location"
+PRED_EVENT_PREFERRED = f"{GVP_NS}eventPreferred"
+PRED_EVENT_NON_PREFERRED = f"{GVP_NS}eventNonPreferred"
+PRED_EST_START = f"{GVP_NS}estStart"
+PRED_EST_END = f"{GVP_NS}estEnd"
 
 # TGN-specific predicates (coordinates/place types). Coordinates are modeled
 # on a companion "-place"-suffixed resource (verified: `tgn/<id>-place`);
@@ -102,7 +110,16 @@ class GettyVocabSpec:
 
     biography_file_suffix: str | None = None
     """Filename suffix for gvp:biographyPreferred/NonPreferred + biography
-    schema:description triples (ULAN only), if available."""
+    schema:description/gender/birthPlace/deathPlace/estStart/estEnd triples
+    (ULAN only), if available."""
+
+    agent_map_file_suffix: str | None = None
+    """Filename suffix for the rdf:type triple on the "-agent" resource
+    (schema:Person / schema:Organization) (ULAN only), if available."""
+
+    event_file_suffix: str | None = None
+    """Filename suffix for gvp:eventPreferred/NonPreferred + activity
+    schema:location/estStart/estEnd triples (ULAN only), if available."""
 
     coordinates_file_suffix: str | None = None
     """Filename suffix for wgs84 lat/long triples (TGN only), if available."""
@@ -152,6 +169,8 @@ ULAN_SPEC = GettyVocabSpec(
     nationality_file_suffix="_Nationality.nt",
     agent_type_file_suffix="_AgentTypes.nt",
     biography_file_suffix="_Biographies.nt",
+    agent_map_file_suffix="_AgentMap.nt",
+    event_file_suffix="_Event.nt",
 )
 
 TGN_SPEC = GettyVocabSpec(

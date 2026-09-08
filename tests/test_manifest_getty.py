@@ -18,7 +18,9 @@ def test_getty_manifest_shape():
     assert manifest["versions"] == ["0.2"]
     assert manifest["name"] == "AAT search"
     assert manifest["identifierSpace"] == "http://vocab.getty.edu/aat/"
-    assert manifest["schemaSpace"] == "http://vocab.getty.edu/aat/"
+    # Reconciliation API 0.2 defines schemaSpace as the URI of the entities'
+    # *type*, not the identifier namespace - Getty records are SKOS concepts.
+    assert manifest["schemaSpace"] == "http://www.w3.org/2004/02/skos/core#Concept"
     assert manifest["view"]["url"] == "http://vocab.getty.edu/page/{{id}}"
 
     # defaultTypes always includes the AAT root type first.

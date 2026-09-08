@@ -1,7 +1,8 @@
 """
 Fixture-based tests for the ULAN/TGN-specific fields added to
-importer/normalize_getty.py: nationality, role, biography (ULAN),
-coordinates and placeType (TGN).
+importer/normalize_getty.py: nationality, role, biography, gender,
+birthPlace, deathPlace, birthDate, deathDate, location, startDate, endDate
+(ULAN), coordinates and placeType (TGN).
 
 tests/fixtures/getty_ulan/ulan/ and tests/fixtures/getty_tgn/tgn/ each
 contain two subjects: one with the new fields populated, one without
@@ -37,9 +38,35 @@ def test_ulan_subject_has_nationality_role_and_biography():
     ]
     assert rembrandt["placeType"] == []
     assert rembrandt["coordinates"] is None
+    # schema:gender/birthPlace/deathPlace + gvp:estStart/estEnd on the
+    # preferred biography node (biographyPreferred only, never
+    # biographyNonPreferred). Place refs use Getty's "-place" companion-
+    # resource URI convention, stripped to match the real TGN concept id.
+    assert rembrandt["gender"] == "aat/300189559"
+    assert rembrandt["birthPlace"] == "tgn/7006934"
+    assert rembrandt["deathPlace"] == "tgn/7008038"
+    assert rembrandt["birthDate"] == "1606"
+    assert rembrandt["deathDate"] == "1669"
+    # gvp:eventPreferred activity event (schema:location + estStart/estEnd).
+    assert rembrandt["location"] == "tgn/7008038"
+    assert rembrandt["startDate"] == "1631"
+    assert rembrandt["endDate"] == "1669"
 
     assert sorted(rembrandt["availableProperties"]) == sorted(
-        ["parentStringAbbrev", "nationality", "role", "biography"]
+        [
+            "parentStringAbbrev",
+            "nationality",
+            "role",
+            "biography",
+            "gender",
+            "birthPlace",
+            "deathPlace",
+            "birthDate",
+            "deathDate",
+            "location",
+            "startDate",
+            "endDate",
+        ]
     )
 
 
@@ -55,6 +82,14 @@ def test_ulan_subject_without_new_fields_has_empty_defaults():
     assert jane_doe["biography"] == []
     assert jane_doe["placeType"] == []
     assert jane_doe["coordinates"] is None
+    assert jane_doe["gender"] is None
+    assert jane_doe["birthPlace"] is None
+    assert jane_doe["deathPlace"] is None
+    assert jane_doe["birthDate"] is None
+    assert jane_doe["deathDate"] is None
+    assert jane_doe["location"] is None
+    assert jane_doe["startDate"] is None
+    assert jane_doe["endDate"] is None
     assert jane_doe["availableProperties"] == []
 
 
