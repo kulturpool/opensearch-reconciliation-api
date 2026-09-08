@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from api.services.suggest_ranking import sort_prefix_matches_first
 from api.vocabularies.base import VocabConfig
 from api.vocabularies.gnd import GND_VOCAB
 
@@ -73,5 +74,14 @@ def suggest_registry_properties(
             if normalized_prefix in prop["id"].lower()
             or normalized_prefix in prop["name"].lower()
         ]
+
+        # Reconciliation API 0.2 expects suggest services to perform prefix
+        # search. Substring hits are kept as a lower-ranked fallback so
+        # multi-word property labels stay findable.
+        properties = sort_prefix_matches_first(
+            properties,
+            prefix=prefix,
+            key=lambda prop: [prop["id"], prop["name"]],
+        )
 
     return properties[cursor : cursor + limit]

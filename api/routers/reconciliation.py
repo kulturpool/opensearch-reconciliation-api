@@ -30,6 +30,7 @@ from api.services.property_registry import (
     suggest_registry_properties,
 )
 from api.services.search import search_gnd
+from api.services.suggest_ranking import sort_prefix_matches_first
 from api.vocabularies.base import VocabConfig
 
 OPENREFINE_POST_OPENAPI_EXTRA: dict[str, Any] = {
@@ -260,6 +261,13 @@ def build_reconciliation_router(
             limit=cursor + limit,
             entity_type=type,
             vocab=vocab,
+            prefix_search=True,
+        )
+
+        results = sort_prefix_matches_first(
+            results,
+            prefix=prefix,
+            key=lambda result: [result.get("name"), result.get("id")],
         )
 
         paged_results = results[cursor : cursor + limit]
@@ -271,6 +279,10 @@ def build_reconciliation_router(
                 {
                     "id": result.get("id"),
                     "name": result.get("name"),
+                    # `notable` is the Reconciliation API 0.2 field for the
+                    # types of a suggested entity; `type` is kept alongside
+                    # it for clients written against the older convention.
+                    "notable": result.get("type", []),
                     "type": result.get("type", []),
                     "score": result.get("score"),
                 }
@@ -311,6 +323,15 @@ def build_reconciliation_router(
 
                 if normalized_prefix in type_id or normalized_prefix in type_name:
                     matching_types.append(entity_type)
+
+            # Suggest services are expected to perform prefix search; keeping
+            # substring hits (but ranked after real prefix hits) preserves
+            # recall for multi-word labels without breaking auto-completion.
+            matching_types = sort_prefix_matches_first(
+                matching_types,
+                prefix=prefix,
+                key=lambda entity_type: [entity_type["id"], entity_type["name"]],
+            )
 
         return {"result": matching_types[cursor : cursor + limit]}
 

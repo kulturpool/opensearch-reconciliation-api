@@ -92,6 +92,7 @@ def search_gnd(
     entity_type: str | None = None,
     properties: list[dict[str, Any]] | None = None,
     vocab: VocabConfig = GND_VOCAB,
+    prefix_search: bool = False,
 ) -> list[dict[str, Any]]:
     """
     Searches a vocabulary's OpenSearch index (GND by default).
@@ -105,15 +106,23 @@ def search_gnd(
         entity_type: Optional entity type filter, e.g. "Person".
         properties: Optional list of property filters
         vocab: VocabConfig to search against (defaults to GND).
+        prefix_search: Adds prefix clauses so partially typed names match,
+            as expected of Reconciliation API suggest services.
 
     Returns:
         A list of candidate matches.
     """
 
     if not query or not query.strip():
-        return []
+        # Reconciliation API 0.2 requires at least one of `query` or
+        # `properties`; a property-only query is valid and must still
+        # retrieve candidates.
+        if not properties:
+            return []
 
-    normalized_query = vocab.normalize_identifier(query)
+        normalized_query = ""
+    else:
+        normalized_query = vocab.normalize_identifier(query)
 
     search_body = build_search_body(
         query=normalized_query,
@@ -121,6 +130,7 @@ def search_gnd(
         entity_type=entity_type,
         properties=properties or [],
         vocab=vocab,
+        prefix_search=prefix_search,
     )
 
     response = client.search(
@@ -174,12 +184,18 @@ def search_gnd_batch(
 
     for spec in query_specs:
         query_text = (spec.get("query") or "").strip()
+        spec_properties = spec.get("properties") or []
 
-        if not query_text:
+        # Reconciliation API 0.2: "At least one of query or properties must
+        # be supplied" - a query object carrying only `properties` is valid
+        # and must still be executed against the index.
+        if not query_text and not spec_properties:
             has_query.append(False)
             continue
 
-        normalized_query = vocab.normalize_identifier(query_text)
+        normalized_query = (
+            vocab.normalize_identifier(query_text) if query_text else ""
+        )
         normalized_queries.append(normalized_query)
         has_query.append(True)
 
@@ -189,7 +205,7 @@ def search_gnd_batch(
                 query=normalized_query,
                 limit=spec.get("limit", 5),
                 entity_type=spec.get("entity_type"),
-                properties=spec.get("properties") or [],
+                properties=spec_properties,
                 vocab=vocab,
             )
         )
@@ -277,6 +293,7 @@ def build_search_body(
     entity_type: str | None = None,
     properties: list[dict[str, Any]] | None = None,
     vocab: VocabConfig = GND_VOCAB,
+    prefix_search: bool = False,
 ) -> dict[str, Any]:
     """
     Builds the OpenSearch query.
@@ -286,73 +303,127 @@ def build_search_body(
     - variantName is also important
     - id is searchable for direct ID lookups
     - fuzziness allows approximate matches
+
+    Reconciliation API 0.2 allows a query to supply `properties` without a
+    `query` string ("At least one of query or properties must be supplied").
+    In that case all name-based clauses are omitted and the requested
+    properties alone drive candidate retrieval.
     """
     properties = properties or []
+    query = (query or "").strip()
 
-    should_clauses: list[dict[str, Any]] = [
-        {"term": {"id": {"value": query, "boost": vocab.id_boost}}},
-        {
-            "term": {
-                "preferredName.keyword": {
-                    "value": query,
-                    "boost": vocab.preferred_keyword_boost,
-                }
-            }
-        },
-        # NOTE: preferredName/variantName have no ".lowercase" sub-field in
-        # the index mapping (only ".keyword", which is case-sensitive) - see
-        # indexer/index_gnd_lds.py INDEX_SETTINGS. A term query against
-        # ".lowercase" would silently match nothing. match_phrase against the
-        # analyzed field (gnd_text_analyzer = standard tokenizer + lowercase
-        # + asciifolding) gives the intended case-insensitive exact-phrase
-        # boost without requiring a mapping change/reindex.
-        {
-            "match_phrase": {
-                "preferredName": {"query": query, "boost": vocab.preferred_phrase_boost}
-            }
-        },
-        {
-            "term": {
-                "variantName.keyword": {
-                    "value": query,
-                    "boost": vocab.variant_keyword_boost,
-                }
-            }
-        },
-        {
-            "match_phrase": {
-                "variantName": {"query": query, "boost": vocab.variant_phrase_boost}
-            }
-        },
-        {
-            "multi_match": {
-                "query": query,
-                "fields": list(vocab.multi_match_fields),
-                "operator": "and",
-                "boost": vocab.multi_match_boost,
-            }
-        },
-    ]
+    should_clauses: list[dict[str, Any]] = []
 
-    # Fuzzy matching multiplies clause count by (terms * fields * expansions),
-    # which can exceed OpenSearch's default maxClauseCount (1024) for queries
-    # with many words (e.g. long titles/descriptions used as the name value).
-    # Cap expansions and skip fuzziness entirely once a query has too many
-    # terms to stay safely under that limit.
-    if len(query.split()) <= vocab.fuzzy_max_terms:
-        should_clauses.append(
-            {
-                "multi_match": {
-                    "query": query,
-                    "fields": list(vocab.fuzzy_fields),
-                    "fuzziness": "AUTO",
-                    "max_expansions": vocab.fuzzy_max_expansions,
-                    "prefix_length": 1,
-                    "operator": "or",
-                    "boost": 1,
-                }
-            }
+    if query:
+        should_clauses.extend(
+            [
+                {"term": {"id": {"value": query, "boost": vocab.id_boost}}},
+                {
+                    "term": {
+                        "preferredName.keyword": {
+                            "value": query,
+                            "boost": vocab.preferred_keyword_boost,
+                        }
+                    }
+                },
+                # NOTE: preferredName/variantName have no ".lowercase" sub-field
+                # in the index mapping (only ".keyword", which is
+                # case-sensitive) - see indexer/index_gnd_lds.py
+                # INDEX_SETTINGS. A term query against ".lowercase" would
+                # silently match nothing. match_phrase against the analyzed
+                # field (gnd_text_analyzer = standard tokenizer + lowercase
+                # + asciifolding) gives the intended case-insensitive
+                # exact-phrase boost without requiring a mapping change/reindex.
+                {
+                    "match_phrase": {
+                        "preferredName": {
+                            "query": query,
+                            "boost": vocab.preferred_phrase_boost,
+                        }
+                    }
+                },
+                {
+                    "term": {
+                        "variantName.keyword": {
+                            "value": query,
+                            "boost": vocab.variant_keyword_boost,
+                        }
+                    }
+                },
+                {
+                    "match_phrase": {
+                        "variantName": {
+                            "query": query,
+                            "boost": vocab.variant_phrase_boost,
+                        }
+                    }
+                },
+                {
+                    "multi_match": {
+                        "query": query,
+                        "fields": list(vocab.multi_match_fields),
+                        "operator": "and",
+                        "boost": vocab.multi_match_boost,
+                    }
+                },
+            ]
         )
+
+        # Fuzzy matching multiplies clause count by (terms * fields *
+        # expansions), which can exceed OpenSearch's default maxClauseCount
+        # (1024) for queries with many words (e.g. long titles/descriptions
+        # used as the name value). Cap expansions and skip fuzziness entirely
+        # once a query has too many terms to stay safely under that limit.
+        if len(query.split()) <= vocab.fuzzy_max_terms:
+            should_clauses.append(
+                {
+                    "multi_match": {
+                        "query": query,
+                        "fields": list(vocab.fuzzy_fields),
+                        "fuzziness": "AUTO",
+                        "max_expansions": vocab.fuzzy_max_expansions,
+                        "prefix_length": 1,
+                        "operator": "or",
+                        "boost": 1,
+                    }
+                }
+            )
+
+        # Suggest services are expected to perform prefix search so they can
+        # drive auto-completion while the user is still typing. These clauses
+        # let a partially typed last token (e.g. "Goeth") match, which the
+        # analyzed match/multi_match clauses above cannot do on their own.
+        if prefix_search:
+            should_clauses.extend(
+                [
+                    {
+                        "match_phrase_prefix": {
+                            "preferredName": {
+                                "query": query,
+                                "max_expansions": vocab.fuzzy_max_expansions,
+                                "boost": vocab.preferred_phrase_boost,
+                            }
+                        }
+                    },
+                    {
+                        "match_phrase_prefix": {
+                            "variantName": {
+                                "query": query,
+                                "max_expansions": vocab.fuzzy_max_expansions,
+                                "boost": vocab.variant_phrase_boost,
+                            }
+                        }
+                    },
+                    {
+                        "prefix": {
+                            "id": {
+                                "value": query,
+                                "boost": vocab.id_boost,
+                            }
+                        }
+                    },
+                ]
+            )
 
     property_should_clauses = build_property_should_clauses(properties, vocab=vocab)
     should_clauses.extend(property_should_clauses)
@@ -909,7 +980,15 @@ def normalize_score(
     # may contribute is capped based on how strong the name match already
     # is - strong name evidence gets to use (most of) the full bonus,
     # while a weak/fallback name match gets only a token amount.
-    property_bonus = min(property_bonus, max_property_bonus_for_base_score(base_score))
+    #
+    # Exception: for a property-only query (allowed by Reconciliation API
+    # 0.2 when no `query` string is supplied), the properties *are* the only
+    # evidence available, so capping them against a non-existent name match
+    # would flatten every candidate to the same score.
+    if query_normalized:
+        property_bonus = min(
+            property_bonus, max_property_bonus_for_base_score(base_score)
+        )
 
     # 8. Type bonus
     type_bonus = 0

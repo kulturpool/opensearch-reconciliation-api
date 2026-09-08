@@ -23,6 +23,12 @@ from importer.getty_vocab_specs import GettyVocabSpec, get_vocab_spec
 GETTY_NAMESPACE_PREFIX = "http://vocab.getty.edu/"
 GETTY_VIEW_URL_TEMPLATE = "http://vocab.getty.edu/page/{{id}}"
 
+# Reconciliation API 0.2 defines `schemaSpace` as a URI identifying the *type*
+# of the entities returned - a different concept from `identifierSpace` (the
+# namespace of the entity identifiers). All Getty vocabulary records are
+# published as SKOS concepts, so skos:Concept is the correct schema space.
+GETTY_SCHEMA_SPACE = "http://www.w3.org/2004/02/skos/core#Concept"
+
 ALL_GETTY_KEYS: tuple[str, ...] = ("aat", "ulan", "tgn")
 
 
@@ -210,6 +216,14 @@ GETTY_SOURCE_FIELDS: tuple[str, ...] = (
     "biography",
     "placeType",
     "coordinates",
+    "gender",
+    "birthPlace",
+    "deathPlace",
+    "birthDate",
+    "deathDate",
+    "location",
+    "startDate",
+    "endDate",
     "availableProperties",
     "propertiesFlat",
 )
@@ -230,6 +244,14 @@ GETTY_RELIABLE_TOP_LEVEL_PROPERTY_IDS: frozenset[str] = frozenset(
         "biography",
         "placeType",
         "coordinates",
+        "gender",
+        "birthPlace",
+        "deathPlace",
+        "birthDate",
+        "deathDate",
+        "location",
+        "startDate",
+        "endDate",
     }
 )
 
@@ -277,6 +299,14 @@ GETTY_PROPERTY_LABEL_OVERRIDES: dict[str, str] = {
     "biography": "Biographies",
     "placeType": "Place Types",
     "coordinates": "Coordinates",
+    "gender": "Gender",
+    "birthPlace": "Birth Place",
+    "deathPlace": "Death Place",
+    "birthDate": "Birth Date",
+    "deathDate": "Death Date",
+    "location": "Location",
+    "startDate": "Start Date",
+    "endDate": "End Date",
 }
 
 
@@ -308,11 +338,9 @@ def _build_getty_vocab(
 
     if len(specs) == 1:
         identifier_space = primary.uri_prefix
-        schema_space = primary.uri_prefix
         preview_id_label = primary.key.upper()
     else:
         identifier_space = GETTY_NAMESPACE_PREFIX
-        schema_space = GETTY_NAMESPACE_PREFIX
         preview_id_label = "Getty"
 
     return VocabConfig(
@@ -320,7 +348,7 @@ def _build_getty_vocab(
         service_name=service_name,
         index_name=GETTY_INDEX_NAME,
         identifier_space=identifier_space,
-        schema_space=schema_space,
+        schema_space=GETTY_SCHEMA_SPACE,
         view_url_template=GETTY_VIEW_URL_TEMPLATE,
         uri_prefix=GETTY_NAMESPACE_PREFIX,
         normalize_identifier=_build_normalizer(specs),

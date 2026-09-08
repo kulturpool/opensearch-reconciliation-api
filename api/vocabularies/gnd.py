@@ -11,6 +11,12 @@ from api.constants import GND_TYPES
 from api.gnd_types import AUTHORITY_RESOURCE_TYPE, GND_TYPE_ALIASES, GND_TYPE_LABELS
 from config import GND_URI_PREFIX, PUBLIC_BASE_URL
 
+# Reconciliation API 0.2 defines `schemaSpace` as a URI identifying the *type*
+# of the entities returned - a different concept from `identifierSpace` (the
+# namespace of the entity identifiers). For GND this is the GND ontology's
+# AuthorityResource class, which every GND entity is an instance of.
+GND_SCHEMA_SPACE = "https://d-nb.info/standards/elementset/gnd#AuthorityResource"
+
 # Fields returned from OpenSearch during reconciliation. See
 # api/services/search.py RECONCILIATION_SOURCE_FIELDS for rationale.
 GND_SOURCE_FIELDS = (
@@ -251,7 +257,7 @@ def _build_gnd_vocab():
         service_name="Local GND Reconciliation Service",
         index_name=INDEX_NAME,
         identifier_space=GND_URI_PREFIX,
-        schema_space=GND_URI_PREFIX,
+        schema_space=GND_SCHEMA_SPACE,
         view_url_template=f"{GND_URI_PREFIX}{{{{id}}}}",
         uri_prefix=GND_URI_PREFIX,
         normalize_identifier=normalize_gnd_identifier,

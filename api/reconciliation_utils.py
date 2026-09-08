@@ -11,7 +11,7 @@ import time
 from typing import Any
 from urllib.parse import parse_qs
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from api.constants import BASE_URL, GND_URI_PREFIX
@@ -19,6 +19,7 @@ from api.services.properties import handle_extend_request
 from api.services.search import get_gnd_record_by_id, search_gnd_batch
 from api.vocabularies.base import VocabConfig
 from api.vocabularies.gnd import GND_VOCAB
+from config import RECONCILIATION_BATCH_SIZE, SERVICE_LOGO_URL, SERVICE_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,15 @@ def service_manifest_response(vocab: VocabConfig = GND_VOCAB) -> dict:
     """
     service_base_url = f"{BASE_URL}{vocab.route_prefix}"
 
-    return {
+    manifest: dict[str, Any] = {
         "versions": ["0.2"],
         "name": vocab.service_name,
         "identifierSpace": vocab.identifier_space,
         "schemaSpace": vocab.schema_space,
         "defaultTypes": list(vocab.types),
-        "batchSize": 50,
+        "documentation": f"{BASE_URL}/docs",
+        "serviceVersion": SERVICE_VERSION,
+        "batchSize": RECONCILIATION_BATCH_SIZE,
         "view": {"url": vocab.view_url_template},
         "preview": {
             "url": f"{service_base_url}/preview/{{{{id}}}}",
@@ -81,6 +84,13 @@ def service_manifest_response(vocab: VocabConfig = GND_VOCAB) -> dict:
         },
     }
 
+    # `logo` is optional and only meaningful if an actual square image is
+    # available, so it is omitted unless configured.
+    if SERVICE_LOGO_URL:
+        manifest["logo"] = SERVICE_LOGO_URL
+
+    return manifest
+
 
 def handle_reconciliation_queries(
     queries: dict,
@@ -102,6 +112,17 @@ def handle_reconciliation_queries(
         Dictionary mapping query IDs to result objects
     """
     batch_start = time.perf_counter()
+
+    # Reconciliation API 0.2: a service MAY reject batches larger than the
+    # `batchSize` it advertises in its manifest with HTTP 413.
+    if len(queries) > RECONCILIATION_BATCH_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Reconciliation query batch of {len(queries)} exceeds the "
+                f"advertised batchSize of {RECONCILIATION_BATCH_SIZE}."
+            ),
+        )
 
     query_ids: list[str] = []
     query_specs: list[dict[str, Any]] = []

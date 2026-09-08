@@ -80,6 +80,20 @@ API_PORT = int(os.getenv("API_PORT", "8083"))
 HOST_API_PORT = int(os.getenv("HOST_API_PORT", "8083"))
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:8083")
 
+# Version of this software, advertised as `serviceVersion` in the
+# Reconciliation API service manifest (distinct from `versions`, which lists
+# the supported Reconciliation API versions).
+SERVICE_VERSION = os.getenv("SERVICE_VERSION", "0.1.0")
+
+# Maximum number of reconciliation queries accepted in a single batch,
+# advertised as `batchSize` in the service manifest. Larger batches are
+# rejected with HTTP 413, as permitted by Reconciliation API 0.2.
+RECONCILIATION_BATCH_SIZE = int(os.getenv("RECONCILIATION_BATCH_SIZE", "50"))
+
+# Optional square logo URL advertised in the service manifest. Left empty by
+# default because no logo is bundled with this service.
+SERVICE_LOGO_URL = os.getenv("SERVICE_LOGO_URL") or None
+
 
 # =============================================================================
 # Data Paths
