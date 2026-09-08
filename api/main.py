@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.models.openapi_models import UpdateStatusResponse
+from api.models.openapi_models import CombinedUpdateStatusResponse
 from api.routers.reconciliation import build_reconciliation_router
 from api.vocabularies.getty import (
     GETTY_VOCAB,
@@ -28,6 +28,7 @@ logging.basicConfig(
 )
 
 UPDATE_STATE_FILE = DATA_DIR / "state" / "update_state.json"
+GETTY_STATE_FILE = DATA_DIR / "state" / "getty_state.json"
 
 tags_metadata = [
     {
@@ -53,21 +54,20 @@ tags_metadata = [
 ]
 
 OPENAPI_DESCRIPTION = """
-Local GND Reconciliation API for OpenRefine.
+Local GND and Getty Reconciliation API which is compatible with OpenRefine.
 
 This service provides:
 - OpenRefine-compatible reconciliation
 - entity, type and property suggest endpoints
 - data extension / Add columns from reconciled values
 - preview endpoint
-- local GND index backed by OpenSearch
-- EntityFacts enrichment
-- daily incremental OAI updates
+- local GND and Getty index backed by OpenSearch
+- regular updates
 """
 
 app = FastAPI(
-    title="Local GND Reconciliation API",
-    summary="Local OpenRefine-compatible reconciliation service for GND.",
+    title="OpenSearch Reconciliation API",
+    summary="OpenRefine-compatible reconciliation service for GND and Getty Vocabularies.",
     description=OPENAPI_DESCRIPTION,
     version="0.1.0",
     docs_url="/docs",
@@ -78,7 +78,7 @@ app = FastAPI(
         "url": "https://kulturpool.at",
     },
     license_info={
-        "name": "See repository license and DNB data terms",
+        "name": "See repository license and DNB and Getty data terms",
     },
     openapi_tags=tags_metadata,
 )
@@ -118,50 +118,68 @@ def health():
 @app.get(
     "/status/update",
     tags=["Status"],
-    summary="Get OAI update status",
-    description="Returns the state of the daily incremental OAI update process.",
-    response_model=UpdateStatusResponse | dict,
+    summary="Get GND and Getty update status",
+    description=(
+        "Returns the state of the regular incremental GND OAI update "
+        "process and the Getty index build status."
+    ),
+    response_model=CombinedUpdateStatusResponse,
 )
 def get_update_status():
-    if not UPDATE_STATE_FILE.exists():
-        return JSONResponse(
-            {
-                "enabled": True,
-                "status": "not_run_yet",
-                "message": "No OAI update has been executed yet.",
-            }
+    gnd_status = (
+        {
+            "enabled": True,
+            "status": "not_run_yet",
+            "message": "No OAI update has been executed yet.",
+        }
+        if not UPDATE_STATE_FILE.exists()
+        else read_state_file(
+            UPDATE_STATE_FILE,
+            "No OAI update has been executed yet.",
         )
+    )
 
+    getty_status = (
+        {
+            "initialized": False,
+            "status": "not_built",
+            "message": "No Getty build has been executed yet.",
+        }
+        if not GETTY_STATE_FILE.exists()
+        else read_state_file(
+            GETTY_STATE_FILE,
+            "No Getty build has been executed yet.",
+        )
+    )
+
+    return {
+        "gnd": gnd_status,
+        "getty": getty_status,
+    }
+
+def read_state_file(
+    state_file: Path,
+    not_found_message: str,
+) -> dict:
     try:
-        state = json.loads(UPDATE_STATE_FILE.read_text(encoding="utf-8"))
+        return json.loads(state_file.read_text(encoding="utf-8"))
 
     except FileNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "status": "not_found",
-                "message": "Update state file does not exist.",
-            },
-        )
+        return {
+            "status": "not_found",
+            "message": not_found_message,
+        }
 
     except json.JSONDecodeError as error:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": "Update state file contains invalid JSON.",
-                "error": str(error),
-            },
-        )
+        return {
+            "status": "error",
+            "message": f"{state_file.name} contains invalid JSON.",
+            "error": str(error),
+        }
 
     except OSError as error:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": "Could not read update state file.",
-                "error": str(error),
-            },
-        )
-
-    return state
+        return {
+            "status": "error",
+            "message": f"Could not read {state_file.name}.",
+            "error": str(error),
+        }

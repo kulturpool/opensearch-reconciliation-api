@@ -1,6 +1,6 @@
 # Architektur
 
-Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des Reconciliation-API-Projekts. Der Service stellt zwei unabhängige Vokabulare bereit: die **Gemeinsame Normdatei (GND)** unter `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und den **Getty Art & Architecture Thesaurus (AAT)** unter `/getty`.
+Dieses Dokument beschreibt den Aufbau, die Komponenten und den Datenfluss des Reconciliation-API-Projekts. Der Service stellt zwei unabhängige Vokabulare bereit: die **Gemeinsame Normdatei (GND)** unter `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und die **Getty** Vokabularien unter `/getty`.
 
 ---
 
@@ -48,7 +48,7 @@ flowchart LR
     GettyBootstrap -->|Download explicit.zip| GettyExport["Getty Vocabulary Program\nN-Triples Export"]
 ```
 
-Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten bestehen zur DNB (GND-LDS-Dumps, EntityFacts, OAI-PMH) sowie zum Getty Vocabulary Program (AAT-N-Triples-Export).
+Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten bestehen zur DNB (GND-LDS-Dumps, EntityFacts, OAI-PMH) sowie zum Getty Vocabulary Program (N-Triples-Export) beim erstmaligen import und den regelmäßigen Updates.
 
 ---
 
@@ -56,10 +56,10 @@ Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten 
 
 | Komponente | Pfad | Verantwortung |
 |---|---|---|
-| FastAPI-App | [api/main.py](../api/main.py) | App-Setup, Mounten der Router (`/gnd` und, für Abwärtskompatibilität, zusätzlich `/` für GND; `/getty` für Getty AAT) |
+| FastAPI-App | [api/main.py](../api/main.py) | App-Setup, Mounten der Router (`/gnd` und, für Abwärtskompatibilität, zusätzlich `/` für GND; `/getty` für Getty) |
 | Router-Factory | [api/routers/reconciliation.py](../api/routers/reconciliation.py) | Erzeugt aus einem `VocabConfig` einen kompletten Satz OpenRefine-Endpunkte (Manifest, Query, Suggest, Extend, Preview) – gemeinsamer Code für GND und Getty. Ein optionaler `operation_id_prefix`-Parameter erlaubt es, denselben Vokabular-Router (GND) unter mehreren Prefixes zu mounten, ohne doppelte OpenAPI-`operationId`s zu erzeugen |
 | Vokabular-Konfiguration GND | [api/vocabularies/gnd.py](../api/vocabularies/gnd.py) | `GND_VOCAB`: Typen, Properties, Feldnamen, Aliase für die GND |
-| Vokabular-Konfiguration Getty | [api/vocabularies/getty.py](../api/vocabularies/getty.py) | `GETTY_VOCAB`: Typen, Properties, Feldnamen für AAT |
+| Vokabular-Konfiguration Getty | [api/vocabularies/getty.py](../api/vocabularies/getty.py) | `GETTY_VOCAB`: Typen, Properties, Feldnamen für AAT, ULAN, TGN |
 | Vokabular-Basistyp | [api/vocabularies/base.py](../api/vocabularies/base.py) | `VocabConfig`-Datenklasse, die beide Vokabulare implementieren |
 | Konstanten/Typen | [api/constants.py](../api/constants.py), [api/gnd_types.py](../api/gnd_types.py) | GND-Entitätstypen, unterstützte Properties |
 | Reconciliation-Orchestrierung | [api/reconciliation_utils.py](../api/reconciliation_utils.py) | Batch-Aufbereitung der Queries, Timing-Logs |
@@ -72,7 +72,7 @@ Der Service läuft vollständig lokal (Docker Compose). Externe Abhängigkeiten 
 | Vocab Resolver | [api/services/vocab_resolver.py](../api/services/vocab_resolver.py), [config/gnd_vocab_labels.json](../config/gnd_vocab_labels.json) | Auflösung von RDF-Vokabular-URIs zu Labels (GND) |
 | Zentrale Konfiguration | [config/\_\_init\_\_.py](../config/__init__.py) | Liest Environment-Variablen (`.env`), stellt Konstanten für den Rest der App bereit (GND- und Getty-Abschnitt) |
 | Importer GND | [importer/download_gnd_lds.py](../importer/download_gnd_lds.py), [importer/normalize_gnd_lds.py](../importer/normalize_gnd_lds.py) | Download der GND-LDS-Dumps, Normalisierung |
-| Importer Getty | [importer/download_getty.py](../importer/download_getty.py), [importer/normalize_getty.py](../importer/normalize_getty.py), [importer/getty_vocab_specs.py](../importer/getty_vocab_specs.py), [importer/ntriples.py](../importer/ntriples.py) | Download/Extraktion des N-Triples-Exports, N-Triples-Parsing, Normalisierung je Getty-Vokabular-Spezifikation (aktuell nur AAT) |
+| Importer Getty | [importer/download_getty.py](../importer/download_getty.py), [importer/normalize_getty.py](../importer/normalize_getty.py), [importer/getty_vocab_specs.py](../importer/getty_vocab_specs.py), [importer/ntriples.py](../importer/ntriples.py) | Download/Extraktion des N-Triples-Exports, N-Triples-Parsing, Normalisierung je Getty-Vokabular-Spezifikation |
 | Indexer | [indexer/](../indexer/) | Bulk-Indexierung/Upsert in OpenSearch (`index_gnd_lds.py`, `index_entityfacts.py`, `upsert_oai_records.py` für GND; `index_getty.py` für Getty) |
 | Scripts | [scripts/](../scripts/) | Bootstrap-Orchestrierung (`bootstrap_gnd.py`, `bootstrap_getty.py`), Update-Scheduler (`update_scheduler.py`, `update_getty_scheduler.py`, `update_getty.py`), gemeinsame Build-State-/Lock-Verwaltung (`index_build_state.py`), OpenSearch-Admin-Hilfsfunktionen (`opensearch_index_admin.py`), Container-Startup |
 
@@ -157,9 +157,9 @@ Der Scheduler läuft als Hintergrund-Thread im selben Container wie die API (kei
 
 ---
 
-## Getty AAT: Vokabular-Architektur und Rebuild-Datenfluss
+## Getty: Vokabular-Architektur und Rebuild-Datenfluss
 
-Getty AAT ist als zweites Vokabular über dieselbe Router-Factory eingebunden ([api/routers/reconciliation.py](../api/routers/reconciliation.py)): `build_reconciliation_router(GETTY_VOCAB)` erzeugt dieselben OpenRefine-Endpunkte wie für GND, nur konfiguriert über [api/vocabularies/getty.py](../api/vocabularies/getty.py) statt [api/vocabularies/gnd.py](../api/vocabularies/gnd.py), und wird in [api/main.py](../api/main.py) unter dem Prefix `/getty` gemountet. Scoring, Batching und `_msearch`-Logik in [api/services/search.py](../api/services/search.py) sind vokabular-agnostisch und werden für beide Indizes wiederverwendet.
+Getty ist als zweites Vokabular über dieselbe Router-Factory eingebunden ([api/routers/reconciliation.py](../api/routers/reconciliation.py)): `build_reconciliation_router(GETTY_VOCAB)` erzeugt dieselben OpenRefine-Endpunkte wie für GND, nur konfiguriert über [api/vocabularies/getty.py](../api/vocabularies/getty.py) statt [api/vocabularies/gnd.py](../api/vocabularies/gnd.py), und wird in [api/main.py](../api/main.py) unter dem Prefix `/getty` gemountet. Scoring, Batching und `_msearch`-Logik in [api/services/search.py](../api/services/search.py) sind vokabular-agnostisch und werden für beide Indizes wiederverwendet.
 
 Analog dazu wird GND selbst zweimal gemountet: einmal am Root-Endpunkt `/` (aus Gründen der Abwärtskompatibilität mit bestehenden OpenRefine-Service-Konfigurationen) und einmal unter dem eigenen Prefix `/gnd` (für Konsistenz mit `/getty`). Beide Mounts nutzen denselben `GND_VOCAB`, der `/gnd`-Mount erhält jedoch eine Kopie mit `route_prefix="/gnd"` (via `dataclasses.replace`), damit das Service-Manifest korrekt `/gnd`-präfixierte Sub-Endpunkt-URLs (Preview, Suggest, Extend) meldet, sowie einen eigenen `operation_id_prefix`, um doppelte OpenAPI-`operationId`s zwischen den beiden GND-Mounts zu vermeiden.
 

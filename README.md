@@ -32,7 +32,7 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 - Extend API für `Add columns from reconciled values`
 - Entity Preview inklusive Link zum GND-Datensatz
 - EntityFacts-Enrichment, u.a. für `Family`, `sameAs`, `depiction`, `associatedCountry`
-- Automatische tägliche OAI-Updates ohne vollständigen Reindex
+- Automatische regelmäßige OAI-Updates ohne vollständigen Reindex
 - Docker Compose Runtime Setup
 - DevContainer für Entwicklung
 
@@ -209,7 +209,11 @@ Service in OpenRefine hinzufügen
 Service URL eintragen:
 
 ```text
-http://127.0.0.1:8083
+http://127.0.0.1:8083/gnd
+```
+oder
+```text
+http://127.0.0.1:8083/getty
 ```
 ![Service URL eintrage](docs/media/add_new_standard_service.gif)<br>
 Service URL eintragen
@@ -219,13 +223,13 @@ Wichtig: **Nicht** `/reconcile` anhängen.
 Richtig:
 
 ```text
-http://127.0.0.1:8083
+http://127.0.0.1:8083/gnd
 ```
 
 Falsch:
 
 ```text
-http://127.0.0.1:8083/reconcile
+http://127.0.0.1:8083/gnd/reconcile
 ```
 
 Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwendet werden.
@@ -303,9 +307,9 @@ Beim Hinzufügen von Properties kann in OpenRefine über **Configure** u.a. gew�
 
 ---
 
-## Bereits vorhandene GND-IDs verwenden
+## Bereits vorhandene IDs verwenden
 
-Wenn eine Spalte bereits GND-IDs enthält, kann in OpenRefine verwendet werden:
+Wenn eine Spalte bereits IDs enthält, kann in OpenRefine verwendet werden:
 
 ```text
 Reconcile
@@ -321,6 +325,9 @@ Beispielwerte:
 118624822
 1036893200
 ```
+Hier ist es wichtig dass es je nach Service unterschiedliche Anforderungen gibt.
+Während für den /gnd Endpunkt die reine ID ohne prefix gewünscht ist, benötigt der /getty-Endpunkt den jeweiligen /aat, /ulan, oder /tgn Prefix vor der ID.
+
 ![Den richtigen Service auswählen](docs/media/service_selection.gif)<br>
 Den richtigen Service auswählen
 
@@ -341,6 +348,10 @@ Danach können über **Add columns from reconciled values** zusätzliche Informa
 curl http://localhost:8083/
 # äquivalent:
 curl http://localhost:8083/gnd/
+```
+und
+```bash
+curl http://localhost:8083/getty/
 ```
 
 ### Reconciliation
@@ -707,7 +718,7 @@ docker compose -f docker-compose.runtime.yml exec gnd-api \
 
 ---
 
-## Automatische tägliche OAI-Updates
+## Automatische regelmäßige OAI-Updates
 
 Wenn `GND_AUTO_UPDATE=true` gesetzt ist, startet der Container nach dem Bootstrap einen Hintergrund-Scheduler.
 
@@ -1068,7 +1079,6 @@ JSON
 
 Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können später ergänzt werden:
 
-- Weitere Getty-Vokabulare (ULAN, TGN) über die bereits vorbereiteten Spezifikationen hinaus
 - Integration weiterer Normdatenquellen als eigene Reconciliation-Quellen
 - Hochverfügbarkeits- oder Clusterbetrieb
 - Schreibzugriffe auf die GND
@@ -1084,7 +1094,6 @@ Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können späte
 - `data/` und das OpenSearch-Volume sollten nicht gelöscht werden, wenn der Index erhalten bleiben soll.
 - EntityFacts werden als zusätzliche Enrichment-Schicht verwendet.
 - Werke und Schlagwörter kommen weiterhin primär aus den GND-LDS-Dumps.
-- Familien werden über EntityFacts ergänzt.
 - Wöchentliche OAI-Updates aktualisieren den bestehenden Index inkrementell und lösen keinen vollständigen Reindex aus.
 
 ---
