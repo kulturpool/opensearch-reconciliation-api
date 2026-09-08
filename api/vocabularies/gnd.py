@@ -254,7 +254,7 @@ def _build_gnd_vocab():
 
     return VocabConfig(
         key="gnd",
-        service_name="Local GND Reconciliation Service",
+        service_name="OpenSearch Reconciliation API for GND",
         index_name=INDEX_NAME,
         identifier_space=GND_URI_PREFIX,
         schema_space=GND_SCHEMA_SPACE,

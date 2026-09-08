@@ -26,8 +26,8 @@ RUN pip install --upgrade pip \
 FROM python:3.12-slim
 
 # Metadata
-LABEL maintainer="GND Reconciliation API"
-LABEL description="Local GND Reconciliation Service für OpenRefine"
+LABEL maintainer="Kulturpool"
+LABEL description="OpenSearch Reconciliation API for GND and Getty Vocabularies"
 
 # Python-Environment optimieren
 ENV PYTHONUNBUFFERED=1

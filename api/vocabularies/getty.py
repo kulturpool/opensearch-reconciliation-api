@@ -413,7 +413,7 @@ TGN_VOCAB = _build_getty_vocab(
 
 ALL_GETTY_VOCAB = _build_getty_vocab(
     config_key="getty",
-    service_name="Getty search",
+    service_name="OpenSearch Reconciliation API for Getty Vocabularies",
     route_prefix="/getty",
     specs=_enabled_all_specs(),
     fixed_vocabulary=None,

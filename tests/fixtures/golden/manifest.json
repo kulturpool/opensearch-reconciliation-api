@@ -2,7 +2,7 @@
     "versions": [
         "0.2"
     ],
-    "name": "Local GND Reconciliation Service",
+    "name": "OpenSeaerch Reconciliation API for GND and Getty Vocabularies",
     "identifierSpace": "https://d-nb.info/gnd/",
     "schemaSpace": "https://d-nb.info/standards/elementset/gnd#AuthorityResource",
     "defaultTypes": [
