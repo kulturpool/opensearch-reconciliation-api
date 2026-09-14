@@ -1,6 +1,6 @@
 {
   // Name des DevContainers (wird in VS Code angezeigt)
-  "name": "local-reconciliation-api",
+  "name": "opensearch-reconciliation-api",
 
   // Docker Compose Konfiguration für die Entwicklungsumgebung
   "dockerComposeFile": "docker-compose.yml",
