@@ -5,25 +5,25 @@
 # Für Entwicklung bitte den DevContainer verwenden (.devcontainer/)!
 
 services:
-  # ---------------------------------------------------------------------------
-  # Init Service: Datenordner vorbereiten
-  # ---------------------------------------------------------------------------
-  init-data:
-    image: alpine:3.20
-    command: >
-      sh -c "
-      mkdir -p /data/raw /data/processed /data/state /data/logs /data/opensearch &&
-      chown -R 1000:1000 /data/opensearch &&
-      chmod -R u+rwX,g+rwX /data/opensearch
-      "
-    volumes:
-      - ./data:/data
-    restart: "no"
+  # # ---------------------------------------------------------------------------
+  # # Init Service: Datenordner vorbereiten
+  # # ---------------------------------------------------------------------------
+  # init-data:
+  #   image: alpine:3.20
+  #   command: >
+  #     sh -c "
+  #     mkdir -p /data/raw /data/processed /data/state /data/logs /data/opensearch &&
+  #     chown -R 1000:1000 /data/opensearch &&
+  #     chmod -R u+rwX,g+rwX /data/opensearch
+  #     "
+  #   volumes:
+  #     - ./data:/data
+  #   restart: "no"
 
   # ---------------------------------------------------------------------------
-  # GND API Service: Hauptanwendung
+  # Opensearch Reconciliation API Service: Hauptanwendung
   # ---------------------------------------------------------------------------
-  gnd-api:
+  opensearch-reconciliation-api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -47,13 +47,13 @@ services:
     
     # Volumes für persistente Daten
     volumes:
-      - ./data:/app/data        # GND-Daten und State
+      - ./data:/app/data        # GND und Getty Daten und State
       - ./config:/app/config    # Konfigurationsdateien
     
     # Dependencies
     depends_on:
-      init-data:
-        condition: service_completed_successfully
+      # init-data:
+      #   condition: service_completed_successfully
       opensearch:
         condition: service_healthy
     
@@ -61,7 +61,7 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # OpenSearch Service: Suchmaschine für GND-Index
+  # OpenSearch Service: Suchmaschine für GND- und Getty-Index
   # ---------------------------------------------------------------------------
   opensearch:
     image: opensearchproject/opensearch:2
@@ -89,15 +89,15 @@ services:
         soft: 65536
         hard: 65536
     
-    # Persistentes Volume für GND-Index
+    # Persistentes Volume für GND- und Getty-Index
     # WICHTIG: Shared mit DevContainer für schnellere Entwicklung
     volumes:
       - ./data/opensearch:/usr/share/opensearch/data
     
     # Init-Service muss zuerst laufen
-    depends_on:
-      init-data:
-        condition: service_completed_successfully
+    # depends_on:
+    #   init-data:
+    #     condition: service_completed_successfully
     
     # Health Check für Container-Startup
     healthcheck:

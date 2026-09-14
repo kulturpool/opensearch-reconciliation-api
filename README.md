@@ -1,6 +1,6 @@
 # GND Reconciliation API mit OpenSearch
 
-Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und Getty-Vokabulare. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), ähnlich wie bei GND ein Typ wie "Person" gewählt wird.
+Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und **Getty-Vokabulare**. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), bei GND können hier Typen wie "Person" gewählt werden.
 
 **API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) CHANGE!
 
@@ -13,9 +13,6 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 - **[docs/CHANGELOG.md](docs/CHANGELOG.md)**: Änderungsprotokoll
 - **[.devcontainer/README.md](.devcontainer/README.md)**: DevContainer-Spezifische Dokumentation
 
-## 🔗 Verwandte Projekte
-
-- **[Reconciliation Web UI](https://git.kpool.at/kulturpool/development/ai/microservice-gnd-reconciliation-interface)**: Eigenständige Web-Oberfläche zum Hochladen von CSV/TSV/Excel-Dateien, Zuordnen von Spalten/Properties und Batch-Reconciliation gegen diese API (kein OpenRefine erforderlich).
 
 ---
 
@@ -30,9 +27,9 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 - Zusätzliche Properties (z.B. `dateOfBirth`, `dateOfDeath`) verbessern die Trefferqualität, ohne die Suche zu verlangsamen
 - Type Suggest, Entity Suggest und Property Suggest
 - Extend API für `Add columns from reconciled values`
-- Entity Preview inklusive Link zum GND-Datensatz
+- Entity Preview inklusive Link zu den Datensätzen
 - EntityFacts-Enrichment, u.a. für `Family`, `sameAs`, `depiction`, `associatedCountry`
-- Automatische regelmäßige OAI-Updates ohne vollständigen Reindex
+- Automatische regelmäßige OAI-Updates ohne vollständigen Reindex für GND-Daten
 - Docker Compose Runtime Setup
 - DevContainer für Entwicklung
 
@@ -48,6 +45,8 @@ Benötigt wird:
 
 Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand mehrere Stunden dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
 Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3.2GB, und der Index benötigt 25GB Speicherplatz.
+Der initiale Download der drei Getty-Vokabularien AAT, TGN, und ULAN beträgt respektive 140MB, 1.2GB, und 365MB als ZIP_Datei. Da diese für den Einlese-Vorgang entpackt werden, werden insgesamt 23.3GB Speicherplatz für den Download und das Entpacken benötigt. Bei bestehendem OpenSearch Index erweitert sich dessen Größe nur minimal auf 25.5GB nach hinzufügen der Getty-Vokabularien.
+Der gesamte `/data`-Ordner benötigt daher derzeit 52GB Speicherplatz. 
 
 ---
 
@@ -172,7 +171,7 @@ docker compose -f docker-compose.runtime.yml up --build
 
 **Wichtig**: Beide Modi teilen sich das gleiche OpenSearch-Volume!
 
-**Vorteil**: GND-Index muss nur einmal gebaut werden (~3 GB Download + 25 GB Indexierung)
+**Vorteil**: Index muss nur einmal gebaut werden (~5 GB Download + 25 GB Indexierung)
 
 **Nachteil**: Runtime und DevContainer dürfen **nicht gleichzeitig** laufen
 
@@ -194,6 +193,8 @@ docker compose -f docker-compose.runtime.yml up --build
 ---
 
 ## OpenRefine verbinden
+
+Grundsätzliche funtionieren die /gnd und /getty-Endpunkte analog zueinander.
 
 In OpenRefine:
 
@@ -340,7 +341,7 @@ Danach können über **Add columns from reconciled values** zusätzliche Informa
 
 ## API testen
 
-> **Hinweis:** Der GND-Service ist sowohl über den Root-Pfad (`http://localhost:8083/…`, aus Gründen der Abwärtskompatibilität) als auch über den eigenen Präfix `http://localhost:8083/gnd/…` erreichbar — analog zu `/getty` für den Getty-Service. Beide Varianten sind funktional identisch; für neue Integrationen wird `/gnd` empfohlen.
+> **Hinweis:** Der GND-Service ist sowohl über den Root-Pfad (`http://localhost:8083/…`, aus Gründen der Abwärtskompatibilität) als auch über den eigenen Präfix `http://localhost:8083/gnd/…` erreichbar — analog zu `/getty` für den Getty-Service. Beide Varianten sind funktional identisch; für neue Integrationen wird `/gnd` anstatt `/` empfohlen.
 
 ### Service Manifest
 
@@ -550,7 +551,7 @@ curl -X POST "http://localhost:8083/extend" \
 curl "http://localhost:8083/preview?id=118540238"
 ```
 
-Liefert eine HTML-Vorschau für OpenRefine. Die Preview enthält je nach Datenlage u.a. bevorzugten Namen, Typ, GND-Link, biografische bzw. historische Informationen und Bildverweise wie `depiction`.
+Liefert eine HTML-Vorschau für OpenRefine. Die Preview enthält je nach Datenlage u.a. bevorzugten Namen, Typ, Link, biografische bzw. historische Informationen und Bildverweise wie `depiction`.
 
 ---
 
@@ -589,14 +590,14 @@ Diese Endpunkte gehören nicht zur Reconciliation API, sind aber für lokale Tes
 Dokumentanzahl prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_count?pretty"
 ```
 
 EntityFacts-Enrichment prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
@@ -620,7 +621,7 @@ docker compose -f docker-compose.runtime.yml exec gnd-api \
 OAI-Updates prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
@@ -705,14 +706,14 @@ Sonst wird bei jedem Start erneut vollständig indexiert.
 Wenn der vorhandene LDS-Index erhalten bleiben soll und nur EntityFacts ergänzt werden sollen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   python scripts/enrich_with_entityfacts.py
 ```
 
 Nur Families importieren:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   python scripts/enrich_with_entityfacts.py --only-type Family
 ```
 
@@ -773,14 +774,14 @@ curl "http://127.0.0.1:8083/status/update"
 Direkt im Container:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   cat data/state/update_state.json
 ```
 
 ### Scheduler-Log prüfen
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   tail -f data/logs/update_scheduler.log
 ```
 
@@ -842,13 +843,13 @@ docker compose -f docker-compose.runtime.yml logs -f
 Nur API:
 
 ```bash
-docker compose -f docker-compose.runtime.yml logs -f gnd-api
+docker compose -f docker-compose.runtime.yml logs -f opensearch-reconciliation-api
 ```
 
 ### Dokumentanzahl im Index
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_count?pretty"
 ```
 
@@ -985,7 +986,7 @@ docker compose -f docker-compose.runtime.yml ps
 Interne Namensauflösung testen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api getent hosts opensearch
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api getent hosts opensearch
 ```
 
 In `.env` sollte stehen:
@@ -1000,14 +1001,14 @@ OPENSEARCH_PORT=9200
 Prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   ps aux | grep update_scheduler
 ```
 
 Log prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api \
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
   tail -f data/logs/update_scheduler.log
 ```
 
@@ -1138,19 +1139,19 @@ Siehe `.env.example`, Abschnitt „Getty Vocabulary Program Configuration", für
 Zustand prüfen, ohne etwas zu verändern:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --check-only
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --check-only
 ```
 
 Build nur ausführen, falls noch kein vollständiger Getty-Index vorhanden ist:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --auto
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --auto
 ```
 
 Vollständigen, erzwungenen Rebuild auslösen (z.B. nach Änderungen an `GETTY_VOCABULARIES`):
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec gnd-api python scripts/bootstrap_getty.py --init
+docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --init
 ```
 
 ### API testen

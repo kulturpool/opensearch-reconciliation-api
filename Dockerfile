@@ -1,8 +1,9 @@
 # =============================================================================
-# Production Dockerfile für GND Reconciliation API
+# Production Dockerfile für OpenSearch Reconciliation API
 # =============================================================================
 # Dieses Dockerfile ist für Production/Runtime optimiert.
 # Für Entwicklung bitte .devcontainer/Dockerfile verwenden!
+
 
 # -----------------------------------------------------------------------------
 # Stage 1: Builder - Dependencies installieren
@@ -54,8 +55,12 @@ COPY indexer /app/indexer
 COPY scripts /app/scripts
 COPY config /app/config
 
+# Entrypoint Script kopieren
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
 # Skripte ausführbar machen
-RUN chmod +x /app/scripts/*.sh 2>/dev/null || true
+RUN chmod +x /app/docker-entrypoint.sh \
+&& chmod +x /app/scripts/*.sh 2>/dev/null || true
 
 # Health Check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
@@ -63,6 +68,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # API Port exponieren
 EXPOSE 8083
+
+# Datenverzeichnisse initialisieren und dann Anwendung starten
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # Startup-Skript ausführen
 CMD ["bash", "scripts/start_container_services.sh"]

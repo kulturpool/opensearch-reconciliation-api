@@ -46,7 +46,7 @@ Ein DevContainer ist eine vollständige Entwicklungsumgebung, die in Docker läu
 
 ⚠️ **WICHTIG**: DevContainer und Runtime teilen sich das gleiche OpenSearch-Volume (`local_reconciliation_api_opensearch-data`).
 
-**Vorteil**: GND-Index muss nur einmal gebaut werden (~3 GB Download + Indexierung).
+**Vorteil**: Index muss nur einmal gebaut werden (~5 GB Download + 25 GB Indexierung).
 
 **Nachteil**: **Beide dürfen nicht gleichzeitig laufen!**
 
