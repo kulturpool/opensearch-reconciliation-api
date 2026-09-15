@@ -1,32 +1,15 @@
 # =============================================================================
-# Docker Compose Konfiguration für Production/Runtime mit Reconciliation API Build Step
+# Docker Compose Konfiguration für Production/Runtime mit Docker Image Verwendung
 # =============================================================================
 # Dieser Setup ist für Production/Deployment optimiert.
 # Für Entwicklung bitte den DevContainer verwenden (.devcontainer/)!
 
 services:
-  # # ---------------------------------------------------------------------------
-  # # Init Service: Datenordner vorbereiten
-  # # ---------------------------------------------------------------------------
-  # init-data:
-  #   image: alpine:3.20
-  #   command: >
-  #     sh -c "
-  #     mkdir -p /data/raw /data/processed /data/state /data/logs /data/opensearch &&
-  #     chown -R 1000:1000 /data/opensearch &&
-  #     chmod -R u+rwX,g+rwX /data/opensearch
-  #     "
-  #   volumes:
-  #     - ./data:/data
-  #   restart: "no"
-
   # ---------------------------------------------------------------------------
   # Opensearch Reconciliation API Service: Hauptanwendung
   # ---------------------------------------------------------------------------
   opensearch-reconciliation-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: swolffkp/opensearch-reconciliation-api:latest
     
     # Environment-Variablen aus .env laden
     env_file:

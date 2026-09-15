@@ -1,4 +1,4 @@
-# GND Reconciliation API mit OpenSearch
+# OpenSearch Reconciliation API
 
 Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und **Getty-Vokabulare**. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), bei GND können hier Typen wie "Person" gewählt werden.
 
@@ -94,10 +94,10 @@ GND_OAI_REQUEST_BACKOFF_SECONDS=10
 GND_OAI_PAGE_DELAY_SECONDS=2
 ```
 
-### 3. Runtime-Container starten
+### 3. Container starten
 
 ```bash
-docker compose -f docker-compose.runtime.yml up --build
+docker compose -f docker-compose.yml up -d
 ```
 
 Beim ersten Start passiert automatisch:
