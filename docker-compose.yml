@@ -16,7 +16,7 @@ services:
   # OpenSearch Reconciliation API: Hauptanwendung
   # ---------------------------------------------------------------------------
   opensearch-reconciliation-api:
-    image: ghcr.io/swolffkp/opensearch-reconciliation-api:latest
+    image: ghcr.io/kulturpool/opensearch-reconciliation-api:latest
 
     environment:
       # -----------------------------------------------------------------------
