@@ -55,46 +55,11 @@ Der gesamte `/data`-Ordner benötigt daher derzeit 52GB Speicherplatz.
 ### 1. Repository klonen
 
 ```bash
-git clone <REPOSITORY_URL>
-cd <REPOSITORY_NAME>
+git clone https://github.com/kulturpool/opensearch-reconciliation-api.git
+cd opensearch-reconciliation-api
 ```
 
-### 2. Environment-Datei erstellen
-
-```bash
-cp .env.example .env
-```
-
-Typische Standardwerte:
-
-```env
-API_PORT=8083
-HOST_API_PORT=8083
-PUBLIC_BASE_URL=http://127.0.0.1:8083
-
-OPENSEARCH_HOST=opensearch
-OPENSEARCH_PORT=9200
-
-GND_FORCE_REINDEX=false
-GND_INDEX_ENTITYFACTS=true
-GND_ENTITYFACTS_ONLY_TYPE=
-
-GND_AUTO_UPDATE=true
-GND_UPDATE_INTERVAL_HOURS=168
-GND_UPDATE_INITIAL_DELAY_SECONDS=300
-
-GND_OAI_BASE_URL=https://services.dnb.de/oai/repository
-GND_OAI_METADATA_PREFIX=RDFxml
-GND_OAI_SET=authorities
-GND_OAI_OVERLAP_MINUTES=60
-
-GND_OAI_REQUEST_TIMEOUT_SECONDS=300
-GND_OAI_REQUEST_MAX_RETRIES=6
-GND_OAI_REQUEST_BACKOFF_SECONDS=10
-GND_OAI_PAGE_DELAY_SECONDS=2
-```
-
-### 3. Container starten
+### 2. Container starten
 
 ```bash
 docker compose -f docker-compose.yml up -d
@@ -110,85 +75,6 @@ Beim ersten Start passiert automatisch:
 6. die API startet auf dem konfigurierten Port, standardmäßig `8083`
 
 Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
-
----
-
-## Entwicklung vs. Production
-
-Dieses Repository unterstützt **zwei verschiedene Modi**:
-
-### 🏭 Production/Runtime (docker-compose.runtime.yml)
-
-**Verwendung**: Deployment, Production, regelmäßige Nutzung
-
-```bash
-docker compose -f docker-compose.runtime.yml up --build
-```
-
-**Eigenschaften**:
-- ✅ Optimiertes, kleines Docker Image (Multi-Stage Build)
-- ✅ Code wird beim Build in das Image kopiert
-- ✅ Automatischer Start mit Healthcheck
-- ✅ Minimale Dependencies
-- ❌ Keine Code-Änderungen ohne Rebuild
-- ❌ Keine Entwickler-Tools
-
-**Verwendung für**:
-- Produktive Nutzung mit OpenRefine
-- Server-Deployment
-- Langzeitbetrieb mit automatischen Updates
-
----
-
-### 🔧 Entwicklung (DevContainer)
-
-**Verwendung**: Lokale Code-Entwicklung mit VS Code
-
-**Voraussetzung**: VS Code mit Extension **Dev Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers))
-
-**Verwendung**:
-1. Repository in VS Code öffnen
-2. Command Palette: `Ctrl+Shift+P`
-3. `Dev Containers: Reopen in Container`
-
-**Eigenschaften**:
-- ✅ Workspace-Ordner live gemountet
-- ✅ Code-Änderungen sofort aktiv (Hot Reload)
-- ✅ Vorinstallierte VS Code Extensions
-- ✅ Entwickler-Tools (vim, httpie, jq, etc.)
-- ✅ Integriertes Debugging
-- ✅ Python-Linting und Formatting (Ruff)
-
-**Verwendung für**:
-- API-Entwicklung
-- Testing neuer Features
-- Debugging
-- Code-Refactoring
-
----
-
-### 📦 Gemeinsames OpenSearch Volume
-
-**Wichtig**: Beide Modi teilen sich das gleiche OpenSearch-Volume!
-
-**Vorteil**: Index muss nur einmal gebaut werden (~5 GB Download + 25 GB Indexierung)
-
-**Nachteil**: Runtime und DevContainer dürfen **nicht gleichzeitig** laufen
-
-**Wechsel von Runtime zu DevContainer**:
-```bash
-docker compose -f docker-compose.runtime.yml down
-# Dann in VS Code: "Reopen in Container"
-```
-
-**Wechsel von DevContainer zu Runtime**:
-```bash
-# In VS Code: "Reopen Folder Locally"
-docker compose -f .devcontainer/docker-compose.yml down
-docker compose -f docker-compose.runtime.yml up --build
-```
-
-**Details**: Siehe [.devcontainer/README.md](.devcontainer/README.md)
 
 ---
 
@@ -1176,6 +1062,60 @@ data/state/getty_state.json, data/state/getty_index_state.json
 data/logs/bootstrap_getty.log, data/logs/update_getty_scheduler.log
   Logs
 ```
+
+---
+
+## Entwicklung vs. Production
+
+Dieses Repository unterstützt **zwei verschiedene Modi**:
+
+### 🏭 Production/Runtime (docker-compose.runtime.yml)
+
+**Verwendung**: Deployment, Production, regelmäßige Nutzung
+
+```bash
+docker compose -f docker-compose.runtime.yml up --build
+```
+
+**Eigenschaften**:
+- ✅ Optimiertes, kleines Docker Image (Multi-Stage Build)
+- ✅ Code wird beim Build in das Image kopiert
+- ✅ Automatischer Start mit Healthcheck
+- ✅ Minimale Dependencies
+- ❌ Keine Code-Änderungen ohne Rebuild
+- ❌ Keine Entwickler-Tools
+
+**Verwendung für**:
+- Produktive Nutzung mit OpenRefine
+- Server-Deployment
+- Langzeitbetrieb mit automatischen Updates
+
+---
+
+### 🔧 Entwicklung (DevContainer)
+
+**Verwendung**: Lokale Code-Entwicklung mit VS Code
+
+**Voraussetzung**: VS Code mit Extension **Dev Containers** ([ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers))
+
+**Verwendung**:
+1. Repository in VS Code öffnen
+2. Command Palette: `Ctrl+Shift+P`
+3. `Dev Containers: Reopen in Container`
+
+**Eigenschaften**:
+- ✅ Workspace-Ordner live gemountet
+- ✅ Code-Änderungen sofort aktiv (Hot Reload)
+- ✅ Vorinstallierte VS Code Extensions
+- ✅ Entwickler-Tools (vim, httpie, jq, etc.)
+- ✅ Integriertes Debugging
+- ✅ Python-Linting und Formatting (Ruff)
+
+**Verwendung für**:
+- API-Entwicklung
+- Testing neuer Features
+- Debugging
+- Code-Refactoring
 
 ---
 
