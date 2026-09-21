@@ -9,6 +9,12 @@
 #
 # Logs:
 #   docker compose logs -f
+#
+# Stoppen, Daten behalten:
+#   docker compose down
+#
+# Stoppen und alle gespeicherten Daten löschen:
+#   docker compose down -v
 # =============================================================================
 
 services:
@@ -28,7 +34,6 @@ services:
       # -----------------------------------------------------------------------
       # OpenSearch Configuration
       # -----------------------------------------------------------------------
-      # "opensearch" entspricht dem Service-Namen weiter unten.
       OPENSEARCH_HOST: "opensearch"
       OPENSEARCH_PORT: "9200"
 
@@ -39,35 +44,26 @@ services:
       GND_FORCE_REINDEX: "false"
       GND_INDEX_ENTITYFACTS: "true"
 
-      # Leer lassen, um alle von EntityFacts unterstützten Typen anzureichern.
+      # Leer lassen, um alle unterstützten Typen anzureichern.
       GND_ENTITYFACTS_ONLY_TYPE: ""
 
       # -----------------------------------------------------------------------
       # Data Paths
       # -----------------------------------------------------------------------
-      # Relativ zu WORKDIR=/app im API-Container.
       GND_DATA_DIR: "data"
 
       # -----------------------------------------------------------------------
       # GND Index Build State Configuration
       # -----------------------------------------------------------------------
-      # 12 Stunden
       GND_INDEX_LOCK_STALE_SECONDS: "43200"
 
       # -----------------------------------------------------------------------
       # GND Update Scheduler Configuration
       # -----------------------------------------------------------------------
       GND_AUTO_UPDATE: "true"
-
-      # 168 Stunden = 7 Tage
       GND_UPDATE_INTERVAL_HOURS: "168"
-
-      # 300 Sekunden = 5 Minuten
       GND_UPDATE_INITIAL_DELAY_SECONDS: "300"
-
       GND_UPDATE_MODE: "oai"
-
-      # 21600 Sekunden = 6 Stunden
       GND_UPDATE_LOCK_STALE_SECONDS: "21600"
 
       # -----------------------------------------------------------------------
@@ -97,40 +93,24 @@ services:
       # Getty Vocabulary Configuration
       # -----------------------------------------------------------------------
       GETTY_INDEX_NAME: "getty"
-
-      # Unterstützte Werte: aat, ulan, tgn
       GETTY_VOCABULARIES: "aat,ulan,tgn"
-
       GETTY_FORCE_REINDEX: "false"
       GETTY_AUTO_UPDATE: "true"
 
-      # 336 Stunden = 14 Tage
       GETTY_UPDATE_INTERVAL_HOURS: "336"
-
-      # 600 Sekunden = 10 Minuten
       GETTY_UPDATE_INITIAL_DELAY_SECONDS: "600"
-
-      # 43200 Sekunden = 12 Stunden
       GETTY_INDEX_LOCK_STALE_SECONDS: "43200"
-
-      # 21600 Sekunden = 6 Stunden
       GETTY_UPDATE_LOCK_STALE_SECONDS: "21600"
 
       GETTY_RAW_DIR: "data/raw/getty"
-
-      # {vocab} wird durch aat, ulan oder tgn ersetzt.
       GETTY_DOWNLOAD_URL_TEMPLATE: "http://{vocab}downloads.getty.edu/VocabData/explicit.zip"
 
-    # Host-Port 8083 -> Container-Port 8083
     ports:
       - "8083:8083"
 
     volumes:
-      # GND-/Getty-Daten, Logs und Statusdateien
-      - ./data:/app/data
-
-      # Beibehalten, wenn Konfiguration zur Laufzeit überschrieben werden soll.
-      - ./config:/app/config
+      # Docker-managed volume for GND/Getty data, logs, and state.
+      - reconciliation-data:/app/data
 
     depends_on:
       opensearch:
@@ -145,14 +125,12 @@ services:
     image: opensearchproject/opensearch:2
 
     environment:
-      # Single-Node Setup für lokale oder kleine Deployments
+      # Single-Node Setup
       discovery.type: "single-node"
 
-      # Security deaktiviert.
-      # OpenSearch daher nicht öffentlich über Port 9200 verfügbar machen.
+      # Nur für lokale oder vertrauenswürdige Umgebungen.
       plugins.security.disabled: "true"
 
-      # Von aktuellen OpenSearch-Images vorausgesetzt.
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: "LocalDevPassword123!"
 
       # Java Heap
@@ -168,8 +146,8 @@ services:
         hard: 65536
 
     volumes:
-      # OpenSearch-Indizes werden direkt im lokalen Repository gespeichert.
-      - ./data/opensearch:/usr/share/opensearch/data
+      # Docker-managed volume for OpenSearch indexes.
+      - opensearch-data:/usr/share/opensearch/data
 
     healthcheck:
       test:
@@ -181,3 +159,13 @@ services:
       start_period: 30s
 
     restart: unless-stopped
+
+# =============================================================================
+# Persistent Docker Volumes
+# =============================================================================
+volumes:
+  reconciliation-data:
+    name: opensearch-reconciliation-data
+
+  opensearch-data:
+    name: opensearch-reconciliation-index

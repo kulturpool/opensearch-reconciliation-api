@@ -2,9 +2,7 @@
 .env
 
 # Data directories
-/data/**
-!/data/*/
-!/data/*/.gitkeep
+/data
 
 # Python
 **/__pycache__

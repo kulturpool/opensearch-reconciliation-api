@@ -1,8 +1,8 @@
 # OpenSearch Reconciliation API
 
-Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei (GND)** und **Getty-Vokabulare**. Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), bei GND können hier Typen wie "Person" gewählt werden.
+Lokaler Docker-basierter Reconciliation-Service für die [**Gemeinsame Normdatei (GND)**](https://www.dnb.de/DE/Professionell/Metadatendienste/Datenbezug/Gesamtabzuege/gesamtabzuege_node.html) und [**Getty-Vokabulare**](https://www.getty.edu/research/tools/vocabularies/obtain/download.html). Der Service lädt die Daten herunter, speichert und indexiert sie lokal in OpenSearch und stellt OpenRefine-kompatible Reconciliation APIs bereit: GND unter der eigenen Service-URL `/gnd` (sowie, aus Gründen der Abwärtskompatibilität, weiterhin am Root-Endpunkt `/`) und Getty (AAT, ULAN, TGN) unter einer einzigen Service-URL `/getty`. Innerhalb von `/getty` wählt man das gewünschte Vokabular über den Type-Filter in OpenRefine ("AAT search", "ULAN search", "TGN search" oder "Search all Vocabs"), bei GND können hier Typen wie "Person" gewählt werden.
 
-**API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) CHANGE!
+**API-Dokumentation (Swagger UI)**: [http://127.0.0.1:8083/docs](http://127.0.0.1:8083/docs) Nach Start des Containers
 
 ## 📚 Dokumentation
 
@@ -39,9 +39,9 @@ Lokaler Docker-basierter Reconciliation-Service für die **Gemeinsame Normdatei 
 
 Benötigt wird:
 
-- Docker
-- Docker Compose
-- OpenRefine
+- [Docker](https://docs.docker.com/engine/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [OpenRefine](https://openrefine.org/docs/manual/installing)
 
 Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand mehrere Stunden dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
 Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3.2GB, und der Index benötigt 25GB Speicherplatz.
