@@ -46,7 +46,7 @@ Benötigt wird:
 Der erste vollständige Import kann je nach Rechner, Netzwerk und Datenstand mehrere Stunden dauern. Spätere Starts sind deutlich schneller, da der Index persistent gespeichert wird.
 Der initiale Download des Gesamtabzugs der GND inklusive Enitity Facts beträgt über 3.2GB, und der Index benötigt 25GB Speicherplatz.
 Der initiale Download der drei Getty-Vokabularien AAT, TGN, und ULAN beträgt respektive 140MB, 1.2GB, und 365MB als ZIP_Datei. Da diese für den Einlese-Vorgang entpackt werden, werden insgesamt 23.3GB Speicherplatz für den Download und das Entpacken benötigt. Bei bestehendem OpenSearch Index erweitert sich dessen Größe nur minimal auf 25.5GB nach hinzufügen der Getty-Vokabularien.
-Der gesamte `/data`-Ordner benötigt daher derzeit 52GB Speicherplatz. 
+Der gesamte Index mit gespeicherten Download-Dateien benötigt daher derzeit 52GB Speicherplatz. 
 
 ---
 
@@ -74,7 +74,7 @@ Beim ersten Start passiert automatisch:
 5. der OAI-Update-Scheduler wird gestartet, falls `GND_AUTO_UPDATE=true`
 6. die API startet auf dem konfigurierten Port, standardmäßig `8083`
 
-Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
+Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` und `GETTY_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
 
 Für einen Schnellstart wird theoretisch nur die docker-compose.yml Datei benötigt.
 
@@ -482,14 +482,14 @@ Diese Endpunkte gehören nicht zur Reconciliation API, sind aber für lokale Tes
 Dokumentanzahl prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_count?pretty"
 ```
 
 EntityFacts-Enrichment prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
@@ -513,7 +513,7 @@ docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api 
 OAI-Updates prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
@@ -551,13 +551,13 @@ Bei einem normalen Neustart bleiben Daten und Index erhalten.
 Container stoppen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml down
+docker compose -f docker-compose.yml down
 ```
 
 Nicht verwenden, außer der Index soll wirklich gelöscht werden:
 
 ```bash
-docker compose -f docker-compose.runtime.yml down -v
+docker compose -f docker-compose.yml down -v
 ```
 
 ---
@@ -968,21 +968,9 @@ JSON
 
 ---
 
-## Nicht Teil des aktuellen MVP
-
-Folgende Funktionen sind bewusst nicht Teil des aktuellen MVP und können später ergänzt werden:
-
-- Integration weiterer Normdatenquellen als eigene Reconciliation-Quellen
-- Hochverfügbarkeits- oder Clusterbetrieb
-- Schreibzugriffe auf die GND
-- eigener EntityFacts-Dump-Refresh unabhängig vom GND-OAI-Update
-- CI-Test-Suite und automatisierte Regressionstests
-
----
-
 ## Hinweise
 
-- Der erste Import ist groß und dauert.
+- Der erste Import ist groß und dauert je nach Hardware circa 2 Stunden.
 - Spätere Starts sind deutlich schneller.
 - `data/` und das OpenSearch-Volume sollten nicht gelöscht werden, wenn der Index erhalten bleiben soll.
 - EntityFacts werden als zusätzliche Enrichment-Schicht verwendet.
