@@ -76,6 +76,8 @@ Beim ersten Start passiert automatisch:
 
 Wenn der Index bereits existiert und `GND_FORCE_REINDEX=false` gesetzt ist, wird der Full-Import übersprungen und die API direkt gestartet.
 
+Für einen Schnellstart wird theoretisch nur die docker-compose.yml Datei benötigt.
+
 ---
 
 ## OpenRefine verbinden
@@ -130,7 +132,7 @@ Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwe
 
 1. Spalte auswählen, z.B. `name`
 2. Reconcile starten
-3. lokalen GND-Service auswählen
+3. OpenSearch Service auswählen
 4. passenden Typ wählen, z.B.:
    - `Normdatenressource`
    - `Individualisierte Person`
@@ -140,6 +142,10 @@ Danach kann der Service wie jeder andere OpenRefine-Reconciliation-Service verwe
    - `Schlagwort`
    - `Werk`
    - `Familie`
+  bzw. den passenden Getty-Service:
+  - `AAT`
+  - `ULAN`
+  - `TGN`
 
 ![Reconciliation Typen auswählen](docs/media/individ_person.gif)<br>
 Reconciliation Typen auswählen
@@ -560,9 +566,9 @@ docker compose -f docker-compose.runtime.yml down -v
 
 Wenn der komplette Index inklusive EntityFacts neu aufgebaut werden soll:
 
-### 1. `.env` anpassen
+### 1. `docker-compose.yml` anpassen
 
-```env
+```docker-compose
 GND_FORCE_REINDEX=true
 GND_INDEX_ENTITYFACTS=true
 GND_ENTITYFACTS_ONLY_TYPE=
@@ -571,15 +577,15 @@ GND_ENTITYFACTS_ONLY_TYPE=
 ### 2. Neu starten
 
 ```bash
-docker compose -f docker-compose.runtime.yml down
-docker compose -f docker-compose.runtime.yml up --build
+docker compose -f docker-compose.yml down
+docker compose -f docker-compose.yml up --build
 ```
 
 ### 3. Danach wieder zurücksetzen
 
 Nach erfolgreichem Reindex:
 
-```env
+```docker-compose
 GND_FORCE_REINDEX=false
 ```
 
@@ -592,14 +598,14 @@ Sonst wird bei jedem Start erneut vollständig indexiert.
 Wenn der vorhandene LDS-Index erhalten bleiben soll und nur EntityFacts ergänzt werden sollen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   python scripts/enrich_with_entityfacts.py
 ```
 
 Nur Families importieren:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   python scripts/enrich_with_entityfacts.py --only-type Family
 ```
 
@@ -623,7 +629,7 @@ Dabei wird **kein vollständiger Reindex** durchgeführt.
 
 ### Konfiguration
 
-```env
+```docker-compose
 GND_AUTO_UPDATE=true
 GND_UPDATE_INTERVAL_HOURS=168
 GND_UPDATE_INITIAL_DELAY_SECONDS=300
@@ -645,7 +651,7 @@ beim Start einen `update.lock` aus einem abgebrochenen Lauf vorfindet, wird
 dieser als veraltet erkannt und entfernt, sobald er älter als
 `GND_UPDATE_LOCK_STALE_SECONDS` (Standard: 6 Stunden) ist:
 
-```env
+```docker-compose
 GND_UPDATE_LOCK_STALE_SECONDS=21600
 ```
 
@@ -660,14 +666,14 @@ curl "http://127.0.0.1:8083/status/update"
 Direkt im Container:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   cat data/state/update_state.json
 ```
 
 ### Scheduler-Log prüfen
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   tail -f data/logs/update_scheduler.log
 ```
 
@@ -675,7 +681,7 @@ docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api 
 
 Für einen kurzen Funktionstest kann das Intervall temporär reduziert werden:
 
-```env
+```docker-compose
 GND_UPDATE_INTERVAL_HOURS=0.01
 GND_UPDATE_INITIAL_DELAY_SECONDS=10
 ```
@@ -684,7 +690,7 @@ GND_UPDATE_INITIAL_DELAY_SECONDS=10
 
 Nach dem Test wieder zurücksetzen:
 
-```env
+```docker-compose
 GND_UPDATE_INTERVAL_HOURS=168
 GND_UPDATE_INITIAL_DELAY_SECONDS=300
 ```
@@ -717,25 +723,25 @@ Dadurch arbeitet der nächste Lauf wieder ab dem letzten erfolgreichen Harvest-Z
 ### Container
 
 ```bash
-docker compose -f docker-compose.runtime.yml ps
+docker compose -f docker-compose.yml ps
 ```
 
 ### Logs
 
 ```bash
-docker compose -f docker-compose.runtime.yml logs -f
+docker compose -f docker-compose.yml logs -f
 ```
 
 Nur API:
 
 ```bash
-docker compose -f docker-compose.runtime.yml logs -f opensearch-reconciliation-api
+docker compose -f docker-compose.yml logs -f opensearch-reconciliation-api
 ```
 
 ### Dokumentanzahl im Index
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   curl "http://opensearch:9200/gnd/_count?pretty"
 ```
 
@@ -761,7 +767,7 @@ Wichtig:
 Vor Wechsel zu DevContainer:
 
 ```bash
-docker compose -f docker-compose.runtime.yml down
+docker compose -f docker-compose.yml down
 ```
 
 Vor Wechsel zu Runtime:
@@ -773,7 +779,7 @@ docker compose -f .devcontainer/docker-compose.yml down
 Dann Runtime starten:
 
 ```bash
-docker compose -f docker-compose.runtime.yml up --build
+docker compose -f docker-compose.yml up --build
 ```
 
 ---
@@ -852,7 +858,7 @@ PUBLIC_BASE_URL=http://127.0.0.1:8084
 Dann starten:
 
 ```bash
-docker compose -f docker-compose.runtime.yml up --build
+docker compose -f docker-compose.yml up --build
 ```
 
 OpenRefine URL:
@@ -866,18 +872,18 @@ http://127.0.0.1:8084
 Prüfen, ob beide Container laufen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml ps
+docker compose -f docker-compose.yml ps
 ```
 
 Interne Namensauflösung testen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api getent hosts opensearch
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api getent hosts opensearch
 ```
 
-In `.env` sollte stehen:
+In `docker-compose.yml` sollte stehen:
 
-```env
+```docker-compose
 OPENSEARCH_HOST=opensearch
 OPENSEARCH_PORT=9200
 ```
@@ -887,20 +893,20 @@ OPENSEARCH_PORT=9200
 Prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   ps aux | grep update_scheduler
 ```
 
 Log prüfen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api \
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api \
   tail -f data/logs/update_scheduler.log
 ```
 
-In `.env` prüfen:
+In `.docker-compose.yml` prüfen:
 
-```env
+```docker-compose
 GND_AUTO_UPDATE=true
 ```
 
@@ -925,8 +931,8 @@ Wenn `last_error` gesetzt ist, wird `last_oai_harvest` nicht fortgeschrieben. De
 Runtime-Container neu bauen:
 
 ```bash
-docker compose -f docker-compose.runtime.yml down
-docker compose -f docker-compose.runtime.yml up --build
+docker compose -f docker-compose.yml down
+docker compose -f docker-compose.yml up --build
 ```
 
 ---
@@ -1025,19 +1031,19 @@ Siehe `.env.example`, Abschnitt „Getty Vocabulary Program Configuration", für
 Zustand prüfen, ohne etwas zu verändern:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --check-only
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --check-only
 ```
 
 Build nur ausführen, falls noch kein vollständiger Getty-Index vorhanden ist:
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --auto
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --auto
 ```
 
 Vollständigen, erzwungenen Rebuild auslösen (z.B. nach Änderungen an `GETTY_VOCABULARIES`):
 
 ```bash
-docker compose -f docker-compose.runtime.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --init
+docker compose -f docker-compose.yml exec opensearch-reconciliation-api python scripts/bootstrap_getty.py --init
 ```
 
 ### API testen
